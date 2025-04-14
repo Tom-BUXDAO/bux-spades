@@ -298,38 +298,27 @@ export default function GameTable({
 
   // FIXED ROTATION: Always put current player at bottom (South)
   const rotatePlayersForCurrentView = () => {
-    // If we can't find the current player, don't rotate
-    if (currentPlayerPosition === -1) {
-      // Create a placeholder array for 4 positions
-      const positions = Array(4).fill(null);
-      
-      // Place each player at their explicit position
-      game.players.forEach(p => {
-        const pos = p.position ?? game.players.indexOf(p);
-        positions[pos] = p;
-      });
-      
-      return positions;
-    }
-
-    // Create a rotated array where current player is at position 0 (South)
-    const rotated = Array(4).fill(null);
+    // Find the current player's position
+    const currentPlayerPosition = currentPlayer?.position ?? 0;
     
-    // Place each player at their rotated position based on their explicit position
-    game.players.forEach(player => {
-      if (!player || !player.id) return;
-      
-      // Get the player's explicit position, or fall back to array index
-      const originalPos = player.position ?? game.players.indexOf(player);
-      
-      // Calculate new position relative to current player
-      // Formula: (4 + originalPos - currentPlayerPosition) % 4
-      // This ensures current player is at position 0
-      const newPos = (4 + originalPos - currentPlayerPosition) % 4;
-      rotated[newPos] = player;
+    // Create a rotated array where current player is at position 0 (South)
+    const rotatedPlayers = game.players.map(player => {
+      if (!player) return null;
+      // Calculate new position: (4 + originalPos - currentPlayerPosition) % 4
+      // This ensures current player is at 0, and others are rotated accordingly
+      const newPosition = (4 + (player.position ?? 0) - currentPlayerPosition) % 4;
+      return { ...player, displayPosition: newPosition };
     });
     
-    return rotated;
+    // Create final array with players in their display positions
+    const positions = Array(4).fill(null);
+    rotatedPlayers.forEach(player => {
+      if (player && player.displayPosition !== undefined) {
+        positions[player.displayPosition] = player;
+      }
+    });
+    
+    return positions;
   };
 
   // Preserve original positions in the array so the server knows where everyone sits
