@@ -5,6 +5,7 @@ import { signOut } from "next-auth/react";
 import Image from "next/image";
 import type { GameState } from "@/types/game";
 import type { Socket } from "socket.io-client";
+import GameRulesModal, { GameRules } from './GameRulesModal';
 
 interface GameLobbyProps {
   onGameSelect: (game: GameState) => void;
@@ -53,6 +54,13 @@ export default function GameLobby({
       localStorage.setItem('browserSessionId', sessionId);
     }
     return sessionId;
+  });
+  const [showRulesModal, setShowRulesModal] = useState(false);
+  const [gameRules, setGameRules] = useState<GameRules>({
+    allowNil: true,
+    allowBlindNil: false,
+    minPoints: -250,
+    maxPoints: 500
   });
 
   useEffect(() => {
@@ -202,21 +210,15 @@ export default function GameLobby({
     };
   }, [onGamesUpdate, socket, user.id, onGameSelect]);
 
-  const handleCreateGame = async () => {
-    console.log("Creating game with user:", user);
-    
-    if (!user) {
-      console.error("No user data available");
-      return;
-    }
-    
-    if (!user.id) {
-      console.error("No user ID available");
-      return;
-    }
+  const handleCreateGame = () => {
+    setShowRulesModal(true);
+  };
 
-    console.log("Sending user object:", user);
-    createGame(user);
+  const handleSaveRules = (rules: GameRules) => {
+    setGameRules(rules);
+    if (user) {
+      createGame({ ...user, gameRules: rules });
+    }
   };
 
   const handleJoinGame = async (gameId: string, team: 1 | 2, position?: number) => {
@@ -383,6 +385,12 @@ export default function GameLobby({
           Create New Game
         </button>
       </div>
+
+      <GameRulesModal
+        isOpen={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+        onSave={handleSaveRules}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {games.map((game) => (

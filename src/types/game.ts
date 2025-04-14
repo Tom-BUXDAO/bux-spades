@@ -26,6 +26,20 @@ export interface Player {
 
 export type GameStatus = "WAITING" | "BIDDING" | "PLAYING" | "FINISHED";
 
+export interface GameRules {
+  allowNil: boolean;
+  allowBlindNil: boolean;
+  minPoints: number;
+  maxPoints: number;
+}
+
+export interface TeamScore {
+  team: 1 | 2;
+  score: number;
+  tricks: number;
+  bid: number;
+}
+
 export interface GameState {
   id: string;
   status: GameStatus;
@@ -50,6 +64,7 @@ export interface GameState {
   currentTrickCardPlayers: { playerId: string; card: Card }[];
   cardPlayers: { [key: string]: string }; // Maps card IDs to player IDs
   createdAt: string;
+  rules: GameRules;
 }
 
 export interface LobbyState {
