@@ -80,7 +80,7 @@ if (typeof window === "undefined" && !io) {
       }
     });
 
-    socket.on("join_game", async ({ gameId, userId }) => {
+    socket.on("join_game", async ({ gameId, userId, testPlayer }) => {
       try {
         const game = games.get(gameId);
         if (!game || game.players.length >= 4) return;
@@ -92,15 +92,25 @@ if (typeof window === "undefined" && !io) {
 
         if (!user) return;
 
-        const position = game.players.length;
-        const team = (position % 2 + 1) as 1 | 2;
+        // Use the position from testPlayer if provided, otherwise use next available position
+        const position = testPlayer?.position !== undefined ? testPlayer.position : game.players.length;
+        const team = testPlayer?.team || (position % 2 + 1) as 1 | 2;
+        
+        // Check if position is already taken
+        if (game.players.some(p => p.position === position)) {
+          socket.emit('error', { message: 'Position already taken' });
+          return;
+        }
+
+        // Add the player with the exact position they requested
         game.players.push({
           id: user.id,
           name: user.name || "Unknown",
           hand: [],
           tricks: 0,
           team,
-          position
+          position,
+          browserSessionId: testPlayer?.browserSessionId
         });
 
         if (game.players.length === 4) {
@@ -302,6 +312,16 @@ function determineTrickWinner(trick: Card[]): Card {
   const leadSuit = trick[0].suit;
   let winningCard = trick[0];
   
+  // First check if any spades were played - spades always trump other suits
+  const spadesPlayed = trick.filter(card => card.suit === 'S');
+  if (spadesPlayed.length > 0) {
+    // Find the highest spade
+    return spadesPlayed.reduce((highest, current) => {
+      return current.rank > highest.rank ? current : highest;
+    }, spadesPlayed[0]);
+  }
+  
+  // If no spades, find the highest card of the lead suit
   for (let i = 1; i < trick.length; i++) {
     const card = trick[i];
     if (card.suit === leadSuit && card.rank > winningCard.rank) {
