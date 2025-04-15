@@ -96,8 +96,8 @@ export default function GamePage() {
   const user = session?.user || guestUser;
 
   // Create wrapper functions to match old API
-  const createGame = (user: any) => {
-    if (socket) socketApi.createGame(socket, user);
+  const createGame = (user: any, rules?: any) => {
+    if (socket) socketApi.createGame(socket, user, rules);
   };
 
   const joinGame = (gameId: string, userId: string, options?: any) => {
