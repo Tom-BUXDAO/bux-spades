@@ -16,7 +16,7 @@ interface GameLobbyProps {
     image?: string | null;
   };
   socket: typeof Socket | null;
-  createGame: (user: { id: string; name?: string | null; image?: string | null }) => void;
+  createGame: (user: { id: string; name?: string | null; image?: string | null }, rules: GameRules) => void;
   joinGame: (gameId: string, userId: string, testPlayer?: { 
     name: string; 
     team: 1 | 2; 
@@ -217,7 +217,7 @@ export default function GameLobby({
   const handleSaveRules = (rules: GameRules) => {
     setGameRules(rules);
     if (user) {
-      createGame({ ...user, gameRules: rules });
+      createGame(user, rules);
     }
   };
 
