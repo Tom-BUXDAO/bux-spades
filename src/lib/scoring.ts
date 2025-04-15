@@ -65,6 +65,12 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
       const overbooks = team1NonNilTricks - team1NonNilBid;
       team1.bags += overbooks;  // Each overbook is a bag
       team1.score += overbooks; // Each overbook is a point
+      
+      // Handle bag overflow - deduct 100 points for every 10 bags
+      while (team1.bags >= 10) {
+        team1.score -= 100;
+        team1.bags -= 10;
+      }
     }
   } else {
     team1.score -= team1NonNilBid * 10;  // Penalty for not making bid
@@ -76,6 +82,12 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
       const overbooks = team2NonNilTricks - team2NonNilBid;
       team2.bags += overbooks;  // Each overbook is a bag
       team2.score += overbooks; // Each overbook is a point
+      
+      // Handle bag overflow - deduct 100 points for every 10 bags
+      while (team2.bags >= 10) {
+        team2.score -= 100;
+        team2.bags -= 10;
+      }
     }
   } else {
     team2.score -= team2NonNilBid * 10;  // Penalty for not making bid
