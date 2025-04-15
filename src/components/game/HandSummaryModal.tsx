@@ -24,7 +24,10 @@ export default function HandSummaryModal({
 
   const { team1Score, team2Score } = handScores;
   
-  const { isOver, winner } = isGameOver(team1Score.score, team2Score.score, minPoints, maxPoints);
+  // Only check game over if we have valid scores
+  const { isOver, winner } = team1Score && team2Score ? 
+    isGameOver(team1Score.score, team2Score.score, minPoints, maxPoints) : 
+    { isOver: false, winner: null };
 
   const handleClose = () => {
     if (isOver && winner) {
@@ -59,22 +62,22 @@ export default function HandSummaryModal({
       <div className="w-[380px] md:w-[360px] sm:w-[320px] max-sm:w-[280px] backdrop-blur-md bg-gray-900/75 border border-white/10 rounded-2xl p-6 max-sm:p-4 shadow-xl">
         <h2 className="text-2xl font-bold text-white mb-6 text-center">Hand Summary</h2>
         
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           {/* Team 1 */}
           <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
             <h3 className="text-lg font-semibold text-red-500 mb-3">Team 1</h3>
-            <div className="text-white space-y-2">
+            <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-400">Bid</span>
-                <span className="font-medium">{team1Score.bid}</span>
+                <span className="font-medium text-white">{team1Score.bid}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Tricks</span>
-                <span className="font-medium">{team1Score.tricks}</span>
+                <span className="font-medium text-white">{team1Score.tricks}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Bags</span>
-                <span className="font-medium">{team1Score.bags}</span>
+                <span className="font-medium text-white">{team1Score.bags}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-white/10">
                 <span className="text-gray-400">Score</span>
@@ -88,18 +91,18 @@ export default function HandSummaryModal({
           {/* Team 2 */}
           <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
             <h3 className="text-lg font-semibold text-blue-500 mb-3">Team 2</h3>
-            <div className="text-white space-y-2">
+            <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-400">Bid</span>
-                <span className="font-medium">{team2Score.bid}</span>
+                <span className="font-medium text-white">{team2Score.bid}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Tricks</span>
-                <span className="font-medium">{team2Score.tricks}</span>
+                <span className="font-medium text-white">{team2Score.tricks}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Bags</span>
-                <span className="font-medium">{team2Score.bags}</span>
+                <span className="font-medium text-white">{team2Score.bags}</span>
               </div>
               <div className="flex justify-between pt-2 border-t border-white/10">
                 <span className="text-gray-400">Score</span>
