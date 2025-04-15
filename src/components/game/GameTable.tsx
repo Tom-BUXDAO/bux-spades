@@ -1128,9 +1128,9 @@ export default function GameTable({
           </button>
               
               {/* Scoreboard in top right corner - inside the table */}
-              <div className="absolute top-4 right-4 z-10 flex flex-col items-center px-2 py-1 bg-gray-800/90 rounded-lg shadow-lg">
+              <div className="absolute top-4 right-4 z-10 flex flex-row items-center gap-4 px-3 py-2 bg-gray-800/90 rounded-lg shadow-lg">
                 {/* Team 1 (Red) Score and Bags */}
-                <div className="flex items-center mb-1">
+                <div className="flex items-center">
                   <div className="bg-red-500 rounded-full w-2 h-2 mr-1"></div>
                   <span className="text-white font-bold mr-1 text-sm">{team1Score}</span>
                   {/* Team 1 Bags */}
@@ -1138,7 +1138,7 @@ export default function GameTable({
                     <Image src="/bag.svg" width={12} height={12} alt="Bags" className="mr-1" priority={true} />
                     <span className="text-xs">{team1Bags}</span>
                   </div>
-        </div>
+                </div>
 
                 {/* Team 2 (Blue) Score and Bags */}
                 <div className="flex items-center">
