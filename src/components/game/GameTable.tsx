@@ -1047,8 +1047,13 @@ export default function GameTable({
   // Calculate scores
   const team1Score = game?.scores?.['team1'] ?? 0;
   const team2Score = game?.scores?.['team2'] ?? 0;
-  const team1Bags = game?.team1Bags ?? 0;
-  const team2Bags = game?.team2Bags ?? 0;
+  // Calculate bags as tricks over bid for each team
+  const team1Tricks = game.players.filter(p => p.team === 1).reduce((sum, p) => sum + (p.tricks || 0), 0);
+  const team2Tricks = game.players.filter(p => p.team === 2).reduce((sum, p) => sum + (p.tricks || 0), 0);
+  const team1Bid = game.players.filter(p => p.team === 1).reduce((sum, p) => sum + (p.bid || 0), 0);
+  const team2Bid = game.players.filter(p => p.team === 2).reduce((sum, p) => sum + (p.bid || 0), 0);
+  const team1Bags = team1Tricks > team1Bid ? team1Tricks - team1Bid : 0;
+  const team2Bags = team2Tricks > team2Bid ? team2Tricks - team2Bid : 0;
 
   // Utility function to get player for a card if the mapping is missing that card
   const getPlayerForCardIndex = (index: number, existingMapping: Record<string, string>) => {
