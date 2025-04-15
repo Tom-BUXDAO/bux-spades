@@ -951,8 +951,7 @@ export default function GameTable({
 
   const handleHandSummaryClose = () => {
     setShowHandSummary(false);
-    // Optional: Clear summary after closing, though server update should handle it
-    // setCurrentHandSummary(null); 
+    setCurrentHandSummary(null); // Only clear summary when modal is closed
   };
 
   const handleGameOver = (winner: 1 | 2) => {

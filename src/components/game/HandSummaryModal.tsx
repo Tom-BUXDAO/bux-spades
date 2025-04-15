@@ -58,47 +58,47 @@ export default function HandSummaryModal({
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-gray-900/75 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-700">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">Hand Summary</h2>
+      <div className="bg-gray-900/75 rounded-lg p-3 max-w-xs w-full shadow-xl border border-gray-700">
+        <h2 className="text-lg font-bold text-white mb-3 text-center">Hand Summary</h2>
         
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-3">
           {/* Team 1 (Red) */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
-            <div className="flex items-center mb-3">
-              <div className="bg-red-500 rounded-full w-3 h-3 mr-2"></div>
-              <h3 className="text-lg font-semibold text-white">Team 1</h3>
+          <div className="bg-gray-800/50 backdrop-blur rounded-lg p-2 border border-white/5">
+            <div className="flex items-center mb-1">
+              <div className="bg-red-500 rounded-full w-2 h-2 mr-1"></div>
+              <h3 className="text-base font-semibold text-white">Team 1</h3>
             </div>
             
-            <div className="space-y-2">
-              <div className="flex justify-between">
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Score</span>
                 <span className="font-medium text-white">{team1Score}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Bags</span>
                 <div className="text-yellow-300 font-medium flex items-center">
-                  <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
+                  <Image src="/bag.svg" width={12} height={12} alt="Bags" className="mr-1" priority={true} />
                   {team1Bags}
                 </div>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Bid</span>
                 <span className="font-medium text-white">{team1Bid}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Tricks</span>
                 <span className="font-medium text-white">{team1Tricks}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Nil Bids</span>
                 <span className="font-medium text-white">{team1NilBids}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Made Nils</span>
                 <span className="font-medium text-white">{team1MadeNils}</span>
               </div>
@@ -106,42 +106,42 @@ export default function HandSummaryModal({
           </div>
           
           {/* Team 2 (Blue) */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
-            <div className="flex items-center mb-3">
-              <div className="bg-blue-500 rounded-full w-3 h-3 mr-2"></div>
-              <h3 className="text-lg font-semibold text-white">Team 2</h3>
+          <div className="bg-gray-800/50 backdrop-blur rounded-lg p-2 border border-white/5">
+            <div className="flex items-center mb-1">
+              <div className="bg-blue-500 rounded-full w-2 h-2 mr-1"></div>
+              <h3 className="text-base font-semibold text-white">Team 2</h3>
             </div>
             
-            <div className="space-y-2">
-              <div className="flex justify-between">
+            <div className="space-y-1">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Score</span>
                 <span className="font-medium text-white">{team2Score}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Bags</span>
                 <div className="text-yellow-300 font-medium flex items-center">
-                  <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
+                  <Image src="/bag.svg" width={12} height={12} alt="Bags" className="mr-1" priority={true} />
                   {team2Bags}
                 </div>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Bid</span>
                 <span className="font-medium text-white">{team2Bid}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Tricks</span>
                 <span className="font-medium text-white">{team2Tricks}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Nil Bids</span>
                 <span className="font-medium text-white">{team2NilBids}</span>
               </div>
               
-              <div className="flex justify-between">
+              <div className="flex justify-between text-xs">
                 <span className="text-gray-400">Made Nils</span>
                 <span className="font-medium text-white">{team2MadeNils}</span>
               </div>
@@ -149,10 +149,10 @@ export default function HandSummaryModal({
           </div>
         </div>
         
-        <div className="mt-8 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <button 
             onClick={onClose}
-            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-medium rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-900 transition-all"
+            className="px-4 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-blue-800 text-white font-medium rounded shadow hover:from-blue-700 hover:to-blue-900 transition-all"
           >
             {isGameOver ? "Continue" : "Next Hand"}
           </button>
