@@ -55,33 +55,57 @@ export default function HandSummaryModal({
   }
 
   return (
-    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg p-4 w-[500px] mx-4 shadow-xl">
-        <h2 className="text-xl font-bold text-white mb-4 text-center">Hand Summary</h2>
+    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="w-[380px] md:w-[360px] sm:w-[320px] max-sm:w-[280px] backdrop-blur-md bg-gray-900/75 border border-white/10 rounded-2xl p-6 max-sm:p-4 shadow-xl">
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">Hand Summary</h2>
         
-        <div className="flex gap-4">
+        <div className="space-y-4">
           {/* Team 1 */}
-          <div className="flex-1 bg-gray-700/50 rounded-lg p-3">
-            <h3 className="text-lg font-semibold text-red-500 mb-2">Team 1</h3>
-            <div className="text-white text-sm">
-              <div>Bid: {team1Score.bid}</div>
-              <div>Tricks: {team1Score.tricks}</div>
-              <div>Bags: {team1Score.bags}</div>
-              <div className="text-lg font-bold mt-1">
-                Score: {team1Score.score >= 0 ? '+' : ''}{team1Score.score}
+          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
+            <h3 className="text-lg font-semibold text-red-500 mb-3">Team 1</h3>
+            <div className="text-white space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bid</span>
+                <span className="font-medium">{team1Score.bid}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Tricks</span>
+                <span className="font-medium">{team1Score.tricks}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bags</span>
+                <span className="font-medium">{team1Score.bags}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-white/10">
+                <span className="text-gray-400">Score</span>
+                <span className="text-xl font-bold text-red-500">
+                  {team1Score.score >= 0 ? '+' : ''}{team1Score.score}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Team 2 */}
-          <div className="flex-1 bg-gray-700/50 rounded-lg p-3">
-            <h3 className="text-lg font-semibold text-blue-500 mb-2">Team 2</h3>
-            <div className="text-white text-sm">
-              <div>Bid: {team2Score.bid}</div>
-              <div>Tricks: {team2Score.tricks}</div>
-              <div>Bags: {team2Score.bags}</div>
-              <div className="text-lg font-bold mt-1">
-                Score: {team2Score.score >= 0 ? '+' : ''}{team2Score.score}
+          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
+            <h3 className="text-lg font-semibold text-blue-500 mb-3">Team 2</h3>
+            <div className="text-white space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bid</span>
+                <span className="font-medium">{team2Score.bid}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Tricks</span>
+                <span className="font-medium">{team2Score.tricks}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bags</span>
+                <span className="font-medium">{team2Score.bags}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t border-white/10">
+                <span className="text-gray-400">Score</span>
+                <span className="text-xl font-bold text-blue-500">
+                  {team2Score.score >= 0 ? '+' : ''}{team2Score.score}
+                </span>
               </div>
             </div>
           </div>
@@ -89,7 +113,7 @@ export default function HandSummaryModal({
 
         <button
           onClick={handleClose}
-          className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200"
+          className="w-full mt-6 bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg"
         >
           Continue
         </button>
