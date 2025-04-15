@@ -35,14 +35,8 @@ export interface GameRules {
   maxPoints: number;
 }
 
-export interface TeamScore {
+export interface TeamScore extends Omit<ScoringTeamScore, 'team'> {
   team: 1 | 2;
-  score: number;
-  tricks: number;
-  bid: number;
-  nilBids: number;
-  madeNils: number;
-  bags: number;
 }
 
 export interface GameState {
@@ -91,6 +85,6 @@ export interface CompletedTrick {
 }
 
 export interface HandSummary {
-  team1Score: ScoringTeamScore;
-  team2Score: ScoringTeamScore;
+  team1Score: TeamScore;
+  team2Score: TeamScore;
 } 

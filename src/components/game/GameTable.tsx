@@ -512,8 +512,8 @@ export default function GameTable({
         // Calculate hand summary before moving to next hand
         const scores = calculateHandScore(game.players);
         setHandSummary({
-          team1Score: scores.team1,
-          team2Score: scores.team2
+          team1Score: { ...scores.team1, team: 1 },
+          team2Score: { ...scores.team2, team: 2 }
         });
         setShowHandSummary(true);
       }
