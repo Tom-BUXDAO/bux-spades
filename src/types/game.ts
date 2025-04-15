@@ -1,3 +1,5 @@
+import { TeamScore as ScoringTeamScore } from '@/lib/scoring';
+
 export type Suit = 'S' | 'H' | 'D' | 'C';
 export type Rank = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
 
@@ -80,4 +82,15 @@ export type GameAction =
   | { type: "CREATE_GAME"; userId: string }
   | { type: "JOIN_GAME"; gameId: string; userId: string }
   | { type: "MAKE_BID"; gameId: string; userId: string; bid: number }
-  | { type: "PLAY_CARD"; gameId: string; userId: string; card: Card }; 
+  | { type: "PLAY_CARD"; gameId: string; userId: string; card: Card };
+
+export interface CompletedTrick {
+  cards: Card[];
+  winningCard: Card;
+  winningPlayerId: string;
+}
+
+export interface HandSummary {
+  team1Score: ScoringTeamScore;
+  team2Score: ScoringTeamScore;
+} 

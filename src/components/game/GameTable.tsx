@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { useWindowSize } from '../../hooks';
+import { CompletedTrick } from '@/types/game';
 
 interface GameTableProps {
   game: GameState;
@@ -495,11 +496,7 @@ export default function GameTable({
   useEffect(() => {
     if (!socket) return;
 
-    const handleTrickComplete = (trick: {
-      cards: Card[];
-      winningCard: Card;
-      winningPlayerId: string;
-    }) => {
+    const handleTrickComplete = (trick: CompletedTrick) => {
       console.log('Trick completed:', trick);
       setCompletedTrick(trick);
       setShowTrickAnimation(true);
@@ -509,6 +506,17 @@ export default function GameTable({
         setShowTrickAnimation(false);
         setCompletedTrick(null);
       }, 2000);
+
+      const isHandComplete = game.completedTricks.length === 12; // 13th trick just completed
+      if (isHandComplete) {
+        // Calculate hand summary before moving to next hand
+        const scores = calculateHandScore(game.players);
+        setHandSummary({
+          team1Score: scores.team1,
+          team2Score: scores.team2
+        });
+        setShowHandSummary(true);
+      }
     };
 
     socket.on('trick_complete', handleTrickComplete);
@@ -516,7 +524,7 @@ export default function GameTable({
     return () => {
       socket.off('trick_complete', handleTrickComplete);
     };
-  }, [socket]);
+  }, [socket, game.completedTricks]);
 
   // Modify renderTrickCards to show animation
   const renderTrickCards = () => {
@@ -950,8 +958,11 @@ export default function GameTable({
   }, [socket]);
 
   const handleHandSummaryClose = () => {
-    setShowHandSummary(false);
-    setHandSummary(null);
+    if (handSummary) {
+      // Only close and reset if we actually had a summary
+      setShowHandSummary(false);
+      setHandSummary(null);
+    }
   };
 
   const handleGameOver = (winner: 1 | 2) => {

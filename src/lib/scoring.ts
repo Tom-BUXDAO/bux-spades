@@ -7,53 +7,75 @@ export interface TeamScore {
   madeNils: number;
   score: number;
   bags: number;
+  team?: 1 | 2;  // Optional to maintain compatibility
 }
 
-export function calculateHandScore(players: Player[]): { team1: TeamScore, team2: TeamScore } {
-  // Initialize team scores
-  const team1: TeamScore = { bid: 0, tricks: 0, nilBids: 0, madeNils: 0, score: 0, bags: 0 };
-  const team2: TeamScore = { bid: 0, tricks: 0, nilBids: 0, madeNils: 0, score: 0, bags: 0 };
+export function calculateHandScore(players: Player[]): { team1: TeamScore; team2: TeamScore } {
+  const team1Players = players.filter(p => p.team === 1);
+  const team2Players = players.filter(p => p.team === 2);
 
-  // Calculate team totals
-  players.forEach(player => {
-    const team = player.team === 1 ? team1 : team2;
-    team.tricks += player.tricks || 0;
-    
-    if (player.bid === 0) {
-      team.nilBids++;
-      if (player.tricks === 0) {
-        team.madeNils++;
-      }
-    } else if (player.bid !== undefined) {
-      team.bid += player.bid;
-    }
-  });
+  const team1 = {
+    bid: team1Players.reduce((sum, p) => sum + (p.bid || 0), 0),
+    tricks: team1Players.reduce((sum, p) => sum + (p.tricks || 0), 0),
+    nilBids: team1Players.filter(p => p.bid === 0).length,
+    madeNils: team1Players.filter(p => p.bid === 0 && p.tricks === 0).length,
+    score: 0,
+    bags: 0,
+    team: 1 as const
+  };
 
-  // Calculate scores for each team
-  [team1, team2].forEach(team => {
-    // Score nil bids
-    team.score += team.madeNils * 100;     // +100 for each made nil
-    team.score -= (team.nilBids - team.madeNils) * 100;  // -100 for each failed nil
+  const team2 = {
+    bid: team2Players.reduce((sum, p) => sum + (p.bid || 0), 0),
+    tricks: team2Players.reduce((sum, p) => sum + (p.tricks || 0), 0),
+    nilBids: team2Players.filter(p => p.bid === 0).length,
+    madeNils: team2Players.filter(p => p.bid === 0 && p.tricks === 0).length,
+    score: 0,
+    bags: 0,
+    team: 2 as const
+  };
 
-    // Score regular bid
-    if (team.bid > 0) {
-      if (team.tricks >= team.bid) {
-        // Made bid
-        team.score += team.bid * 10;  // 10 points per bid book
-        team.bags = team.tricks - team.bid;  // Extra books are bags
-        team.score += team.bags;  // 1 point per bag
-      } else {
-        // Set (failed to make bid)
-        team.score -= team.bid * 10;  // -10 points per bid book
-      }
-    }
+  // Calculate scores
+  // Handle nil bids first
+  team1.score += team1.madeNils * 100;
+  team1.score -= (team1.nilBids - team1.madeNils) * 100;
+  
+  team2.score += team2.madeNils * 100;
+  team2.score -= (team2.nilBids - team2.madeNils) * 100;
 
-    // Handle bags overflow (10 bags = -100 points)
-    while (team.bags >= 10) {
-      team.score -= 100;
-      team.bags -= 10;
-    }
-  });
+  // Handle regular bids
+  const team1NonNilBid = team1Players
+    .filter(p => p.bid !== 0)
+    .reduce((sum, p) => sum + (p.bid || 0), 0);
+  
+  const team2NonNilBid = team2Players
+    .filter(p => p.bid !== 0)
+    .reduce((sum, p) => sum + (p.bid || 0), 0);
+
+  // Calculate tricks taken by non-nil bidders
+  const team1NonNilTricks = team1Players
+    .filter(p => p.bid !== 0)
+    .reduce((sum, p) => sum + (p.tricks || 0), 0);
+  
+  const team2NonNilTricks = team2Players
+    .filter(p => p.bid !== 0)
+    .reduce((sum, p) => sum + (p.tricks || 0), 0);
+
+  // Calculate bags (overbooks) and scores for non-nil bids
+  if (team1NonNilTricks >= team1NonNilBid) {
+    team1.score += team1NonNilBid * 10;
+    team1.bags = team1NonNilTricks - team1NonNilBid;
+    team1.score += team1.bags;
+  } else {
+    team1.score -= team1NonNilBid * 10;
+  }
+
+  if (team2NonNilTricks >= team2NonNilBid) {
+    team2.score += team2NonNilBid * 10;
+    team2.bags = team2NonNilTricks - team2NonNilBid;
+    team2.score += team2.bags;
+  } else {
+    team2.score -= team2NonNilBid * 10;
+  }
 
   return { team1, team2 };
 }
