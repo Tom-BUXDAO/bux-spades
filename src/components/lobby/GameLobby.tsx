@@ -401,14 +401,17 @@ export default function GameLobby({
             <div className="flex justify-between items-center mb-3">
               <div className="text-white">
                 {(() => {
-                  const rules = game.rules || {};
-                  const min = rules.maxPoints ?? 500;
-                  const max = rules.minPoints ?? -150;
-                  const nil = rules.allowNil ? '✅N' : '❌N';
-                  const bn = rules.allowBlindNil ? '✅BN' : '❌BN';
+                  const rules = game.rules;
+                  let max = 500, min = -150, nil = '❌N', bn = '❌BN';
+                  if (rules) {
+                    max = rules.maxPoints;
+                    min = rules.minPoints;
+                    nil = rules.allowNil ? '✅N' : '❌N';
+                    bn = rules.allowBlindNil ? '✅BN' : '❌BN';
+                  }
                   return (
                     <h3 className="text-sm font-medium">
-                      REG {min}/{max} {nil} {bn}
+                      REG {max}/{min} {nil} {bn}
                     </h3>
                   );
                 })()}
