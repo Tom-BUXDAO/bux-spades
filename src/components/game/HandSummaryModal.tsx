@@ -61,66 +61,90 @@ export default function HandSummaryModal({
       <div className="bg-gray-900/75 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-700">
         <h2 className="text-2xl font-bold text-white mb-6 text-center">Hand Summary</h2>
         
-        <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-6">
           {/* Team 1 (Red) */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center">
+          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
+            <div className="flex items-center mb-3">
               <div className="bg-red-500 rounded-full w-3 h-3 mr-2"></div>
               <h3 className="text-lg font-semibold text-white">Team 1</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-gray-300">Score:</div>
-              <div className="text-white font-medium">{team1Score}</div>
-              
-              <div className="text-gray-300">Bags:</div>
-              <div className="text-yellow-300 font-medium flex items-center">
-                <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
-                {team1Bags}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Score</span>
+                <span className="font-medium text-white">{team1Score}</span>
               </div>
               
-              <div className="text-gray-300">Bid:</div>
-              <div className="text-white font-medium">{team1Bid}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bags</span>
+                <div className="text-yellow-300 font-medium flex items-center">
+                  <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
+                  {team1Bags}
+                </div>
+              </div>
               
-              <div className="text-gray-300">Tricks:</div>
-              <div className="text-white font-medium">{team1Tricks}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bid</span>
+                <span className="font-medium text-white">{team1Bid}</span>
+              </div>
               
-              <div className="text-gray-300">Nil Bids:</div>
-              <div className="text-white font-medium">{team1NilBids}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Tricks</span>
+                <span className="font-medium text-white">{team1Tricks}</span>
+              </div>
               
-              <div className="text-gray-300">Made Nils:</div>
-              <div className="text-white font-medium">{team1MadeNils}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Nil Bids</span>
+                <span className="font-medium text-white">{team1NilBids}</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-400">Made Nils</span>
+                <span className="font-medium text-white">{team1MadeNils}</span>
+              </div>
             </div>
           </div>
           
           {/* Team 2 (Blue) */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center">
+          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
+            <div className="flex items-center mb-3">
               <div className="bg-blue-500 rounded-full w-3 h-3 mr-2"></div>
               <h3 className="text-lg font-semibold text-white">Team 2</h3>
             </div>
             
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-gray-300">Score:</div>
-              <div className="text-white font-medium">{team2Score}</div>
-              
-              <div className="text-gray-300">Bags:</div>
-              <div className="text-yellow-300 font-medium flex items-center">
-                <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
-                {team2Bags}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Score</span>
+                <span className="font-medium text-white">{team2Score}</span>
               </div>
               
-              <div className="text-gray-300">Bid:</div>
-              <div className="text-white font-medium">{team2Bid}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bags</span>
+                <div className="text-yellow-300 font-medium flex items-center">
+                  <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
+                  {team2Bags}
+                </div>
+              </div>
               
-              <div className="text-gray-300">Tricks:</div>
-              <div className="text-white font-medium">{team2Tricks}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Bid</span>
+                <span className="font-medium text-white">{team2Bid}</span>
+              </div>
               
-              <div className="text-gray-300">Nil Bids:</div>
-              <div className="text-white font-medium">{team2NilBids}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Tricks</span>
+                <span className="font-medium text-white">{team2Tricks}</span>
+              </div>
               
-              <div className="text-gray-300">Made Nils:</div>
-              <div className="text-white font-medium">{team2MadeNils}</div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Nil Bids</span>
+                <span className="font-medium text-white">{team2NilBids}</span>
+              </div>
+              
+              <div className="flex justify-between">
+                <span className="text-gray-400">Made Nils</span>
+                <span className="font-medium text-white">{team2MadeNils}</span>
+              </div>
             </div>
           </div>
         </div>
