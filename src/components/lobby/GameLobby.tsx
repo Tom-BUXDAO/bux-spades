@@ -404,8 +404,8 @@ export default function GameLobby({
                   const rules = game.rules || {};
                   const min = rules.maxPoints ?? 500;
                   const max = rules.minPoints ?? -150;
-                  const nil = rules.allowNil ? '✓N' : '✗N';
-                  const bn = rules.allowBlindNil ? '✓BN' : '✗BN';
+                  const nil = rules.allowNil ? '✅N' : '❌N';
+                  const bn = rules.allowBlindNil ? '✅BN' : '❌BN';
                   return (
                     <h3 className="text-sm font-medium">
                       REG {min}/{max} {nil} {bn}
