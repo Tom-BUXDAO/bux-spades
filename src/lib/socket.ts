@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
-import type { GameState, Card } from '@/types/game';
+import type { GameState, Card, GameRules } from '@/types/game';
 
 // Create separate socket instances for regular and test connections
 let regularSocket: typeof Socket | null = null;
@@ -182,9 +182,9 @@ export function authenticateUser(socket: typeof Socket | null, userId: string) {
   socket.emit('authenticate', { userId });
 }
 
-export function createGame(socket: typeof Socket | null, user: { id: string; name?: string | null }) {
+export function createGame(socket: typeof Socket | null, user: { id: string; name?: string | null }, gameRules?: GameRules) {
   if (!socket) return;
-  socket.emit('create_game', { user });
+  socket.emit('create_game', { user, gameRules });
 }
 
 interface JoinOptions {
