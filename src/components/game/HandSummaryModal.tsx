@@ -2,6 +2,8 @@ import { calculateHandScore, isGameOver } from '@/lib/scoring';
 import { Player, HandSummary } from '@/types/game';
 import WinnerModal from './WinnerModal';
 import LoserModal from './LoserModal';
+import { useEffect } from 'react';
+import Image from 'next/image';
 
 interface HandSummaryModalProps {
   isOpen: boolean;
@@ -16,110 +18,120 @@ export default function HandSummaryModal({
   isOpen,
   onClose,
   handScores,
-  minPoints,
-  maxPoints,
+  minPoints = 500,
+  maxPoints = -500,
   onGameOver
 }: HandSummaryModalProps) {
-  if (!isOpen || !handScores) return null;
-
-  const { team1Score, team2Score } = handScores;
+  // Add null checks for handScores
+  const team1Score = handScores?.team1Score?.score || 0;
+  const team2Score = handScores?.team2Score?.score || 0;
+  const team1Bags = handScores?.team1Score?.bags || 0;
+  const team2Bags = handScores?.team2Score?.bags || 0;
+  const team1Bid = handScores?.team1Score?.bid || 0;
+  const team2Bid = handScores?.team2Score?.bid || 0;
+  const team1Tricks = handScores?.team1Score?.tricks || 0;
+  const team2Tricks = handScores?.team2Score?.tricks || 0;
+  const team1NilBids = handScores?.team1Score?.nilBids || 0;
+  const team2NilBids = handScores?.team2Score?.nilBids || 0;
+  const team1MadeNils = handScores?.team1Score?.madeNils || 0;
+  const team2MadeNils = handScores?.team2Score?.madeNils || 0;
   
-  // Only check game over if we have valid scores
-  const { isOver, winner } = team1Score && team2Score ? 
-    isGameOver(team1Score.score, team2Score.score, minPoints, maxPoints) : 
-    { isOver: false, winner: null };
-
-  const handleClose = () => {
-    if (isOver && winner) {
+  // Check if game is over
+  const isGameOver = team1Score >= minPoints || team2Score >= minPoints || 
+                     team1Score <= maxPoints || team2Score <= maxPoints;
+  
+  // Determine winner
+  const winner = team1Score >= minPoints ? 1 : 
+                 team2Score >= minPoints ? 2 : 
+                 team1Score <= maxPoints ? 2 : 
+                 team2Score <= maxPoints ? 1 : null;
+  
+  // Call onGameOver if game is over
+  useEffect(() => {
+    if (isGameOver && winner && onGameOver) {
       onGameOver(winner);
     }
-    onClose();
-  };
-
-  if (isOver && winner) {
-    return (
-      <>
-        <WinnerModal
-          isOpen={isOpen}
-          onClose={handleClose}
-          team1Score={team1Score.score}
-          team2Score={team2Score.score}
-          winningTeam={winner}
-        />
-        <LoserModal
-          isOpen={isOpen}
-          onClose={handleClose}
-          team1Score={team1Score.score}
-          team2Score={team2Score.score}
-          winningTeam={winner}
-        />
-      </>
-    );
-  }
-
+  }, [isGameOver, winner, onGameOver]);
+  
+  if (!isOpen) return null;
+  
   return (
-    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="w-[380px] md:w-[360px] sm:w-[320px] max-sm:w-[280px] backdrop-blur-md bg-gray-900/75 border border-white/10 rounded-2xl p-6 max-sm:p-4 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-gray-900/75 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-700">
         <h2 className="text-2xl font-bold text-white mb-6 text-center">Hand Summary</h2>
         
-        <div className="grid grid-cols-2 gap-4">
-          {/* Team 1 */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
-            <h3 className="text-lg font-semibold text-red-500 mb-3">Team 1</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Bid</span>
-                <span className="font-medium text-white">{team1Score.bid}</span>
+        <div className="space-y-6">
+          {/* Team 1 (Red) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center">
+              <div className="bg-red-500 rounded-full w-3 h-3 mr-2"></div>
+              <h3 className="text-lg font-semibold text-white">Team 1</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="text-gray-300">Score:</div>
+              <div className="text-white font-medium">{team1Score}</div>
+              
+              <div className="text-gray-300">Bags:</div>
+              <div className="text-yellow-300 font-medium flex items-center">
+                <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
+                {team1Bags}
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Tricks</span>
-                <span className="font-medium text-white">{team1Score.tricks}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Bags</span>
-                <span className="font-medium text-white">{team1Score.bags}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-white/10">
-                <span className="text-gray-400">Score</span>
-                <span className="text-xl font-bold text-red-500">
-                  {team1Score.score >= 0 ? '+' : ''}{team1Score.score}
-                </span>
-              </div>
+              
+              <div className="text-gray-300">Bid:</div>
+              <div className="text-white font-medium">{team1Bid}</div>
+              
+              <div className="text-gray-300">Tricks:</div>
+              <div className="text-white font-medium">{team1Tricks}</div>
+              
+              <div className="text-gray-300">Nil Bids:</div>
+              <div className="text-white font-medium">{team1NilBids}</div>
+              
+              <div className="text-gray-300">Made Nils:</div>
+              <div className="text-white font-medium">{team1MadeNils}</div>
             </div>
           </div>
-
-          {/* Team 2 */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-4 border border-white/5">
-            <h3 className="text-lg font-semibold text-blue-500 mb-3">Team 2</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Bid</span>
-                <span className="font-medium text-white">{team2Score.bid}</span>
+          
+          {/* Team 2 (Blue) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center">
+              <div className="bg-blue-500 rounded-full w-3 h-3 mr-2"></div>
+              <h3 className="text-lg font-semibold text-white">Team 2</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="text-gray-300">Score:</div>
+              <div className="text-white font-medium">{team2Score}</div>
+              
+              <div className="text-gray-300">Bags:</div>
+              <div className="text-yellow-300 font-medium flex items-center">
+                <Image src="/bag.svg" width={14} height={14} alt="Bags" className="mr-1" priority={true} />
+                {team2Bags}
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Tricks</span>
-                <span className="font-medium text-white">{team2Score.tricks}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Bags</span>
-                <span className="font-medium text-white">{team2Score.bags}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-white/10">
-                <span className="text-gray-400">Score</span>
-                <span className="text-xl font-bold text-blue-500">
-                  {team2Score.score >= 0 ? '+' : ''}{team2Score.score}
-                </span>
-              </div>
+              
+              <div className="text-gray-300">Bid:</div>
+              <div className="text-white font-medium">{team2Bid}</div>
+              
+              <div className="text-gray-300">Tricks:</div>
+              <div className="text-white font-medium">{team2Tricks}</div>
+              
+              <div className="text-gray-300">Nil Bids:</div>
+              <div className="text-white font-medium">{team2NilBids}</div>
+              
+              <div className="text-gray-300">Made Nils:</div>
+              <div className="text-white font-medium">{team2MadeNils}</div>
             </div>
           </div>
         </div>
-
-        <button
-          onClick={handleClose}
-          className="w-full mt-6 bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 shadow-lg"
-        >
-          Continue
-        </button>
+        
+        <div className="mt-8 flex justify-center">
+          <button 
+            onClick={onClose}
+            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-medium rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-900 transition-all"
+          >
+            {isGameOver ? "Continue" : "Next Hand"}
+          </button>
+        </div>
       </div>
     </div>
   );
