@@ -68,6 +68,8 @@ export interface GameState {
   cardPlayers: { [key: string]: string }; // Maps card IDs to player IDs
   createdAt: string;
   rules: GameRules;
+  minPoints: number;
+  maxPoints: number;
 }
 
 export interface LobbyState {

@@ -954,6 +954,16 @@ export default function GameTable({
     setHandSummary(null);
   };
 
+  const handleGameOver = (winner: 1 | 2) => {
+    setShowHandSummary(false);
+    setHandSummary(null);
+    if (winner === 1) {
+      setShowWinner(true);
+    } else {
+      setShowLoser(true);
+    }
+  };
+
   // Add state to track the server-determined winner
   const [serverWinningCard, setServerWinningCard] = useState<{rank: number | string, suit: Suit} | null>(null);
   const [serverWinningPlayerId, setServerWinningPlayerId] = useState<string | null>(null);
@@ -1220,12 +1230,14 @@ export default function GameTable({
         </div>
 
         {/* Hand Summary Modal */}
-        {showHandSummary && handSummary && (
+        {showHandSummary && (
           <HandSummaryModal
+            isOpen={showHandSummary}
             onClose={handleHandSummaryClose}
             players={game.players}
-            team1Score={handSummary.team1Score}
-            team2Score={handSummary.team2Score}
+            minPoints={game.minPoints}
+            maxPoints={game.maxPoints}
+            onGameOver={handleGameOver}
           />
         )}
 
