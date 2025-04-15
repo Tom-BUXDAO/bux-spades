@@ -9,7 +9,9 @@ const nextConfig = {
     // Exclude socket-server directory from the build
     config.watchOptions = {
       ...config.watchOptions,
-      ignored: [...(config.watchOptions?.ignored || []), '**/socket-server/**'],
+      ignored: Array.isArray(config.watchOptions?.ignored) 
+        ? [...config.watchOptions.ignored, '**/socket-server/**']
+        : ['**/socket-server/**']
     };
     return config;
   },
