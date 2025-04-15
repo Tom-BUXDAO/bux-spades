@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import type { GameState, Card, Suit, Player, TeamScore } from "@/types/game";
+import type { GameState, Card, Suit, Player, TeamScore, HandSummary } from "@/types/game";
 import type { Socket } from "socket.io-client";
 import { useSocket, sendChatMessage, debugTrickWinner, setupTrickCompletionDelay } from "@/lib/socket";
 import Chat from './Chat';
@@ -223,7 +223,7 @@ export default function GameTable({
   const [showHandSummary, setShowHandSummary] = useState(false);
   const [showWinner, setShowWinner] = useState(false);
   const [showLoser, setShowLoser] = useState(false);
-  const [handScores, setHandScores] = useState<ReturnType<typeof calculateHandScore> | null>(null);
+  const [currentHandSummary, setCurrentHandSummary] = useState<HandSummary | null>(null);
   
   // Use the windowSize hook to get responsive information
   const windowSize = useWindowSize();
@@ -511,7 +511,7 @@ export default function GameTable({
       if (isHandComplete) {
         // Calculate hand summary before moving to next hand
         const scores = calculateHandScore(game.players);
-        setHandSummary({
+        setCurrentHandSummary({
           team1Score: { ...scores.team1, team: 1 },
           team2Score: { ...scores.team2, team: 2 }
         });
@@ -932,42 +932,32 @@ export default function GameTable({
     );
   };
 
-  // Add state for hand summary
-  const [handSummary, setHandSummary] = useState<{
-    team1Score: TeamScore;
-    team2Score: TeamScore;
-  } | null>(null);
-
-  // Effect to handle hand completion
+  // Effect to handle hand summary event from server
   useEffect(() => {
     if (!socket) return;
 
-    const handleHandComplete = (data: {
-      team1Score: TeamScore;
-      team2Score: TeamScore;
-    }) => {
-      setHandSummary(data);
-      setShowHandSummary(true);
+    const handleHandSummary = (data: HandSummary) => {
+      console.log("Received hand_summary event:", data);
+      setCurrentHandSummary(data); // Store the received hand scores
+      setShowHandSummary(true); // Show the modal
     };
 
-    socket.on('hand_complete', handleHandComplete);
+    socket.on('hand_summary', handleHandSummary);
 
     return () => {
-      socket.off('hand_complete', handleHandComplete);
+      socket.off('hand_summary', handleHandSummary);
     };
   }, [socket]);
 
   const handleHandSummaryClose = () => {
-    if (handSummary) {
-      // Only close and reset if we actually had a summary
-      setShowHandSummary(false);
-      setHandSummary(null);
-    }
+    setShowHandSummary(false);
+    // Optional: Clear summary after closing, though server update should handle it
+    // setCurrentHandSummary(null); 
   };
 
   const handleGameOver = (winner: 1 | 2) => {
     setShowHandSummary(false);
-    setHandSummary(null);
+    setCurrentHandSummary(null);
     if (winner === 1) {
       setShowWinner(true);
     } else {
@@ -1024,7 +1014,10 @@ export default function GameTable({
       console.log('Hand scores calculated:', calculatedScores);
       
       // Set the hand scores and show the modal
-      setHandScores(calculatedScores);
+      setCurrentHandSummary({
+        team1Score: { ...calculatedScores.team1, team: 1 },
+        team2Score: { ...calculatedScores.team2, team: 2 }
+      });
       setShowHandSummary(true);
     };
     
@@ -1054,8 +1047,8 @@ export default function GameTable({
   // Calculate scores
   const team1Score = game?.scores?.['team1'] ?? 0;
   const team2Score = game?.scores?.['team2'] ?? 0;
-  const team1Bags = Math.floor((team1Score % 100) / 10);
-  const team2Bags = Math.floor((team2Score % 100) / 10);
+  const team1Bags = game?.team1Bags ?? 0;
+  const team2Bags = game?.team2Bags ?? 0;
 
   // Utility function to get player for a card if the mapping is missing that card
   const getPlayerForCardIndex = (index: number, existingMapping: Record<string, string>) => {
@@ -1240,12 +1233,13 @@ export default function GameTable({
           </div>
         </div>
 
-        {/* Hand Summary Modal */}
+        {/* Hand Summary Modal - Pass currentHandSummary */}
         {showHandSummary && (
           <HandSummaryModal
             isOpen={showHandSummary}
             onClose={handleHandSummaryClose}
-            players={game.players}
+            // Pass the received hand scores state
+            handScores={currentHandSummary} 
             minPoints={game.minPoints}
             maxPoints={game.maxPoints}
             onGameOver={handleGameOver}

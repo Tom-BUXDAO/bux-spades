@@ -59,6 +59,8 @@ export interface GameState {
   dealerPosition: number;
   northSouthTricks: number;
   eastWestTricks: number;
+  team1Bags: number;
+  team2Bags: number;
   winningTeam?: string;
   currentTrickCardPlayers: { playerId: string; card: Card }[];
   cardPlayers: { [key: string]: string }; // Maps card IDs to player IDs
