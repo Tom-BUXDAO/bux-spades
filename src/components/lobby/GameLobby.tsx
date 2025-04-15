@@ -400,7 +400,18 @@ export default function GameLobby({
           >
             <div className="flex justify-between items-center mb-3">
               <div className="text-white">
-                <h3 className="text-sm font-medium">REG · NBN · 500</h3>
+                {(() => {
+                  const rules = game.rules || {};
+                  const min = rules.maxPoints ?? 500;
+                  const max = rules.minPoints ?? -150;
+                  const nil = rules.allowNil ? '✓N' : '✗N';
+                  const bn = rules.allowBlindNil ? '✓BN' : '✗BN';
+                  return (
+                    <h3 className="text-sm font-medium">
+                      REG {min}/{max} {nil} {bn}
+                    </h3>
+                  );
+                })()}
               </div>
               <div className={`px-2 py-0.5 rounded-full text-xs ${
                 game.status === "WAITING" ? "bg-yellow-500 text-black" :
