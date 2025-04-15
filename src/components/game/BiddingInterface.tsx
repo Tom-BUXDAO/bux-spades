@@ -97,7 +97,7 @@ export default function BiddingInterface({ onBid, currentBid, gameId, playerId, 
                   key={bid}
                   onClick={() => handleBidClick(bid)}
                   // Updated button styles
-                  className={`${numberButtonClass} w-16 h-16 md:w-14 md:h-14 sm:w-12 sm:h-12 max-sm:w-11 max-sm:h-11 rounded-full text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center flex-shrink-0 ${selectedBid === bid ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}>
+                  className={`${numberButtonClass} w-16 h-12 md:w-14 md:h-10 sm:w-12 sm:h-9 max-sm:w-11 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center flex-shrink-0 ${selectedBid === bid ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}>
                   {bid}
                 </button>
               ))}
@@ -110,7 +110,7 @@ export default function BiddingInterface({ onBid, currentBid, gameId, playerId, 
                   key={bid}
                   onClick={() => handleBidClick(bid)}
                   // Updated button styles
-                  className={`${numberButtonClass} w-16 h-16 md:w-14 md:h-14 sm:w-12 sm:h-12 max-sm:w-11 max-sm:h-11 rounded-full text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center flex-shrink-0 ${selectedBid === bid ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}>
+                  className={`${numberButtonClass} w-16 h-12 md:w-14 md:h-10 sm:w-12 sm:h-9 max-sm:w-11 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center flex-shrink-0 ${selectedBid === bid ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}>
                   {bid}
                 </button>
               ))}
@@ -123,7 +123,7 @@ export default function BiddingInterface({ onBid, currentBid, gameId, playerId, 
                   key={bid}
                   onClick={() => handleBidClick(bid)}
                   // Updated button styles
-                  className={`${numberButtonClass} w-16 h-16 md:w-14 md:h-14 sm:w-12 sm:h-12 max-sm:w-11 max-sm:h-11 rounded-full text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center flex-shrink-0 ${selectedBid === bid ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}>
+                  className={`${numberButtonClass} w-16 h-12 md:w-14 md:h-10 sm:w-12 sm:h-9 max-sm:w-11 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center flex-shrink-0 ${selectedBid === bid ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}>
                   {bid}
                 </button>
               ))}
