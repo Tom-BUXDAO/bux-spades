@@ -938,8 +938,17 @@ export default function GameTable({
 
     const handleHandSummary = (data: HandSummary) => {
       console.log("Received hand_summary event:", data);
-      setCurrentHandSummary(data); // Store the received hand scores
-      setShowHandSummary(true); // Show the modal
+      // Only update if data is valid (nonzero scores)
+      if (
+        data &&
+        ((data.team1Score && data.team1Score.score !== 0) ||
+         (data.team2Score && data.team2Score.score !== 0))
+      ) {
+        setCurrentHandSummary(data); // Store the received hand scores
+        setShowHandSummary(true); // Show the modal
+      } else {
+        console.warn("Ignoring empty or zero hand summary data", data);
+      }
     };
 
     socket.on('hand_summary', handleHandSummary);
