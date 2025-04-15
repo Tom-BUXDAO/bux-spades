@@ -38,6 +38,9 @@ export interface TeamScore {
   score: number;
   tricks: number;
   bid: number;
+  nilBids: number;
+  madeNils: number;
+  bags: number;
 }
 
 export interface GameState {
