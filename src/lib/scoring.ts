@@ -34,25 +34,6 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
     team: 2 as const
   };
 
-  // Verify total tricks equals 13
-  const totalTricks = team1.tricks + team2.tricks;
-  if (totalTricks !== 13) {
-    console.error(`Invalid trick total: ${totalTricks}. Must be 13.`);
-    return { team1, team2 };
-  }
-
-  // Calculate total books bid (excluding nil bids)
-  const team1NonNilBid = team1Players
-    .filter(p => p.bid !== 0)
-    .reduce((sum, p) => sum + (p.bid || 0), 0);
-  
-  const team2NonNilBid = team2Players
-    .filter(p => p.bid !== 0)
-    .reduce((sum, p) => sum + (p.bid || 0), 0);
-
-  const totalBid = team1NonNilBid + team2NonNilBid;
-  const totalBags = 13 - totalBid;
-
   // Handle nil bids first
   team1.score += team1.madeNils * 100;
   team1.score -= (team1.nilBids - team1.madeNils) * 100;
@@ -69,28 +50,35 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
     .filter(p => p.bid !== 0)
     .reduce((sum, p) => sum + (p.tricks || 0), 0);
 
-  // Score regular bids and calculate bags
+  const team1NonNilBid = team1Players
+    .filter(p => p.bid !== 0)
+    .reduce((sum, p) => sum + (p.bid || 0), 0);
+  
+  const team2NonNilBid = team2Players
+    .filter(p => p.bid !== 0)
+    .reduce((sum, p) => sum + (p.bid || 0), 0);
+
+  // Score regular bids
   if (team1NonNilTricks >= team1NonNilBid) {
-    team1.score += team1NonNilBid * 10;
-    team1.bags = team1NonNilTricks - team1NonNilBid;
-    team1.score += team1.bags;
+    team1.score += team1NonNilBid * 10;  // Points for making bid
+    if (team1NonNilTricks > team1NonNilBid) {
+      const overbooks = team1NonNilTricks - team1NonNilBid;
+      team1.bags += overbooks;  // Each overbook is a bag
+      team1.score += overbooks; // Each overbook is a point
+    }
   } else {
-    team1.score -= team1NonNilBid * 10;
+    team1.score -= team1NonNilBid * 10;  // Penalty for not making bid
   }
 
   if (team2NonNilTricks >= team2NonNilBid) {
-    team2.score += team2NonNilBid * 10;
-    team2.bags = team2NonNilTricks - team2NonNilBid;
-    team2.score += team2.bags;
+    team2.score += team2NonNilBid * 10;  // Points for making bid
+    if (team2NonNilTricks > team2NonNilBid) {
+      const overbooks = team2NonNilTricks - team2NonNilBid;
+      team2.bags += overbooks;  // Each overbook is a bag
+      team2.score += overbooks; // Each overbook is a point
+    }
   } else {
-    team2.score -= team2NonNilBid * 10;
-  }
-
-  // Verify total bags equals unbid tricks
-  const totalCalculatedBags = team1.bags + team2.bags;
-  if (totalCalculatedBags !== totalBags) {
-    console.error(`Bag calculation error: got ${totalCalculatedBags}, expected ${totalBags}`);
-    return { team1, team2 };
+    team2.score -= team2NonNilBid * 10;  // Penalty for not making bid
   }
 
   return { team1, team2 };
