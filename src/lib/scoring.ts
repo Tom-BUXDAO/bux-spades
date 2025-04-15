@@ -34,15 +34,14 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
     team: 2 as const
   };
 
-  // Calculate scores
-  // Handle nil bids first
-  team1.score += team1.madeNils * 100;
-  team1.score -= (team1.nilBids - team1.madeNils) * 100;
-  
-  team2.score += team2.madeNils * 100;
-  team2.score -= (team2.nilBids - team2.madeNils) * 100;
+  // Verify total tricks equals 13
+  const totalTricks = team1.tricks + team2.tricks;
+  if (totalTricks !== 13) {
+    console.error(`Invalid trick total: ${totalTricks}. Must be 13.`);
+    return { team1, team2 };
+  }
 
-  // Handle regular bids
+  // Calculate total books bid (excluding nil bids)
   const team1NonNilBid = team1Players
     .filter(p => p.bid !== 0)
     .reduce((sum, p) => sum + (p.bid || 0), 0);
@@ -50,6 +49,16 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
   const team2NonNilBid = team2Players
     .filter(p => p.bid !== 0)
     .reduce((sum, p) => sum + (p.bid || 0), 0);
+
+  const totalBid = team1NonNilBid + team2NonNilBid;
+  const totalBags = 13 - totalBid;
+
+  // Handle nil bids first
+  team1.score += team1.madeNils * 100;
+  team1.score -= (team1.nilBids - team1.madeNils) * 100;
+  
+  team2.score += team2.madeNils * 100;
+  team2.score -= (team2.nilBids - team2.madeNils) * 100;
 
   // Calculate tricks taken by non-nil bidders
   const team1NonNilTricks = team1Players
@@ -60,7 +69,7 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
     .filter(p => p.bid !== 0)
     .reduce((sum, p) => sum + (p.tricks || 0), 0);
 
-  // Calculate bags (overbooks) and scores for non-nil bids
+  // Score regular bids and calculate bags
   if (team1NonNilTricks >= team1NonNilBid) {
     team1.score += team1NonNilBid * 10;
     team1.bags = team1NonNilTricks - team1NonNilBid;
@@ -75,6 +84,13 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
     team2.score += team2.bags;
   } else {
     team2.score -= team2NonNilBid * 10;
+  }
+
+  // Verify total bags equals unbid tricks
+  const totalCalculatedBags = team1.bags + team2.bags;
+  if (totalCalculatedBags !== totalBags) {
+    console.error(`Bag calculation error: got ${totalCalculatedBags}, expected ${totalBags}`);
+    return { team1, team2 };
   }
 
   return { team1, team2 };
