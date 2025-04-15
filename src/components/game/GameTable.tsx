@@ -13,7 +13,7 @@ import LoserModal from './LoserModal';
 import BiddingInterface from './BiddingInterface';
 import { calculateHandScore } from '@/lib/scoring';
 import LandscapePrompt from '@/components/LandscapePrompt';
-import { IoExitOutline } from "react-icons/io5";
+import { IoExitOutline, IoInformationCircleOutline } from "react-icons/io5";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import useResizeObserver from "@/hooks/useResizeObserver";
@@ -1100,6 +1100,26 @@ export default function GameTable({
     }
   }, [game.status, game.winningTeam, currentPlayer?.team]);
 
+  const [showGameInfo, setShowGameInfo] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (infoRef.current && !infoRef.current.contains(event.target as Node)) {
+        setShowGameInfo(false);
+      }
+    }
+    if (showGameInfo) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showGameInfo]);
+
   // Return the JSX for the component
   return (
     <>
@@ -1116,15 +1136,38 @@ export default function GameTable({
               border: `${Math.floor(2 * scaleFactor)}px solid #855f31`
             }}>
               {/* Leave Table button - inside table in top left corner */}
-          <button
-            onClick={handleLeaveTable}
-                className="absolute top-4 left-4 z-10 p-2 bg-gray-800/90 text-white rounded-full hover:bg-gray-700 transition shadow-lg"
-            style={{ fontSize: `${Math.floor(14 * scaleFactor)}px` }}
-          >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-          </button>
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                <button
+                  onClick={handleLeaveTable}
+                  className="p-2 bg-gray-800/90 text-white rounded-full hover:bg-gray-700 transition shadow-lg"
+                  style={{ fontSize: `${Math.floor(14 * scaleFactor)}px` }}
+                >
+                  <IoExitOutline className="h-5 w-5" />
+                </button>
+                <div className="relative" ref={infoRef}>
+                  <button
+                    onClick={() => setShowGameInfo((v) => !v)}
+                    className="p-2 bg-gray-800/90 text-white rounded-full hover:bg-gray-700 transition shadow-lg"
+                    style={{ fontSize: `${Math.floor(14 * scaleFactor)}px` }}
+                  >
+                    <IoInformationCircleOutline className="h-5 w-5" />
+                  </button>
+                  {showGameInfo && (
+                    <div className="absolute left-0 mt-2 w-56 bg-gray-900/95 border border-gray-700 rounded-lg shadow-xl p-4 z-50 text-sm text-white">
+                      <div className="font-bold mb-2 flex items-center gap-2">
+                        <IoInformationCircleOutline className="inline-block h-4 w-4 text-blue-400" />
+                        Table Details
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div><span className="text-gray-400">Type:</span> REGULAR</div>
+                        <div><span className="text-gray-400">Points:</span> {game.rules?.maxPoints ?? 500}/{game.rules?.minPoints ?? -150}</div>
+                        <div><span className="text-gray-400">Nil:</span> {game.rules?.allowNil ? '✅ Allowed' : '❌ Not allowed'}</div>
+                        <div><span className="text-gray-400">Blind Nil:</span> {game.rules?.allowBlindNil ? '✅ Allowed' : '❌ Not allowed'}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
               
               {/* Scoreboard in top right corner - inside the table */}
               <div className="absolute top-4 right-4 z-10 flex flex-col items-center gap-2 px-3 py-2 bg-gray-800/90 rounded-lg shadow-lg">
