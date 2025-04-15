@@ -25,8 +25,9 @@ export default function HandSummaryModal({
   // Add null checks for handScores
   const team1Score = handScores?.team1Score?.score || 0;
   const team2Score = handScores?.team2Score?.score || 0;
-  const team1Bags = handScores?.team1Score?.bags || 0;
-  const team2Bags = handScores?.team2Score?.bags || 0;
+  // Calculate bags - for negative scores, use complement of last digit to 10
+  const team1Bags = team1Score >= 0 ? team1Score % 10 : (10 - (Math.abs(team1Score) % 10)) % 10;
+  const team2Bags = team2Score >= 0 ? team2Score % 10 : (10 - (Math.abs(team2Score) % 10)) % 10;
   const team1Bid = handScores?.team1Score?.bid || 0;
   const team2Bid = handScores?.team2Score?.bid || 0;
   const team1Tricks = handScores?.team1Score?.tricks || 0;
