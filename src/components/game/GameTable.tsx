@@ -538,10 +538,10 @@ export default function GameTable({
 
     // Position cards based on the relative position of the player who played them
     const positions: Record<number, string> = windowSize.width < 640 ? {
-      0: 'bottom-16 left-1/2 transform -translate-x-1/2',  // Current player's position
-      1: 'left-8 top-1/2 transform -translate-y-1/2',      // Player to the left
-      2: 'top-16 left-1/2 transform -translate-x-1/2',     // Player opposite
-      3: 'right-8 top-1/2 transform -translate-y-1/2'      // Player to the right
+      0: 'bottom-12 left-1/2 transform -translate-x-1/2',  // Current player's position (moved up)
+      1: 'left-6 top-1/2 transform -translate-y-1/2',      // Player to the left (moved in)
+      2: 'top-12 left-1/2 transform -translate-x-1/2',     // Player opposite (moved down)
+      3: 'right-6 top-1/2 transform -translate-y-1/2'      // Player to the right (moved in)
     } : {
       0: 'bottom-[20%] left-1/2 transform -translate-x-1/2',
       1: 'left-[20%] top-1/2 transform -translate-y-1/2',
@@ -557,8 +557,8 @@ export default function GameTable({
 
     // Calculate card dimensions using the same approach as player hand
     const isMobile = windowSize.isMobile;
-    const cardUIWidth = Math.floor(isMobile ? 27 : 96 * scaleFactor);  // Reduced to maintain 2:3 ratio with height of 40
-    const cardUIHeight = Math.floor(isMobile ? 40 : 144 * scaleFactor); // Reduced to 40px for mobile
+    const cardUIWidth = Math.floor(isMobile ? 24 : 96 * scaleFactor);  // Reduced further from 27 to 24
+    const cardUIHeight = Math.floor(isMobile ? 36 : 144 * scaleFactor); // Reduced further from 40 to 36
 
     return game.currentTrick.map((card, index) => {
       const position = getRelativePosition(index);
