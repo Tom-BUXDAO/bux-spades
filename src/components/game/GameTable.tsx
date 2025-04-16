@@ -648,8 +648,8 @@ export default function GameTable({
   }, [windowSize.isMobile]);
   
   // Scale dimensions for card images
-  const cardWidth = Math.floor(96 * scaleFactor);
-  const cardHeight = Math.floor(144 * scaleFactor);
+  const cardWidth = windowSize.width < 640 ? 48 : Math.floor(96 * scaleFactor);
+  const cardHeight = windowSize.width < 640 ? 72 : Math.floor(144 * scaleFactor);
   const avatarSize = Math.floor(64 * scaleFactor);
   
   // Player positions mapping - responsive
