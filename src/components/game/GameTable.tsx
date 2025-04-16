@@ -556,11 +556,9 @@ export default function GameTable({
       return (
         <div
           key={`${card.suit}-${card.rank}-${index}`}
-          className={
-            `trick-card ${positions[relativePosition]} z-10 transition-all duration-300` +
-            (isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : '')
-          }
+          className={`trick-card ${positions[relativePosition]} z-10 transition-all duration-300${isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : ''}`}
           style={{ width: '96px', height: '144px' }}
+          id={index === 0 ? 'trick-card-debug' : undefined}
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
         >
@@ -1314,10 +1312,10 @@ export default function GameTable({
       {/* Add global style for mobile trick card size */}
       <style jsx global>{`
         @media (max-width: 639px) {
-          .trick-card {
+          #trick-card-debug {
             width: 48px !important;
             height: 72px !important;
-            border: 2px solid red !important;
+            border: 2px solid blue !important;
           }
           .trick-card-img {
             width: 100% !important;
