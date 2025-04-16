@@ -557,8 +557,8 @@ export default function GameTable({
 
     // Calculate card dimensions using the same approach as player hand
     const isMobile = windowSize.isMobile;
-    const cardUIWidth = Math.floor(isMobile ? 16 : 96 * scaleFactor);  // MUCH smaller on mobile - from 24 to 16
-    const cardUIHeight = Math.floor(isMobile ? 24 : 144 * scaleFactor); // MUCH smaller on mobile - from 36 to 24
+    const cardUIWidth = Math.floor(isMobile ? 16 : 96 * scaleFactor);
+    const cardUIHeight = Math.floor(isMobile ? 24 : 144 * scaleFactor);
 
     return game.currentTrick.map((card, index) => {
       const position = getRelativePosition(index);
@@ -575,14 +575,14 @@ export default function GameTable({
             height: `${cardUIHeight}px`
           }}
         >
-          <img
+          <Image
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank}${card.suit}`}
-            className="rounded-lg shadow-md w-full h-full object-contain"
-            style={{ 
-              width: `${cardUIWidth}px`, 
-              height: `${cardUIHeight}px`
-            }}
+            width={cardUIWidth}
+            height={cardUIHeight}
+            className="rounded-lg shadow-md"
+            style={{ width: `${cardUIWidth}px`, height: `${cardUIHeight}px` }}
+            priority={true}
           />
           {isWinning && (
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-green-500 font-bold">
