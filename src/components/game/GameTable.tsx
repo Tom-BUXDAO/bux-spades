@@ -534,12 +534,12 @@ export default function GameTable({
 
     if (!cardsToRender.length) return null;
 
-    // Restore the original positions mapping for card placement
+    // Update positions to be responsive
     const positions: Record<number, string> = {
-      0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
-      1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
-      2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
-      3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
+      0: 'absolute bottom-[15%] sm:bottom-[20%] left-1/2 transform -translate-x-1/2',
+      1: 'absolute left-[10%] sm:left-[20%] top-1/2 transform -translate-y-1/2',
+      2: 'absolute top-[15%] sm:top-[20%] left-1/2 transform -translate-x-1/2',
+      3: 'absolute right-[10%] sm:right-[20%] top-1/2 transform -translate-y-1/2'
     };
 
     return cardsToRender.map((card, index) => {
@@ -566,8 +566,8 @@ export default function GameTable({
             className="w-full h-full object-contain trick-card-img"
           />
           {isWinningCard && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
+            <div className="absolute -top-6 sm:-top-8 left-1/2 transform -translate-x-1/2 
+              bg-yellow-400 text-black font-bold rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm
               animate-bounce">
               +1
             </div>
