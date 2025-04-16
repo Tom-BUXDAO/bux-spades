@@ -560,8 +560,8 @@ export default function GameTable({
 
       // Calculate card dimensions using the same approach as player's hand
       const isMobile = windowSize.width < 640;
-      const cardWidth = Math.floor(isMobile ? 25 : 96 * scaleFactor);
-      const cardHeight = Math.floor(isMobile ? 38 : 144 * scaleFactor);
+      const trickCardWidth = windowSize.width < 640 ? 48 : Math.floor(96 * getScaleFactor());
+      const trickCardHeight = windowSize.width < 640 ? 72 : Math.floor(144 * getScaleFactor());
 
       return (
         <div
@@ -569,12 +569,12 @@ export default function GameTable({
           className={`${positions[relativePosition]} z-10 transition-all duration-300
             ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
           style={{
-            width: `${cardWidth}px`,
-            height: `${cardHeight}px`,
+            width: `${trickCardWidth}px`,
+            height: `${trickCardHeight}px`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            minHeight: 'unset' // Remove any min-height constraints
+            minHeight: 'unset'
           }}
         >
           <img
