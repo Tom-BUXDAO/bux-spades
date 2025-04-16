@@ -1259,8 +1259,6 @@ export default function GameTable({
                        style={{ fontSize: `${Math.floor(14 * scaleFactor)}px` }}>
                     <div className="font-bold">Waiting for {game.players.find(p => p.id === game.currentPlayer)?.name} to bid</div>
                   </div>
-                ) : game.status === "PLAYING" && game.currentTrick && game.currentTrick.length > 0 ? (
-                  renderTrickCards()
                 ) : game.status === "PLAYING" && game.currentTrick?.length === 0 ? (
                   <div className="px-4 py-2 bg-gray-700/70 text-white rounded-lg text-center"
                        style={{ fontSize: `${Math.floor(14 * scaleFactor)}px` }}>
