@@ -560,14 +560,13 @@ export default function GameTable({
             `trick-card ${positions[relativePosition]} z-10 transition-all duration-300` +
             (isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : '')
           }
-          style={{ width: '96px', height: '144px' }}
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
         >
           <img
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank} of ${card.suit}`}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain trick-card-img"
           />
           {isWinningCard && (
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
@@ -1317,6 +1316,12 @@ export default function GameTable({
           .trick-card {
             width: 48px !important;
             height: 72px !important;
+            border: 2px solid red !important;
+          }
+          .trick-card-img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain !important;
           }
         }
       `}</style>
