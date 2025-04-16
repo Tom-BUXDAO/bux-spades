@@ -527,69 +527,61 @@ export default function GameTable({
   }, [socket, game.completedTricks]);
 
   // Modify renderTrickCards to show animation
+  const getRelativePosition = (index: number): string => {
+    const positions: Record<number, string> = windowSize.width < 640 ? {
+      0: 'bottom-16 left-1/2 transform -translate-x-1/2',
+      1: 'left-8 top-1/2 transform -translate-y-1/2',
+      2: 'top-16 left-1/2 transform -translate-x-1/2',
+      3: 'right-8 top-1/2 transform -translate-y-1/2'
+    } : {
+      0: 'bottom-[20%] left-1/2 transform -translate-x-1/2',
+      1: 'left-[20%] top-1/2 transform -translate-y-1/2',
+      2: 'top-[20%] left-1/2 transform -translate-x-1/2',
+      3: 'right-[20%] top-1/2 transform -translate-y-1/2'
+    };
+    return positions[index];
+  };
+
   const renderTrickCards = () => {
-    const cardsToRender = showTrickAnimation && completedTrick 
-      ? completedTrick.cards 
-      : game?.currentTrick || [];
+    if (!game?.currentTrick || game.currentTrick.length === 0) return null;
 
-    if (!cardsToRender.length) return null;
+    // Calculate card dimensions using the same approach as player hand
+    const isMobile = windowSize.isMobile;
+    const cardUIWidth = Math.floor(isMobile ? 48 : 96 * scaleFactor);
+    const cardUIHeight = Math.floor(isMobile ? 72 : 144 * scaleFactor);
 
-    return cardsToRender.map((card, index) => {
-      if (!card.playedBy) {
-        console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
-        return null;
-      }
-
-      const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
-
-      const positions: Record<number, string> = windowSize.width < 640 ? {
-        0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
-        1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
-        2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
-        3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
-      } : {
-        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
-        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
-        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
-        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
-      };
-
-      const isWinningCard = showTrickAnimation && 
-        completedTrick?.winningCard.suit === card.suit && 
-        completedTrick?.winningCard.rank === card.rank;
+    return game.currentTrick.map((card, index) => {
+      const position = getRelativePosition(index);
+      const isWinning = winningCardIndex === index;
 
       return (
         <div
-          key={`${card.suit}-${card.rank}-${index}`}
-          className={`${positions[relativePosition]} z-10 transition-all duration-300
-            ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
+          key={`${card.suit}${card.rank}`}
+          className={`absolute ${position} transition-all duration-300 ease-in-out ${
+            isWinning ? 'scale-110 z-10' : ''
+          }`}
           style={{
-            width: windowSize.width < 640 ? '48px' : '96px',
-            height: windowSize.width < 640 ? '72px' : '144px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            width: `${cardUIWidth}px`,
+            height: `${cardUIHeight}px`
           }}
         >
-          <img
+          <Image
             src={`/cards/${getCardImage(card)}`}
-            alt={`${card.rank} of ${card.suit}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain'
-            }}
+            alt={`${card.rank}${card.suit}`}
+            width={cardUIWidth}
+            height={cardUIHeight}
+            className="rounded-lg shadow-md"
+            style={{ width: 'auto', height: 'auto' }}
+            priority={true}
           />
-          {isWinningCard && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
-              animate-bounce">
+          {isWinning && (
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-green-500 font-bold">
               +1
             </div>
           )}
         </div>
       );
-    }).filter(Boolean);
+    });
   };
 
   const handleLeaveTable = () => {
