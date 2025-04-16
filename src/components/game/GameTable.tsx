@@ -542,7 +542,12 @@ export default function GameTable({
 
       const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
 
-      const positions: Record<number, string> = {
+      const positions: Record<number, string> = windowSize.width < 640 ? {
+        0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
+      } : {
         0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
         1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
         2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
