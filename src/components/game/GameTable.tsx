@@ -528,18 +528,28 @@ export default function GameTable({
 
   // Modify renderTrickCards to show animation
   const getRelativePosition = (index: number): string => {
+    // Get the player who played this card
+    const card = game.currentTrick[index];
+    if (!card || !card.playedBy) return '';
+
+    // Calculate the relative position based on who played the card
+    const playerPosition = card.playedBy.position;
+    const relativePos = (4 + playerPosition - currentPlayerPosition) % 4;
+
+    // Position cards based on the relative position of the player who played them
     const positions: Record<number, string> = windowSize.width < 640 ? {
-      0: 'bottom-16 left-1/2 transform -translate-x-1/2',
-      1: 'left-8 top-1/2 transform -translate-y-1/2',
-      2: 'top-16 left-1/2 transform -translate-x-1/2',
-      3: 'right-8 top-1/2 transform -translate-y-1/2'
+      0: 'bottom-16 left-1/2 transform -translate-x-1/2',  // Current player's position
+      1: 'left-8 top-1/2 transform -translate-y-1/2',      // Player to the left
+      2: 'top-16 left-1/2 transform -translate-x-1/2',     // Player opposite
+      3: 'right-8 top-1/2 transform -translate-y-1/2'      // Player to the right
     } : {
       0: 'bottom-[20%] left-1/2 transform -translate-x-1/2',
       1: 'left-[20%] top-1/2 transform -translate-y-1/2',
       2: 'top-[20%] left-1/2 transform -translate-x-1/2',
       3: 'right-[20%] top-1/2 transform -translate-y-1/2'
     };
-    return positions[index];
+
+    return positions[relativePos] || '';
   };
 
   const renderTrickCards = () => {
