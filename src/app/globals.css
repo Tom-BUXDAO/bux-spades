@@ -30,7 +30,6 @@ body {
   .trick-card {
     width: 48px !important;
     height: 72px !important;
-    border: 2px solid blue !important; /* For debug, remove when done */
     position: relative !important;
   }
   .trick-card-img {

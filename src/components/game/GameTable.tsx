@@ -1307,26 +1307,14 @@ export default function GameTable({
           />
         )}
       </div>
-      {/* Add global style for mobile trick card size */}
+      {/* Remove conflicting mobile styles */}
       <style jsx global>{`
         @media (max-width: 639px) {
           .trick-cards-parent {
-            background: rgba(255,0,0,0.1) !important;
             overflow: visible !important;
             flex: none !important;
             max-width: none !important;
             position: relative !important;
-          }
-          #trick-card-debug {
-            width: 48px !important;
-            height: 72px !important;
-            border: 2px solid blue !important;
-            position: relative !important;
-          }
-          .trick-card-img {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain !important;
           }
         }
       `}</style>
