@@ -25,3 +25,17 @@ body {
   overflow-x: hidden;
   position: relative;
 }
+
+@media (max-width: 639px) {
+  .trick-card {
+    width: 48px !important;
+    height: 72px !important;
+    border: 2px solid blue !important; /* For debug, remove when done */
+    position: relative !important;
+  }
+  .trick-card-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+}
