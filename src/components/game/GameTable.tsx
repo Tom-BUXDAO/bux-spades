@@ -572,7 +572,9 @@ export default function GameTable({
           }`}
           style={{
             width: `${cardUIWidth}px`,
-            height: `${cardUIHeight}px`
+            height: `${cardUIHeight}px`,
+            maxWidth: `${cardUIWidth}px`,
+            maxHeight: `${cardUIHeight}px`
           }}
         >
           <Image
@@ -581,7 +583,12 @@ export default function GameTable({
             width={cardUIWidth}
             height={cardUIHeight}
             className="rounded-lg shadow-md"
-            style={{ width: 'auto', height: 'auto' }}
+            style={{ 
+              width: `${cardUIWidth}px`, 
+              height: `${cardUIHeight}px`,
+              maxWidth: `${cardUIWidth}px`,
+              maxHeight: `${cardUIHeight}px`
+            }}
             priority={true}
           />
           {isWinning && (
