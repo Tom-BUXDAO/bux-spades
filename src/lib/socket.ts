@@ -158,6 +158,13 @@ export function getGames(socket: typeof Socket | null, callback: (games: GameSta
     socket.emit('get_games');
   });
   
+  // Listen for game_over event
+  socket.on('game_over', (data: { team1Score: number, team2Score: number, winningTeam: 1 | 2, team1Bags: number, team2Bags: number }) => {
+    console.log('Game over event received:', data);
+    // Request full game list to ensure everything is in sync
+    socket.emit('get_games');
+  });
+  
   // Initial request
   socket.emit('get_games');
   
@@ -171,6 +178,7 @@ export function getGames(socket: typeof Socket | null, callback: (games: GameSta
   return () => {
     socket.off('games_update', wrappedCallback);
     socket.off('game_update');
+    socket.off('game_over');
     socket.off('connect', () => {
       socket.emit('get_games');
     });
