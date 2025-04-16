@@ -527,40 +527,53 @@ export default function GameTable({
   }, [socket, game.completedTricks]);
 
   // Modify renderTrickCards to show animation
-  const getRelativePosition = (index: number): string => {
-    const positions: Record<number, string> = windowSize.width < 640 ? {
-      0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
-      1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
-      2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
-      3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
-    } : {
-      0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
-      1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
-      2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
-      3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
-    };
-    return positions[index] || '';
-  };
-
   const renderTrickCards = () => {
-    if (!game?.currentTrick || game.currentTrick.length === 0) return null;
+    const cardsToRender = showTrickAnimation && completedTrick 
+      ? completedTrick.cards 
+      : game?.currentTrick || [];
 
-    return game.currentTrick.map((card, index) => {
-      const position = getRelativePosition(index);
-      const isWinning = winningCardIndex === index;
-      const isMobile = windowSize.isMobile;
-      const cardUIWidth = Math.floor(isMobile ? 38 : 96 * scaleFactor);
-      const cardUIHeight = Math.floor(isMobile ? 38 : 144 * scaleFactor);
+    if (!cardsToRender.length) return null;
+
+    return cardsToRender.map((card, index) => {
+      if (!card.playedBy) {
+        console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
+        return null;
+      }
+
+      const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
+
+      const positions: Record<number, string> = windowSize.width < 640 ? {
+        0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
+      } : {
+        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
+      };
+
+      const isWinningCard = showTrickAnimation && 
+        completedTrick?.winningCard.suit === card.suit && 
+        completedTrick?.winningCard.rank === card.rank;
+
+      // Calculate card dimensions using the same approach as player's hand
+      const isMobile = windowSize.width < 640;
+      const cardWidth = Math.floor(isMobile ? 25 : 96 * scaleFactor);
+      const cardHeight = Math.floor(isMobile ? 38 : 144 * scaleFactor);
 
       return (
         <div
-          key={`${card.suit}${card.rank}`}
-          className={`absolute ${position} transition-all duration-300 ease-in-out ${
-            isWinning ? 'scale-110 z-10' : ''
-          }`}
+          key={`${card.suit}-${card.rank}-${index}`}
+          className={`${positions[relativePosition]} z-10 transition-all duration-300
+            ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
           style={{
-            width: `${cardUIWidth}px`,
-            height: `${cardUIHeight}px`
+            width: `${cardWidth}px`,
+            height: `${cardHeight}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           <img
@@ -572,14 +585,16 @@ export default function GameTable({
               objectFit: 'contain'
             }}
           />
-          {isWinning && (
-            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-green-500 font-bold">
+          {isWinningCard && (
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
+              animate-bounce">
               +1
             </div>
           )}
         </div>
       );
-    });
+    }).filter(Boolean);
   };
 
   const handleLeaveTable = () => {
@@ -1132,59 +1147,6 @@ export default function GameTable({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showGameInfo]);
-
-  const getCardSize = () => {
-    if (isMobile) {
-      return {
-        width: '38px',
-        height: '53px',
-        fontSize: '0.75rem'
-      };
-    }
-    return {
-      width: '80px',
-      height: '112px',
-      fontSize: '1rem'
-    };
-  };
-
-  const getPlayedCardPosition = (position: number, index: number) => {
-    const offset = isMobile ? 20 : 30;
-    const playedOffset = isMobile ? 15 : 25;
-    
-    switch (position) {
-      case 0: // South
-        return {
-          bottom: `${offset + (index * playedOffset)}px`,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 20 + index
-        };
-      case 1: // East
-        return {
-          right: `${offset + (index * playedOffset)}px`,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 20 + index
-        };
-      case 2: // North
-        return {
-          top: `${offset + (index * playedOffset)}px`,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 20 + index
-        };
-      case 3: // West
-        return {
-          left: `${offset + (index * playedOffset)}px`,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 20 + index
-        };
-      default:
-        return {};
-    }
-  };
 
   // Return the JSX for the component
   return (
