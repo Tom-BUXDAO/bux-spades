@@ -560,6 +560,7 @@ export default function GameTable({
             `trick-card ${positions[relativePosition]} z-10 transition-all duration-300` +
             (isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : '')
           }
+          style={{ width: '96px', height: '144px' }}
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
         >
