@@ -34,6 +34,22 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
     team: 2 as const
   };
 
+  // Validate total tricks equals 13
+  const totalTricks = team1.tricks + team2.tricks;
+  if (totalTricks > 0 && totalTricks !== 13) {
+    console.error(`Invalid trick count: ${totalTricks}. Expected 13 tricks total.`);
+    // Adjust tricks if needed
+    if (team1.tricks + team2.tricks < 13) {
+      // Add missing tricks to the team with more tricks
+      const missingTricks = 13 - totalTricks;
+      if (team1.tricks > team2.tricks) {
+        team1.tricks += missingTricks;
+      } else {
+        team2.tricks += missingTricks;
+      }
+    }
+  }
+
   // Handle nil bids first
   team1.score += team1.madeNils * 100;
   team1.score -= (team1.nilBids - team1.madeNils) * 100;
@@ -68,62 +84,35 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
 }
 
 export function isGameOver(team1Score: number, team2Score: number, minPoints: number, maxPoints: number): { isOver: boolean; winner: 1 | 2 | null } {
-  // If both teams are below min points, highest score wins
-  if (team1Score < minPoints && team2Score < minPoints) {
-    return {
-      isOver: true,
-      winner: team1Score > team2Score ? 1 : 2
-    };
-  }
-
-  // If both teams are above max points, highest score wins
-  if (team1Score > maxPoints && team2Score > maxPoints) {
-    return {
-      isOver: true,
-      winner: team1Score > team2Score ? 1 : 2
-    };
-  }
-
-  // If one team is below min and other is above min, game continues
-  if ((team1Score < minPoints && team2Score >= minPoints) || 
-      (team2Score < minPoints && team1Score >= minPoints)) {
-    return {
-      isOver: false,
-      winner: null
-    };
-  }
-
-  // If one team is above max and other is below max, game continues
-  if ((team1Score > maxPoints && team2Score <= maxPoints) || 
-      (team2Score > maxPoints && team1Score <= maxPoints)) {
-    return {
-      isOver: false,
-      winner: null
-    };
-  }
-
-  // If scores are equal, play another round
-  if (team1Score === team2Score) {
-    return {
-      isOver: false,
-      winner: null
-    };
-  }
-
-  // If one team is below min or above max, they lose
-  if (team1Score < minPoints || team1Score > maxPoints) {
+  // If either team is below minPoints (-100), they lose immediately
+  if (team1Score <= minPoints) {
     return {
       isOver: true,
       winner: 2
     };
   }
-  if (team2Score < minPoints || team2Score > maxPoints) {
+  if (team2Score <= minPoints) {
     return {
       isOver: true,
       winner: 1
     };
   }
 
+  // If either team is above maxPoints (500), they win
+  if (team1Score >= maxPoints) {
+    return {
+      isOver: true,
+      winner: 1
+    };
+  }
+  if (team2Score >= maxPoints) {
+    return {
+      isOver: true,
+      winner: 2
+    };
+  }
+
+  // Game continues if no winning condition is met
   return {
     isOver: false,
     winner: null

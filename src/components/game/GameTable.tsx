@@ -507,7 +507,8 @@ export default function GameTable({
         setCompletedTrick(null);
       }, 2000);
 
-      const isHandComplete = game.completedTricks.length === 12; // 13th trick just completed
+      // Check if hand is complete (all 13 tricks played)
+      const isHandComplete = game.completedTricks.length === 13;
       if (isHandComplete) {
         // Calculate hand summary before moving to next hand
         const scores = calculateHandScore(game.players);
