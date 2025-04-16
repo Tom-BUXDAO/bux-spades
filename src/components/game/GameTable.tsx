@@ -557,8 +557,8 @@ export default function GameTable({
 
     // Calculate card dimensions using the same approach as player hand
     const isMobile = windowSize.isMobile;
-    const cardUIWidth = Math.floor(isMobile ? 36 : 96 * scaleFactor);  // Reduced from 48 to 36 for mobile
-    const cardUIHeight = Math.floor(isMobile ? 54 : 144 * scaleFactor); // Reduced from 72 to 54 for mobile
+    const cardUIWidth = Math.floor(isMobile ? 27 : 96 * scaleFactor);  // Reduced to maintain 2:3 ratio with height of 40
+    const cardUIHeight = Math.floor(isMobile ? 40 : 144 * scaleFactor); // Reduced to 40px for mobile
 
     return game.currentTrick.map((card, index) => {
       const position = getRelativePosition(index);
