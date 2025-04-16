@@ -542,7 +542,7 @@ export default function GameTable({
 
       const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
 
-      const positions: Record<number, string> = windowSize.width < 640 ? {
+      const positions: Record<number, string> = isMobile ? {
         0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
         1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
         2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
@@ -566,8 +566,8 @@ export default function GameTable({
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
           style={{ 
-            width: windowSize.width < 640 ? '48px' : '96px',
-            height: windowSize.width < 640 ? '72px' : '144px',
+            width: isMobile ? '48px' : '96px',
+            height: isMobile ? '72px' : '144px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -577,8 +577,8 @@ export default function GameTable({
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank} of ${card.suit}`}
             style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
+              width: '100%',
+              height: '100%',
               objectFit: 'contain'
             }}
           />
