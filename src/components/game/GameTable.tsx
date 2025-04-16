@@ -1133,6 +1133,102 @@ export default function GameTable({
     };
   }, [showGameInfo]);
 
+  const getCardSize = () => {
+    if (isMobile) {
+      return {
+        width: '60px',
+        height: '84px',
+        fontSize: '0.75rem'
+      };
+    }
+    return {
+      width: '80px',
+      height: '112px',
+      fontSize: '1rem'
+    };
+  };
+
+  const getCardPosition = (position: number) => {
+    const size = getCardSize();
+    const cardWidth = parseInt(size.width);
+    const cardHeight = parseInt(size.height);
+    const offset = isMobile ? 20 : 30;
+    
+    switch (position) {
+      case 0: // South
+        return {
+          bottom: `${offset}px`,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10
+        };
+      case 1: // East
+        return {
+          right: `${offset}px`,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 10
+        };
+      case 2: // North
+        return {
+          top: `${offset}px`,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10
+        };
+      case 3: // West
+        return {
+          left: `${offset}px`,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 10
+        };
+      default:
+        return {};
+    }
+  };
+
+  const getPlayedCardPosition = (position: number, index: number) => {
+    const size = getCardSize();
+    const cardWidth = parseInt(size.width);
+    const cardHeight = parseInt(size.height);
+    const offset = isMobile ? 20 : 30;
+    const playedOffset = isMobile ? 15 : 25;
+    
+    switch (position) {
+      case 0: // South
+        return {
+          bottom: `${offset + (index * playedOffset)}px`,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 20 + index
+        };
+      case 1: // East
+        return {
+          right: `${offset + (index * playedOffset)}px`,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 20 + index
+        };
+      case 2: // North
+        return {
+          top: `${offset + (index * playedOffset)}px`,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 20 + index
+        };
+      case 3: // West
+        return {
+          left: `${offset + (index * playedOffset)}px`,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 20 + index
+        };
+      default:
+        return {};
+    }
+  };
+
   // Return the JSX for the component
   return (
     <>
