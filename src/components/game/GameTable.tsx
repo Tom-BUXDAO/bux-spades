@@ -572,28 +572,17 @@ export default function GameTable({
           }`}
           style={{
             width: `${cardUIWidth}px`,
-            height: `${cardUIHeight}px`,
-            maxWidth: `${cardUIWidth}px`,
-            maxHeight: `${cardUIHeight}px`,
-            minWidth: `${cardUIWidth}px`,
-            minHeight: `${cardUIHeight}px`
+            height: `${cardUIHeight}px`
           }}
         >
-          <Image
+          <img
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank}${card.suit}`}
-            width={cardUIWidth}
-            height={cardUIHeight}
-            className="rounded-lg shadow-md"
+            className="rounded-lg shadow-md w-full h-full object-contain"
             style={{ 
               width: `${cardUIWidth}px`, 
-              height: `${cardUIHeight}px`,
-              maxWidth: `${cardUIWidth}px`,
-              maxHeight: `${cardUIHeight}px`,
-              minWidth: `${cardUIWidth}px`,
-              minHeight: `${cardUIHeight}px`
+              height: `${cardUIHeight}px`
             }}
-            priority={true}
           />
           {isWinning && (
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-green-500 font-bold">
