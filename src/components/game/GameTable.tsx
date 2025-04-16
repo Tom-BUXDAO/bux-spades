@@ -1136,8 +1136,8 @@ export default function GameTable({
   const getCardSize = () => {
     if (isMobile) {
       return {
-        width: '60px',
-        height: '84px',
+        width: '38px',
+        height: '53px',
         fontSize: '0.75rem'
       };
     }
@@ -1148,50 +1148,7 @@ export default function GameTable({
     };
   };
 
-  const getCardPosition = (position: number) => {
-    const size = getCardSize();
-    const cardWidth = parseInt(size.width);
-    const cardHeight = parseInt(size.height);
-    const offset = isMobile ? 20 : 30;
-    
-    switch (position) {
-      case 0: // South
-        return {
-          bottom: `${offset}px`,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10
-        };
-      case 1: // East
-        return {
-          right: `${offset}px`,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 10
-        };
-      case 2: // North
-        return {
-          top: `${offset}px`,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10
-        };
-      case 3: // West
-        return {
-          left: `${offset}px`,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          zIndex: 10
-        };
-      default:
-        return {};
-    }
-  };
-
   const getPlayedCardPosition = (position: number, index: number) => {
-    const size = getCardSize();
-    const cardWidth = parseInt(size.width);
-    const cardHeight = parseInt(size.height);
     const offset = isMobile ? 20 : 30;
     const playedOffset = isMobile ? 15 : 25;
     
