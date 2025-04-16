@@ -534,20 +534,6 @@ export default function GameTable({
 
     if (!cardsToRender.length) return null;
 
-    const isMobile = windowSize.width < 640;
-    const positionMap: Record<number, 'top' | 'left' | 'right' | 'bottom'> = {
-      0: 'bottom',
-      1: 'left',
-      2: 'top',
-      3: 'right'
-    };
-    const positions = {
-      top: isMobile ? '25%' : '30%',
-      left: isMobile ? '25%' : '30%',
-      right: isMobile ? '25%' : '30%',
-      bottom: isMobile ? '25%' : '30%'
-    };
-
     return cardsToRender.map((card, index) => {
       if (!card.playedBy) {
         console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
@@ -555,7 +541,18 @@ export default function GameTable({
       }
 
       const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
-      const position = positions[positionMap[relativePosition]];
+
+      const positions: Record<number, string> = windowSize.width < 640 ? {
+        0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
+      } : {
+        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
+      };
 
       const isWinningCard = showTrickAnimation && 
         completedTrick?.winningCard.suit === card.suit && 
@@ -564,24 +561,23 @@ export default function GameTable({
       return (
         <div
           key={`${card.suit}-${card.rank}-${index}`}
-          className={`absolute transform -translate-x-1/2 -translate-y-1/2 z-10 transition-all duration-300
+          className={`${positions[relativePosition]} z-10 transition-all duration-300
             ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
           style={{
-            [positionMap[relativePosition]]: position,
-            width: isMobile ? '48px' : '96px',
-            height: isMobile ? '72px' : '144px',
-            zIndex: 10 + index
+            width: windowSize.width < 640 ? '48px' : '96px',
+            height: windowSize.width < 640 ? '72px' : '144px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           <img
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank} of ${card.suit}`}
-            className="w-full h-full object-contain"
             style={{
-              width: '100% !important',
-              height: '100% !important',
-              maxWidth: 'none !important',
-              maxHeight: 'none !important'
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
             }}
           />
           {isWinningCard && (
