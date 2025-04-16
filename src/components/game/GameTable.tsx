@@ -567,13 +567,20 @@ export default function GameTable({
           data-position={card.playedBy.position}
           style={{ 
             width: windowSize.width < 640 ? '48px' : '96px',
-            height: windowSize.width < 640 ? '72px' : '144px'
+            height: windowSize.width < 640 ? '72px' : '144px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
           <img
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank} of ${card.suit}`}
-            className="w-full h-full object-contain"
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain'
+            }}
           />
           {isWinningCard && (
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
