@@ -84,7 +84,23 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
 }
 
 export function isGameOver(team1Score: number, team2Score: number, minPoints: number, maxPoints: number): { isOver: boolean; winner: 1 | 2 | null } {
-  // If either team is below minPoints (-100), they lose immediately
+  // If both teams are below minPoints, highest score wins
+  if (team1Score <= minPoints && team2Score <= minPoints) {
+    return {
+      isOver: true,
+      winner: team1Score > team2Score ? 1 : 2
+    };
+  }
+
+  // If both teams are above maxPoints, highest score wins
+  if (team1Score >= maxPoints && team2Score >= maxPoints) {
+    return {
+      isOver: true,
+      winner: team1Score > team2Score ? 1 : 2
+    };
+  }
+
+  // If either team is below minPoints, they lose immediately
   if (team1Score <= minPoints) {
     return {
       isOver: true,
@@ -98,7 +114,7 @@ export function isGameOver(team1Score: number, team2Score: number, minPoints: nu
     };
   }
 
-  // If either team is above maxPoints (500), they win
+  // If either team is above maxPoints, they win
   if (team1Score >= maxPoints) {
     return {
       isOver: true,
@@ -112,7 +128,7 @@ export function isGameOver(team1Score: number, team2Score: number, minPoints: nu
     };
   }
 
-  // Game continues if no winning condition is met
+  // Game continues if no winning condition is met (including tied scores)
   return {
     isOver: false,
     winner: null

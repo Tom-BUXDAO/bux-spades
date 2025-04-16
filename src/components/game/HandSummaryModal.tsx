@@ -18,8 +18,8 @@ export default function HandSummaryModal({
   isOpen,
   onClose,
   handScores,
-  minPoints = 500,
-  maxPoints = -500,
+  minPoints = -250,
+  maxPoints = 500,
   onGameOver
 }: HandSummaryModalProps) {
   // Add null checks for handScores
@@ -38,21 +38,14 @@ export default function HandSummaryModal({
   const team2MadeNils = handScores?.team2Score?.madeNils || 0;
   
   // Check if game is over
-  const isGameOver = team1Score >= minPoints || team2Score >= minPoints || 
-                     team1Score <= maxPoints || team2Score <= maxPoints;
-  
-  // Determine winner
-  const winner = team1Score >= minPoints ? 1 : 
-                 team2Score >= minPoints ? 2 : 
-                 team1Score <= maxPoints ? 2 : 
-                 team2Score <= maxPoints ? 1 : null;
+  const { isOver: gameIsOver, winner } = isGameOver(team1Score, team2Score, minPoints, maxPoints);
   
   // Call onGameOver if game is over
   useEffect(() => {
-    if (isGameOver && winner && onGameOver) {
+    if (gameIsOver && winner && onGameOver) {
       onGameOver(winner);
     }
-  }, [isGameOver, winner, onGameOver]);
+  }, [gameIsOver, winner, onGameOver]);
   
   if (!isOpen) return null;
   
@@ -154,7 +147,7 @@ export default function HandSummaryModal({
             onClick={onClose}
             className="px-4 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-blue-800 text-white font-medium rounded shadow hover:from-blue-700 hover:to-blue-900 transition-all"
           >
-            {isGameOver ? "Continue" : "Next Hand"}
+            {gameIsOver ? "Continue" : "Next Hand"}
           </button>
         </div>
       </div>
