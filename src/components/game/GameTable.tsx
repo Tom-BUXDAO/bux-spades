@@ -557,13 +557,10 @@ export default function GameTable({
         <div
           key={`${card.suit}-${card.rank}-${index}`}
           className={
-            `${positions[relativePosition]} z-10 transition-all duration-300` +
+            `trick-card ${positions[relativePosition]} z-10 transition-all duration-300` +
             (isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : '')
           }
-          style={{
-            width: windowSize.width < 640 ? '64px' : '96px',
-            height: windowSize.width < 640 ? '96px' : '144px'
-          }}
+          style={{ width: '96px', height: '144px' }}
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
         >
@@ -1314,6 +1311,15 @@ export default function GameTable({
           />
         )}
       </div>
+      {/* Add global style for mobile trick card size */}
+      <style jsx global>{`
+        @media (max-width: 639px) {
+          .trick-card {
+            width: 48px !important;
+            height: 72px !important;
+          }
+        }
+      `}</style>
     </>
   );
 }
