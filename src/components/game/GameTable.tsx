@@ -556,8 +556,11 @@ export default function GameTable({
       return (
         <div
           key={`${card.suit}-${card.rank}-${index}`}
-          className={`${positions[relativePosition]} w-24 h-36 z-10 transition-all duration-300
-            ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
+          className={
+            `${positions[relativePosition]} z-10 transition-all duration-300 ` +
+            (windowSize.width < 640 ? 'w-16 h-24' : 'w-24 h-36') +
+            (isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : '')
+          }
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
         >
