@@ -573,7 +573,8 @@ export default function GameTable({
             height: `${cardHeight}px`,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            minHeight: 'unset' // Remove any min-height constraints
           }}
         >
           <img
@@ -1162,8 +1163,7 @@ export default function GameTable({
               background: 'radial-gradient(circle at center, #316785 0%, #1a3346 100%)',
               borderRadius: `${Math.floor(64 * scaleFactor)}px`,
               border: `${Math.floor(2 * scaleFactor)}px solid #855f31`,
-              aspectRatio: windowSize.width < 640 ? '4/3' : 'auto',
-              height: windowSize.width < 640 ? 'auto' : '100%'
+              height: '100%'
             }}>
               {/* Leave Table button - inside table in top left corner */}
               <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
