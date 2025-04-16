@@ -534,49 +534,53 @@ export default function GameTable({
 
     if (!cardsToRender.length) return null;
 
-    return cardsToRender.map((card, index) => {
-      if (!card.playedBy) {
-        console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
-        return null;
-      }
+    return (
+      <div className="trick-cards-parent" style={{ position: 'relative' }}>
+        {cardsToRender.map((card, index) => {
+          if (!card.playedBy) {
+            console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
+            return null;
+          }
 
-      const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
+          const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
 
-      const positions: Record<number, string> = {
-        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
-        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
-        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
-        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
-      };
+          const positions: Record<number, string> = {
+            0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
+            1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
+            2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
+            3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
+          };
 
-      const isWinningCard = showTrickAnimation && 
-        completedTrick?.winningCard.suit === card.suit && 
-        completedTrick?.winningCard.rank === card.rank;
+          const isWinningCard = showTrickAnimation && 
+            completedTrick?.winningCard.suit === card.suit && 
+            completedTrick?.winningCard.rank === card.rank;
 
-      return (
-        <div
-          key={`${card.suit}-${card.rank}-${index}`}
-          className={`trick-card ${positions[relativePosition]} z-10 transition-all duration-300${isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : ''}`}
-          style={{ width: '96px', height: '144px' }}
-          id={index === 0 ? 'trick-card-debug' : undefined}
-          data-player={card.playedBy.name}
-          data-position={card.playedBy.position}
-        >
-          <img
-            src={`/cards/${getCardImage(card)}`}
-            alt={`${card.rank} of ${card.suit}`}
-            className="w-full h-full object-contain trick-card-img"
-          />
-          {isWinningCard && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
-              animate-bounce">
-              +1
+          return (
+            <div
+              key={`${card.suit}-${card.rank}-${index}`}
+              className={`trick-card ${positions[relativePosition]} z-10 transition-all duration-300${isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : ''}`}
+              style={{ width: '96px', height: '144px' }}
+              id={index === 0 ? 'trick-card-debug' : undefined}
+              data-player={card.playedBy.name}
+              data-position={card.playedBy.position}
+            >
+              <img
+                src={`/cards/${getCardImage(card)}`}
+                alt={`${card.rank} of ${card.suit}`}
+                className="w-full h-full object-contain trick-card-img"
+              />
+              {isWinningCard && (
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+                  bg-yellow-400 text-black font-bold rounded-full px-3 py-1
+                  animate-bounce">
+                  +1
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      );
-    }).filter(Boolean);
+          );
+        })}
+      </div>
+    );
   };
 
   const handleLeaveTable = () => {
@@ -1312,10 +1316,18 @@ export default function GameTable({
       {/* Add global style for mobile trick card size */}
       <style jsx global>{`
         @media (max-width: 639px) {
+          .trick-cards-parent {
+            background: rgba(255,0,0,0.1) !important;
+            overflow: visible !important;
+            flex: none !important;
+            max-width: none !important;
+            position: relative !important;
+          }
           #trick-card-debug {
             width: 48px !important;
             height: 72px !important;
             border: 2px solid blue !important;
+            position: relative !important;
           }
           .trick-card-img {
             width: 100% !important;
