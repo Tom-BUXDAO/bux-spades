@@ -1153,10 +1153,11 @@ export default function GameTable({
           {/* Game table area - add padding on top and bottom */}
           <div className="w-[70%] p-2 flex flex-col h-full overflow-hidden">
             {/* Game table with more space top and bottom */}
-            <div className="relative flex-1 mb-2 overflow-hidden" style={{ 
+            <div className="relative mb-2 overflow-hidden" style={{ 
               background: 'radial-gradient(circle at center, #316785 0%, #1a3346 100%)',
               borderRadius: `${Math.floor(64 * scaleFactor)}px`,
-              border: `${Math.floor(2 * scaleFactor)}px solid #855f31`
+              border: `${Math.floor(2 * scaleFactor)}px solid #855f31`,
+              height: windowSize.width < 640 ? '300px' : '100%'
             }}>
               {/* Leave Table button - inside table in top left corner */}
               <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
