@@ -581,7 +581,7 @@ export default function GameTable({
             width={cardUIWidth}
             height={cardUIHeight}
             className="rounded-lg shadow-md"
-            style={{ width: 'auto', height: '100%' }}
+            style={{ width: 'auto', height: 'auto' }}
             priority={true}
           />
           {isWinning && (
