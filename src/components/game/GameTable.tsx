@@ -555,10 +555,10 @@ export default function GameTable({
   const renderTrickCards = () => {
     if (!game?.currentTrick || game.currentTrick.length === 0) return null;
 
-    // Use the same proportions as player hand cards (70x100 on mobile), but scaled down by 0.4
+    // Use EXACTLY the same dimensions as player hand cards, but scaled down
     const isMobile = windowSize.isMobile;
-    const cardUIWidth = Math.floor(isMobile ? 28 : 96 * scaleFactor);  // 70 * 0.4 = 28
-    const cardUIHeight = Math.floor(isMobile ? 40 : 144 * scaleFactor); // 100 * 0.4 = 40
+    const cardUIWidth = Math.floor(isMobile ? 35 : 96 * scaleFactor);  // Half of 70
+    const cardUIHeight = Math.floor(isMobile ? 50 : 144 * scaleFactor); // Half of 100
 
     return game.currentTrick.map((card, index) => {
       const position = getRelativePosition(index);
@@ -581,7 +581,7 @@ export default function GameTable({
             width={cardUIWidth}
             height={cardUIHeight}
             className="rounded-lg shadow-md"
-            style={{ width: `${cardUIWidth}px`, height: `${cardUIHeight}px` }}
+            style={{ width: 'auto', height: '100%' }}
             priority={true}
           />
           {isWinning && (
