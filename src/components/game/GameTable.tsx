@@ -637,6 +637,9 @@ export default function GameTable({
 
   // Keep the getScaleFactor function
   const getScaleFactor = () => {
+    // Don't scale on mobile
+    if (windowSize.width < 640) return 1;
+    
     // Base scale on the screen width compared to a reference size
     const referenceWidth = 1200; // Reference width for desktop
     let scale = Math.min(1, windowSize.width / referenceWidth);
@@ -653,7 +656,7 @@ export default function GameTable({
     setIsMobile(windowSize.isMobile);
   }, [windowSize.isMobile]);
   
-  // Scale dimensions for card images
+  // Scale dimensions for card images - use fixed size on mobile
   const cardWidth = windowSize.width < 640 ? 25 : Math.floor(96 * scaleFactor);
   const cardHeight = windowSize.width < 640 ? 38 : Math.floor(144 * scaleFactor);
   const avatarSize = Math.floor(64 * scaleFactor);
