@@ -555,10 +555,10 @@ export default function GameTable({
   const renderTrickCards = () => {
     if (!game?.currentTrick || game.currentTrick.length === 0) return null;
 
-    // Use EXACTLY the same dimensions as player hand cards, but scaled down
+    // Use EXACTLY the same dimensions and approach as player hand cards
     const isMobile = windowSize.isMobile;
-    const cardUIWidth = Math.floor(isMobile ? 35 : 96 * scaleFactor);  // Half of 70
-    const cardUIHeight = Math.floor(isMobile ? 50 : 144 * scaleFactor); // Half of 100
+    const cardUIWidth = Math.floor(isMobile ? 35 : 84 * scaleFactor);  // Half of player hand width
+    const cardUIHeight = Math.floor(isMobile ? 50 : 120 * scaleFactor); // Half of player hand height
 
     return game.currentTrick.map((card, index) => {
       const position = getRelativePosition(index);
@@ -570,20 +570,18 @@ export default function GameTable({
           className={`absolute ${position} transition-all duration-300 ease-in-out ${
             isWinning ? 'scale-110 z-10' : ''
           }`}
-          style={{
-            width: `${cardUIWidth}px`,
-            height: `${cardUIHeight}px`
-          }}
         >
-          <Image
-            src={`/cards/${getCardImage(card)}`}
-            alt={`${card.rank}${card.suit}`}
-            width={cardUIWidth}
-            height={cardUIHeight}
-            className="rounded-lg shadow-md"
-            style={{ width: 'auto', height: 'auto' }}
-            priority={true}
-          />
+          <div className="relative">
+            <Image
+              src={`/cards/${getCardImage(card)}`}
+              alt={`${card.rank}${card.suit}`}
+              width={cardUIWidth}
+              height={cardUIHeight}
+              className="rounded-lg shadow-md"
+              style={{ width: 'auto', height: 'auto' }}
+              priority={true}
+            />
+          </div>
           {isWinning && (
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-green-500 font-bold">
               +1
