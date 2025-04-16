@@ -534,12 +534,12 @@ export default function GameTable({
 
     if (!cardsToRender.length) return null;
 
-    // Update positions to be responsive
+    // Fixed positions for cards relative to players
     const positions: Record<number, string> = {
-      0: 'absolute bottom-[15%] sm:bottom-[20%] left-1/2 transform -translate-x-1/2',
-      1: 'absolute left-[10%] sm:left-[20%] top-1/2 transform -translate-y-1/2',
-      2: 'absolute top-[15%] sm:top-[20%] left-1/2 transform -translate-x-1/2',
-      3: 'absolute right-[10%] sm:right-[20%] top-1/2 transform -translate-y-1/2'
+      0: 'absolute bottom-[25%] left-1/2 -translate-x-1/2', // Bottom player (current player)
+      1: 'absolute left-[25%] top-1/2 -translate-y-1/2',    // Left player
+      2: 'absolute top-[25%] left-1/2 -translate-x-1/2',    // Top player
+      3: 'absolute right-[25%] top-1/2 -translate-y-1/2'    // Right player
     };
 
     return cardsToRender.map((card, index) => {
@@ -548,7 +548,9 @@ export default function GameTable({
         return null;
       }
 
+      // Calculate relative position based on the current player's position
       const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
+      
       const isWinningCard = showTrickAnimation && 
         completedTrick?.winningCard.suit === card.suit && 
         completedTrick?.winningCard.rank === card.rank;
@@ -556,18 +558,18 @@ export default function GameTable({
       return (
         <div
           key={`${card.suit}-${card.rank}-${index}`}
-          className={`trick-card ${positions[relativePosition as 0|1|2|3]} z-10 transition-all duration-300${isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : ''}`}
+          className={`trick-card ${positions[relativePosition]} z-10 transition-all duration-300${isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : ''}`}
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
         >
           <img
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank} of ${card.suit}`}
-            className="w-full h-full object-contain trick-card-img"
+            className="trick-card-img"
           />
           {isWinningCard && (
-            <div className="absolute -top-6 sm:-top-8 left-1/2 transform -translate-x-1/2 
-              bg-yellow-400 text-black font-bold rounded-full px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 
+              bg-yellow-400 text-black font-bold rounded-full px-2 py-0.5 text-xs
               animate-bounce">
               +1
             </div>
