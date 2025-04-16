@@ -560,8 +560,8 @@ export default function GameTable({
 
       // Calculate card dimensions using the same approach as player's hand
       const isMobile = windowSize.width < 640;
-      const trickCardWidth = windowSize.width < 640 ? 48 : Math.floor(96 * getScaleFactor());
-      const trickCardHeight = windowSize.width < 640 ? 72 : Math.floor(144 * getScaleFactor());
+      const trickCardWidth = windowSize.width < 640 ? 25 : Math.floor(96 * getScaleFactor());
+      const trickCardHeight = windowSize.width < 640 ? 38 : Math.floor(144 * getScaleFactor());
 
       return (
         <div
@@ -654,8 +654,8 @@ export default function GameTable({
   }, [windowSize.isMobile]);
   
   // Scale dimensions for card images
-  const cardWidth = windowSize.width < 640 ? 48 : Math.floor(96 * scaleFactor);
-  const cardHeight = windowSize.width < 640 ? 72 : Math.floor(144 * scaleFactor);
+  const cardWidth = windowSize.width < 640 ? 25 : Math.floor(96 * scaleFactor);
+  const cardHeight = windowSize.width < 640 ? 38 : Math.floor(144 * scaleFactor);
   const avatarSize = Math.floor(64 * scaleFactor);
   
   // Player positions mapping - responsive
