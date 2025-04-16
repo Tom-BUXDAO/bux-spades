@@ -557,8 +557,8 @@ export default function GameTable({
 
     // Calculate card dimensions using the same approach as player hand
     const isMobile = windowSize.isMobile;
-    const cardUIWidth = Math.floor(isMobile ? 24 : 96 * scaleFactor);  // Reduced further from 27 to 24
-    const cardUIHeight = Math.floor(isMobile ? 36 : 144 * scaleFactor); // Reduced further from 40 to 36
+    const cardUIWidth = Math.floor(isMobile ? 16 : 96 * scaleFactor);  // MUCH smaller on mobile - from 24 to 16
+    const cardUIHeight = Math.floor(isMobile ? 24 : 144 * scaleFactor); // MUCH smaller on mobile - from 36 to 24
 
     return game.currentTrick.map((card, index) => {
       const position = getRelativePosition(index);
@@ -574,7 +574,9 @@ export default function GameTable({
             width: `${cardUIWidth}px`,
             height: `${cardUIHeight}px`,
             maxWidth: `${cardUIWidth}px`,
-            maxHeight: `${cardUIHeight}px`
+            maxHeight: `${cardUIHeight}px`,
+            minWidth: `${cardUIWidth}px`,
+            minHeight: `${cardUIHeight}px`
           }}
         >
           <Image
@@ -587,7 +589,9 @@ export default function GameTable({
               width: `${cardUIWidth}px`, 
               height: `${cardUIHeight}px`,
               maxWidth: `${cardUIWidth}px`,
-              maxHeight: `${cardUIHeight}px`
+              maxHeight: `${cardUIHeight}px`,
+              minWidth: `${cardUIWidth}px`,
+              minHeight: `${cardUIHeight}px`
             }}
             priority={true}
           />
