@@ -2,7 +2,7 @@ import { calculateHandScore, isGameOver } from '@/lib/scoring';
 import { Player, HandSummary } from '@/types/game';
 import WinnerModal from './WinnerModal';
 import LoserModal from './LoserModal';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 interface HandSummaryModalProps {
@@ -40,14 +40,50 @@ export default function HandSummaryModal({
   // Check if game is over
   const { isOver: gameIsOver, winner } = isGameOver(team1Score, team2Score, minPoints, maxPoints);
   
+  // State for winner/loser modals
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [showLoserModal, setShowLoserModal] = useState(false);
+  
   // Call onGameOver if game is over
   useEffect(() => {
     if (gameIsOver && winner && onGameOver) {
       onGameOver(winner);
+      
+      // Show appropriate modal based on winner
+      if (winner === 1) {
+        setShowWinnerModal(true);
+      } else {
+        setShowLoserModal(true);
+      }
     }
   }, [gameIsOver, winner, onGameOver]);
   
   if (!isOpen) return null;
+  
+  // If game is over, show winner/loser modal instead of hand summary
+  if (gameIsOver && winner) {
+    return (
+      <>
+        {winner === 1 ? (
+          <WinnerModal 
+            isOpen={showWinnerModal} 
+            onClose={onClose} 
+            team1Score={team1Score} 
+            team2Score={team2Score} 
+            winningTeam={1} 
+          />
+        ) : (
+          <LoserModal 
+            isOpen={showLoserModal} 
+            onClose={onClose} 
+            team1Score={team1Score} 
+            team2Score={team2Score} 
+            winningTeam={2} 
+          />
+        )}
+      </>
+    );
+  }
   
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -147,7 +183,7 @@ export default function HandSummaryModal({
             onClick={onClose}
             className="px-4 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-blue-800 text-white font-medium rounded shadow hover:from-blue-700 hover:to-blue-900 transition-all"
           >
-            {gameIsOver ? "Continue" : "Next Hand"}
+            Next Hand
           </button>
         </div>
       </div>
