@@ -569,6 +569,10 @@ export default function GameTable({
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank} of ${card.suit}`}
             className="w-full h-full object-contain"
+            style={{ 
+              maxWidth: windowSize.width < 640 ? '64px' : '96px',
+              maxHeight: windowSize.width < 640 ? '96px' : '144px'
+            }}
           />
           {isWinningCard && (
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
