@@ -556,10 +556,14 @@ export default function GameTable({
       return (
         <div
           key={`${card.suit}-${card.rank}-${index}`}
-          className={`${positions[relativePosition]} w-24 h-36 z-10 transition-all duration-300
+          className={`${positions[relativePosition]} z-10 transition-all duration-300
             ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
+          style={{ 
+            width: windowSize.width < 640 ? '64px' : '96px',
+            height: windowSize.width < 640 ? '96px' : '144px'
+          }}
         >
           <img
             src={`/cards/${getCardImage(card)}`}
