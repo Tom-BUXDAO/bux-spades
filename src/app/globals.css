@@ -25,25 +25,3 @@ body {
   overflow-x: hidden;
   position: relative;
 }
-
-/* Desktop trick card size */
-.trick-card {
-  width: 96px;
-  height: 144px;
-  position: relative;
-}
-
-/* Mobile trick card size */
-@media (max-width: 639px) {
-  .trick-card {
-    width: 48px !important;
-    height: 72px !important;
-    position: relative !important;
-  }
-}
-
-.trick-card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}

@@ -534,23 +534,21 @@ export default function GameTable({
 
     if (!cardsToRender.length) return null;
 
-    // Fixed positions for cards relative to players
-    const positions: Record<number, string> = {
-      0: 'absolute bottom-[25%] left-1/2 -translate-x-1/2', // Bottom player (current player)
-      1: 'absolute left-[25%] top-1/2 -translate-y-1/2',    // Left player
-      2: 'absolute top-[25%] left-1/2 -translate-x-1/2',    // Top player
-      3: 'absolute right-[25%] top-1/2 -translate-y-1/2'    // Right player
-    };
-
     return cardsToRender.map((card, index) => {
       if (!card.playedBy) {
         console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
         return null;
       }
 
-      // Calculate relative position based on the current player's position
       const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
-      
+
+      const positions: Record<number, string> = {
+        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
+      };
+
       const isWinningCard = showTrickAnimation && 
         completedTrick?.winningCard.suit === card.suit && 
         completedTrick?.winningCard.rank === card.rank;
@@ -558,25 +556,26 @@ export default function GameTable({
       return (
         <div
           key={`${card.suit}-${card.rank}-${index}`}
-          className={`trick-card ${positions[relativePosition]} z-10 transition-all duration-300${isWinningCard ? ' ring-4 ring-yellow-400 scale-110' : ''}`}
+          className={`${positions[relativePosition]} w-24 h-36 z-10 transition-all duration-300
+            ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
           data-player={card.playedBy.name}
           data-position={card.playedBy.position}
         >
           <img
             src={`/cards/${getCardImage(card)}`}
             alt={`${card.rank} of ${card.suit}`}
-            className="trick-card-img"
+            className="w-full h-full object-contain"
           />
           {isWinningCard && (
-            <div className="absolute -top-6 left-1/2 -translate-x-1/2 
-              bg-yellow-400 text-black font-bold rounded-full px-2 py-0.5 text-xs
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
               animate-bounce">
               +1
             </div>
           )}
         </div>
       );
-    });
+    }).filter(Boolean);
   };
 
   const handleLeaveTable = () => {
@@ -1309,17 +1308,6 @@ export default function GameTable({
           />
         )}
       </div>
-      {/* Remove conflicting mobile styles */}
-      <style jsx global>{`
-        @media (max-width: 639px) {
-          .trick-cards-parent {
-            overflow: visible !important;
-            flex: none !important;
-            max-width: none !important;
-            position: relative !important;
-          }
-        }
-      `}</style>
     </>
   );
 }
