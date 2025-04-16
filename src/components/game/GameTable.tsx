@@ -528,41 +528,29 @@ export default function GameTable({
 
   // Modify renderTrickCards to show animation
   const getRelativePosition = (index: number): string => {
-    // Get the player who played this card
-    const card = game.currentTrick[index];
-    if (!card || !card.playedBy) return '';
-
-    // Calculate the relative position based on who played the card
-    const playerPosition = card.playedBy.position;
-    const relativePos = (4 + playerPosition - currentPlayerPosition) % 4;
-
-    // Position cards based on the relative position of the player who played them
     const positions: Record<number, string> = windowSize.width < 640 ? {
-      0: 'bottom-12 left-1/2 transform -translate-x-1/2',  // Current player's position (moved up)
-      1: 'left-6 top-1/2 transform -translate-y-1/2',      // Player to the left (moved in)
-      2: 'top-12 left-1/2 transform -translate-x-1/2',     // Player opposite (moved down)
-      3: 'right-6 top-1/2 transform -translate-y-1/2'      // Player to the right (moved in)
+      0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
+      1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
+      2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
+      3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
     } : {
-      0: 'bottom-[20%] left-1/2 transform -translate-x-1/2',
-      1: 'left-[20%] top-1/2 transform -translate-y-1/2',
-      2: 'top-[20%] left-1/2 transform -translate-x-1/2',
-      3: 'right-[20%] top-1/2 transform -translate-y-1/2'
+      0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
+      1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
+      2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
+      3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
     };
-
-    return positions[relativePos] || '';
+    return positions[index] || '';
   };
 
   const renderTrickCards = () => {
     if (!game?.currentTrick || game.currentTrick.length === 0) return null;
 
-    // Use EXACTLY the same dimensions and approach as player hand cards
-    const isMobile = windowSize.isMobile;
-    const cardUIWidth = Math.floor(isMobile ? 35 : 84 * scaleFactor);  // Half of player hand width
-    const cardUIHeight = Math.floor(isMobile ? 50 : 120 * scaleFactor); // Half of player hand height
-
     return game.currentTrick.map((card, index) => {
       const position = getRelativePosition(index);
       const isWinning = winningCardIndex === index;
+      const isMobile = windowSize.isMobile;
+      const cardUIWidth = Math.floor(isMobile ? 38 : 96 * scaleFactor);
+      const cardUIHeight = Math.floor(isMobile ? 38 : 144 * scaleFactor);
 
       return (
         <div
@@ -570,18 +558,20 @@ export default function GameTable({
           className={`absolute ${position} transition-all duration-300 ease-in-out ${
             isWinning ? 'scale-110 z-10' : ''
           }`}
+          style={{
+            width: `${cardUIWidth}px`,
+            height: `${cardUIHeight}px`
+          }}
         >
-          <div className="relative">
-            <Image
-              src={`/cards/${getCardImage(card)}`}
-              alt={`${card.rank}${card.suit}`}
-              width={cardUIWidth}
-              height={cardUIHeight}
-              className="rounded-lg shadow-md"
-              style={{ width: 'auto', height: 'auto' }}
-              priority={true}
-            />
-          </div>
+          <img
+            src={`/cards/${getCardImage(card)}`}
+            alt={`${card.rank} of ${card.suit}`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
           {isWinning && (
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-green-500 font-bold">
               +1
