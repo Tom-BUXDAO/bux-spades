@@ -514,7 +514,11 @@ export default function GameTable({
         const scores = calculateHandScore(game.players);
         setCurrentHandSummary({
           team1Score: { ...scores.team1, team: 1 },
-          team2Score: { ...scores.team2, team: 2 }
+          team2Score: { ...scores.team2, team: 2 },
+          totalScores: {
+            team1: game.scores.team1 || 0,
+            team2: game.scores.team2 || 0
+          }
         });
         setShowHandSummary(true);
       }
@@ -1048,7 +1052,11 @@ export default function GameTable({
       // Set the hand scores and show the modal
       setCurrentHandSummary({
         team1Score: { ...calculatedScores.team1, team: 1 },
-        team2Score: { ...calculatedScores.team2, team: 2 }
+        team2Score: { ...calculatedScores.team2, team: 2 },
+        totalScores: {
+          team1: game.scores.team1 || 0,
+          team2: game.scores.team2 || 0
+        }
       });
       setShowHandSummary(true);
     };

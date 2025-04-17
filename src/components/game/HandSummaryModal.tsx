@@ -23,12 +23,17 @@ export default function HandSummaryModal({
   onGameOver
 }: HandSummaryModalProps) {
   // Add null checks for handScores
-  const team1Score = handScores?.team1Score?.score || 0;
-  const team2Score = handScores?.team2Score?.score || 0;
+  const team1HandScore = handScores?.team1Score?.score || 0;
+  const team2HandScore = handScores?.team2Score?.score || 0;
   const team1Bid = handScores?.team1Score?.bid || 0;
   const team2Bid = handScores?.team2Score?.bid || 0;
   const team1Tricks = handScores?.team1Score?.tricks || 0;
   const team2Tricks = handScores?.team2Score?.tricks || 0;
+  
+  // Use total scores for game over check
+  const team1Score = handScores?.totalScores?.team1 || 0;
+  const team2Score = handScores?.totalScores?.team2 || 0;
+  
   // Calculate bags as tricks over bid
   const team1Bags = team1Tricks > team1Bid ? team1Tricks - team1Bid : 0;
   const team2Bags = team2Tricks > team2Bid ? team2Tricks - team2Bid : 0;
@@ -37,7 +42,7 @@ export default function HandSummaryModal({
   const team1MadeNils = handScores?.team1Score?.madeNils || 0;
   const team2MadeNils = handScores?.team2Score?.madeNils || 0;
   
-  // Check if game is over
+  // Check if game is over using total scores
   const { isOver: gameIsOver, winner } = isGameOver(team1Score, team2Score, minPoints, maxPoints);
   
   // State for winner/loser modals
@@ -100,7 +105,12 @@ export default function HandSummaryModal({
             
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400">Score</span>
+                <span className="text-gray-400">Hand Score</span>
+                <span className="font-medium text-white">{team1HandScore}</span>
+              </div>
+              
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Total Score</span>
                 <span className="font-medium text-white">{team1Score}</span>
               </div>
               
@@ -143,7 +153,12 @@ export default function HandSummaryModal({
             
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-gray-400">Score</span>
+                <span className="text-gray-400">Hand Score</span>
+                <span className="font-medium text-white">{team2HandScore}</span>
+              </div>
+              
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Total Score</span>
                 <span className="font-medium text-white">{team2Score}</span>
               </div>
               

@@ -89,4 +89,8 @@ export interface CompletedTrick {
 export interface HandSummary {
   team1Score: TeamScore;
   team2Score: TeamScore;
+  totalScores: {
+    team1: number;
+    team2: number;
+  };
 } 
