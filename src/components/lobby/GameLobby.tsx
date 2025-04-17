@@ -410,11 +410,27 @@ export default function GameLobby({
                     min = rules.minPoints;
                     nil = rules.allowNil ? '✅N' : '❌N';
                     bn = rules.allowBlindNil ? '✅BN' : '❌BN';
-                    gameType = rules.gameType;
+                    // Map game type to display value
+                    switch (rules.gameType) {
+                      case 'REGULAR':
+                        gameType = 'REG';
+                        break;
+                      case 'WHIZ':
+                        gameType = 'WHIZ';
+                        break;
+                      case 'SOLO':
+                        gameType = 'SOLO';
+                        break;
+                      case 'MIRROR':
+                        gameType = 'MIRR';
+                        break;
+                      default:
+                        gameType = 'REG';
+                    }
                   }
                   return (
                     <h3 className="text-sm font-medium">
-                      {gameType} {max}/{min} {gameType === 'REGULAR' || gameType === 'SOLO' ? `${nil} ${bn}` : ''}
+                      {gameType} {max}/{min} {gameType === 'REG' || gameType === 'SOLO' ? `${nil} ${bn}` : ''}
                     </h3>
                   );
                 })()}

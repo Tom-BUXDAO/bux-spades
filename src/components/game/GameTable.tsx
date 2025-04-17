@@ -1223,10 +1223,14 @@ export default function GameTable({
                         Table Details
                       </div>
                       <div className="flex flex-col gap-1">
-                        <div><span className="text-gray-400">Type:</span> REGULAR</div>
+                        <div><span className="text-gray-400">Type:</span> {game.rules?.gameType || 'REGULAR'}</div>
                         <div><span className="text-gray-400">Points:</span> {game.rules?.maxPoints ?? 500}/{game.rules?.minPoints ?? -150}</div>
-                        <div><span className="text-gray-400">Nil:</span> {game.rules?.allowNil ? '✅ Allowed' : '❌ Not allowed'}</div>
-                        <div><span className="text-gray-400">Blind Nil:</span> {game.rules?.allowBlindNil ? '✅ Allowed' : '❌ Not allowed'}</div>
+                        {(game.rules?.gameType === 'REGULAR' || game.rules?.gameType === 'SOLO') && (
+                          <>
+                            <div><span className="text-gray-400">Nil:</span> {game.rules?.allowNil ? '✅ Allowed' : '❌ Not allowed'}</div>
+                            <div><span className="text-gray-400">Blind Nil:</span> {game.rules?.allowBlindNil ? '✅ Allowed' : '❌ Not allowed'}</div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
