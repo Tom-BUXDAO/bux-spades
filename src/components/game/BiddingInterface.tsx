@@ -61,21 +61,26 @@ export default function BiddingInterface({
             <h2 className="text-lg max-sm:text-base font-bold text-white">Make Your Bid</h2>
             <p className="text-sm max-sm:text-xs text-gray-300">You have {numSpades} spades</p>
           </div>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col gap-3">
             <button
-              onClick={() => handleSubmit(numSpades)}
-              className={`${numberButtonClass} px-6 h-12 md:h-10 sm:h-9 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg`}
+              onClick={() => setSelectedBid(numSpades)}
+              className={`${numberButtonClass} px-6 h-12 md:h-10 sm:h-9 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center ${selectedBid === numSpades ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black ring-2 ring-yellow-200 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}
             >
-              {numSpades}
+              Bid {numSpades}
             </button>
-            {numSpades === 0 && (
-              <button
-                onClick={() => handleSubmit(0)}
-                className={`${numberButtonClass} px-6 h-12 md:h-10 sm:h-9 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-700 text-white ring-2 ring-blue-300 shadow-lg`}
-              >
-                Nil
-              </button>
-            )}
+            <button
+              onClick={() => setSelectedBid(0)}
+              className={`${numberButtonClass} px-6 h-12 md:h-10 sm:h-9 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center ${selectedBid === 0 ? 'bg-gradient-to-br from-blue-500 to-blue-700 text-white ring-2 ring-blue-300 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}
+            >
+              Nil
+            </button>
+            <button
+              onClick={() => selectedBid !== null && handleSubmit(selectedBid)}
+              disabled={selectedBid === null}
+              className={`${bottomButtonClass} px-6 h-12 md:h-10 sm:h-9 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center ${selectedBid !== null ? 'bg-gradient-to-br from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}
+            >
+              Confirm
+            </button>
           </div>
         </div>
       </div>
