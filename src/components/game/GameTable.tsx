@@ -497,42 +497,26 @@ export default function GameTable({
   } | null>(null);
   const [showTrickAnimation, setShowTrickAnimation] = useState(false);
 
-  // Effect to handle trick completion event
+  // Effect to handle trick completion
   useEffect(() => {
     if (!socket) return;
 
     const handleTrickComplete = (trick: CompletedTrick) => {
       console.log('Trick completed:', trick);
-      setCompletedTrick(trick);
-      setShowTrickAnimation(true);
+      
+      // Wait for all 4 cards to be rendered
+      if (game.currentTrick.length === 4) {
+        // Hold for 2 seconds to show all cards
+        setTimeout(() => {
+          setCompletedTrick(trick);
+          setShowTrickAnimation(true);
 
-      // Clear animation after delay
-      setTimeout(() => {
-        setShowTrickAnimation(false);
-        setCompletedTrick(null);
-      }, 2000);
-
-      // Check if hand is complete (all 13 tricks played)
-      const isHandComplete = game.completedTricks.length === 13;
-      if (isHandComplete) {
-        // Calculate hand summary before moving to next hand
-        const scores = calculateHandScore(game.players);
-        const handSummary: HandSummary = {
-          team1Score: { ...scores.team1, team: 1 as const },
-          team2Score: { ...scores.team2, team: 2 as const },
-          totalScores: {
-            team1: game.scores.team1 || 0,
-            team2: game.scores.team2 || 0
-          }
-        };
-        setCurrentHandSummary(handSummary);
-        setShowHandSummary(true);
-
-        // Send the hand scores to the server
-        socket.emit('update_hand_scores', {
-          gameId: game.id,
-          handScores: handSummary
-        });
+          // Hold for 4 more seconds showing winning card and animation
+          setTimeout(() => {
+            setShowTrickAnimation(false);
+            setCompletedTrick(null);
+          }, 4000);
+        }, 2000);
       }
     };
 
@@ -541,78 +525,15 @@ export default function GameTable({
     return () => {
       socket.off('trick_complete', handleTrickComplete);
     };
-  }, [socket, game.completedTricks]);
+  }, [socket, game.currentTrick]);
 
-  // Modify renderTrickCards to show animation
-  const renderTrickCards = () => {
-    const cardsToRender = showTrickAnimation && completedTrick 
-      ? completedTrick.cards 
-      : game?.currentTrick || [];
-
-    if (!cardsToRender.length) return null;
-
-    return cardsToRender.map((card, index) => {
-      if (!card.playedBy) {
-        console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
-        return null;
-      }
-
-      const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
-
-      const positions: Record<number, string> = windowSize.width < 640 ? {
-        0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
-        1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
-        2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
-        3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
-      } : {
-        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
-        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
-        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
-        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
-      };
-
-      const isWinningCard = showTrickAnimation && 
-        completedTrick?.winningCard.suit === card.suit && 
-        completedTrick?.winningCard.rank === card.rank;
-
-      // Calculate card dimensions using the same approach as player's hand
-      const isMobile = windowSize.width < 640;
-      const trickCardWidth = windowSize.width < 640 ? 25 : Math.floor(96 * getScaleFactor());
-      const trickCardHeight = windowSize.width < 640 ? 38 : Math.floor(144 * getScaleFactor());
-
-      return (
-        <div
-          key={`${card.suit}-${card.rank}-${index}`}
-          className={`${positions[relativePosition]} z-10 transition-all duration-300
-            ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
-          style={{
-            width: `${trickCardWidth}px`,
-            height: `${trickCardHeight}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 'unset'
-          }}
-        >
-          <img
-            src={`/cards/${getCardImage(card)}`}
-            alt={`${card.rank} of ${card.suit}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain'
-            }}
-          />
-          {isWinningCard && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
-              animate-bounce">
-              +1
-            </div>
-          )}
-        </div>
-      );
-    }).filter(Boolean);
+  // Add CSS classes for card animations
+  const cardAnimationClass = (card: Card) => {
+    if (!showTrickAnimation || !completedTrick) return '';
+    
+    return card === completedTrick.winningCard
+      ? 'opacity-100 scale-110 border-2 border-yellow-400 z-10'
+      : 'opacity-40 scale-95';
   };
 
   const handleLeaveTable = () => {
@@ -1023,8 +944,8 @@ export default function GameTable({
   // Calculate scores
   const team1Score = game?.scores?.['team1'] ?? 0;
   const team2Score = game?.scores?.['team2'] ?? 0;
-  const team1Bags = Math.abs(team1Score) % 10;
-  const team2Bags = Math.abs(team2Score) % 10;
+  const team1Bags = game?.team1Bags ?? 0;
+  const team2Bags = game?.team2Bags ?? 0;
 
   // Utility function to get player for a card if the mapping is missing that card
   const getPlayerForCardIndex = (index: number, existingMapping: Record<string, string>) => {
@@ -1118,6 +1039,77 @@ export default function GameTable({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showGameInfo]);
+
+  const renderTrickCards = () => {
+    const cardsToRender = showTrickAnimation && completedTrick 
+      ? completedTrick.cards 
+      : game?.currentTrick || [];
+
+    if (!cardsToRender.length) return null;
+
+    return cardsToRender.map((card, index) => {
+      if (!card.playedBy) {
+        console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
+        return null;
+      }
+
+      const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
+
+      const positions: Record<number, string> = windowSize.width < 640 ? {
+        0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
+      } : {
+        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
+        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
+        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
+        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
+      };
+
+      const isWinningCard = showTrickAnimation && 
+        completedTrick?.winningCard.suit === card.suit && 
+        completedTrick?.winningCard.rank === card.rank;
+
+      // Calculate card dimensions using the same approach as player's hand
+      const isMobile = windowSize.width < 640;
+      const trickCardWidth = windowSize.width < 640 ? 25 : Math.floor(96 * getScaleFactor());
+      const trickCardHeight = windowSize.width < 640 ? 38 : Math.floor(144 * getScaleFactor());
+
+      return (
+        <div
+          key={`${card.suit}-${card.rank}-${index}`}
+          className={`${positions[relativePosition]} z-10 transition-all duration-500
+            ${isWinningCard ? 'opacity-100 scale-110 border-2 border-yellow-400 z-10' : showTrickAnimation ? 'opacity-40 scale-95' : ''}`}
+          style={{
+            width: `${trickCardWidth}px`,
+            height: `${trickCardHeight}px`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 'unset'
+          }}
+        >
+          <img
+            src={`/cards/${getCardImage(card)}`}
+            alt={`${card.rank} of ${card.suit}`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
+          {isWinningCard && showTrickAnimation && (
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
+              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
+              animate-bounce">
+              +1
+            </div>
+          )}
+        </div>
+      );
+    }).filter(Boolean);
+  };
 
   // Return the JSX for the component
   return (
