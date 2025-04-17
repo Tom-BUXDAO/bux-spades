@@ -1265,6 +1265,7 @@ export default function GameTable({
                       gameType={game.rules.gameType}
                       numSpades={currentPlayer ? countSpades(currentPlayer.hand) : 0}
                       isCurrentPlayer={game.currentPlayer === currentPlayerId}
+                      allowNil={game.rules.allowNil}
                     />
                   </div>
                 ) : game.status === "BIDDING" && game.currentPlayer !== currentPlayerId ? (

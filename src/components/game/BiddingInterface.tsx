@@ -10,6 +10,7 @@ interface BiddingProps {
   gameType: GameType;
   numSpades: number; // Number of spades in player's hand
   isCurrentPlayer: boolean;
+  allowNil?: boolean; // Add allowNil prop
 }
 
 // Assign a unique class name for direct targeting
@@ -26,7 +27,8 @@ export default function BiddingInterface({
   currentPlayerTurn,
   gameType,
   numSpades,
-  isCurrentPlayer
+  isCurrentPlayer,
+  allowNil = true // Default to true for backward compatibility
 }: BiddingProps) {
   const [selectedBid, setSelectedBid] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -141,12 +143,14 @@ export default function BiddingInterface({
 
             {/* Bottom row: Nil and Submit */}
             <div className="flex justify-center gap-3 max-sm:gap-2 mt-3">
-              <button
-                onClick={() => setSelectedBid(0)}
-                className={`${numberButtonClass} px-6 h-12 md:h-10 sm:h-9 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center ${selectedBid === 0 ? 'bg-gradient-to-br from-blue-500 to-blue-700 text-white ring-2 ring-blue-300 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}
-              >
-                Nil
-              </button>
+              {allowNil && (
+                <button
+                  onClick={() => setSelectedBid(0)}
+                  className={`${numberButtonClass} px-6 h-12 md:h-10 sm:h-9 max-sm:h-8 rounded-md text-xl md:text-lg sm:text-base max-sm:text-sm font-bold transition-all flex items-center justify-center ${selectedBid === 0 ? 'bg-gradient-to-br from-blue-500 to-blue-700 text-white ring-2 ring-blue-300 shadow-lg' : 'bg-gray-700/80 hover:bg-gray-600/90 text-white'}`}
+                >
+                  Nil
+                </button>
+              )}
               <button
                 onClick={() => selectedBid !== null && handleSubmit(selectedBid)}
                 disabled={selectedBid === null}
