@@ -57,27 +57,31 @@ export function calculateHandScore(players: Player[]): { team1: TeamScore; team2
   team2.score += team2.madeNils * 100;
   team2.score -= (team2.nilBids - team2.madeNils) * 100;
 
-  // Score regular bids
-  if (team1.tricks >= team1.bid) {
-    team1.score += team1.bid * 10;  // Points for making bid
-    if (team1.tricks > team1.bid) {
+  // Calculate non-nil bids
+  const team1NonNilBid = team1.bid - (team1.nilBids * 0); // Nil bids don't count towards team bid
+  const team2NonNilBid = team2.bid - (team2.nilBids * 0); // Nil bids don't count towards team bid
+
+  // Score regular bids - team must make their combined bid
+  if (team1.tricks >= team1NonNilBid) {
+    team1.score += team1NonNilBid * 10;  // Points for making bid
+    if (team1.tricks > team1NonNilBid) {
       // Only overbooks (tricks above bid) count as bags
-      team1.bags = team1.tricks - team1.bid;
+      team1.bags = team1.tricks - team1NonNilBid;
       team1.score += team1.bags;  // Each bag worth 1 point
     }
   } else {
-    team1.score -= team1.bid * 10;  // Penalty for not making bid
+    team1.score -= team1NonNilBid * 10;  // Penalty for not making bid
   }
 
-  if (team2.tricks >= team2.bid) {
-    team2.score += team2.bid * 10;  // Points for making bid
-    if (team2.tricks > team2.bid) {
+  if (team2.tricks >= team2NonNilBid) {
+    team2.score += team2NonNilBid * 10;  // Points for making bid
+    if (team2.tricks > team2NonNilBid) {
       // Only overbooks (tricks above bid) count as bags
-      team2.bags = team2.tricks - team2.bid;
+      team2.bags = team2.tricks - team2NonNilBid;
       team2.score += team2.bags;  // Each bag worth 1 point
     }
   } else {
-    team2.score -= team2.bid * 10;  // Penalty for not making bid
+    team2.score -= team2NonNilBid * 10;  // Penalty for not making bid
   }
 
   return { team1, team2 };
