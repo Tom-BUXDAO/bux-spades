@@ -1,12 +1,12 @@
 import { useState } from 'react';
 
+export type GameType = 'REGULAR' | 'WHIZ' | 'SOLO' | 'MIRROR';
+
 interface GameRulesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (rules: GameRules) => void;
 }
-
-export type GameType = 'REGULAR' | 'WHIZ' | 'SOLO' | 'MIRROR';
 
 export interface GameRules {
   gameType: GameType;
@@ -37,7 +37,7 @@ export default function GameRulesModal({ isOpen, onClose, onSave }: GameRulesMod
     const newValue = currentValue + delta;
     
     // Validate ranges
-    if (type === 'min' && newValue >= -100 && newValue <= -250) {
+    if (type === 'min' && newValue >= -250 && newValue <= -100) {
       setRules({ ...rules, minPoints: newValue });
     } else if (type === 'max' && newValue >= 100 && newValue <= 650) {
       setRules({ ...rules, maxPoints: newValue });

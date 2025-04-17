@@ -1,13 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from './index';
+import type { Card } from '@/types/game';
+import type { GameRules } from '@/components/lobby/GameRulesModal';
+
+export type GameType = 'REGULAR' | 'WHIZ' | 'SOLO' | 'MIRROR';
 
 export interface GameState {
   id: string;
   status: 'WAITING' | 'BIDDING' | 'PLAYING' | 'FINISHED';
+  gameType: GameType;
   players: Player[];
   currentPlayer?: string;
   scores?: { team1: number, team2: number };
-  currentTrick?: any[];
+  currentTrick?: Card[];
+  winningTeam?: 'team1' | 'team2';
+  rules?: GameRules;
+  team1Score?: number;
+  team2Score?: number;
+  team1Bags?: number;
+  team2Bags?: number;
   round?: number;
   tricks?: any[];
   // Add other game state properties as needed
