@@ -972,83 +972,7 @@ export default function GameTable({
     );
   };
 
-  // Effect to handle hand summary event from server
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleHandSummary = (data: HandSummary) => {
-      console.log("Received hand_summary event:", data);
-      // Only update if data is valid (nonzero scores)
-      if (
-        data &&
-        ((data.team1Score && data.team1Score.score !== 0) ||
-         (data.team2Score && data.team2Score.score !== 0))
-      ) {
-        setCurrentHandSummary(data); // Store the received hand scores
-        setShowHandSummary(true); // Show the modal
-      } else {
-        console.warn("Ignoring empty or zero hand summary data", data);
-      }
-    };
-
-    socket.on('hand_summary', handleHandSummary);
-
-    return () => {
-      socket.off('hand_summary', handleHandSummary);
-    };
-  }, [socket]);
-
-  const handleHandSummaryClose = () => {
-    setShowHandSummary(false);
-    setCurrentHandSummary(null); // Only clear summary when modal is closed
-  };
-
-  const handleGameOver = (winner: 1 | 2) => {
-    setShowHandSummary(false);
-    setCurrentHandSummary(null);
-    if (winner === 1) {
-      setShowWinner(true);
-    } else {
-      setShowLoser(true);
-    }
-  };
-
-  // Add state to track the server-determined winner
-  const [serverWinningCard, setServerWinningCard] = useState<{rank: number | string, suit: Suit} | null>(null);
-  const [serverWinningPlayerId, setServerWinningPlayerId] = useState<string | null>(null);
-
-  // Use effect to handle the server trick winner determination
-  useEffect(() => {
-    let cleanupListener: (() => void) | undefined;
-    
-    if (socket) {
-      // Set up the trick winner handler with a callback
-      cleanupListener = debugTrickWinner(socket, game.id, (data) => {
-        console.log('✅ CLIENT RECEIVED WINNER:', data);
-        if (data.winningCard && data.winningPlayerId) {
-          // Convert to the correct Card type
-          setServerWinningCard({
-            rank: data.winningCard.rank,
-            suit: data.winningCard.suit as Suit
-          });
-          setServerWinningPlayerId(data.winningPlayerId);
-          
-          // Clear the winner after 3 seconds (when the next trick starts)
-          setTimeout(() => {
-            setServerWinningCard(null);
-            setServerWinningPlayerId(null);
-          }, 3000);
-        }
-      });
-    }
-    
-    // Clean up the listener when component unmounts
-    return () => {
-      if (cleanupListener) cleanupListener();
-    };
-  }, [socket, game.id]);
-
-  // Add a useEffect to listen for hand completion and display the hand summary
+  // Effect to handle hand completion
   useEffect(() => {
     if (!socket) return;
 
@@ -1062,22 +986,15 @@ export default function GameTable({
       console.log('Hand scores calculated:', calculatedScores);
       
       // Set the hand scores and show the modal
-      const handSummary: HandSummary = {
+      setCurrentHandSummary({
         team1Score: { ...calculatedScores.team1, team: 1 as const },
         team2Score: { ...calculatedScores.team2, team: 2 as const },
         totalScores: {
           team1: game.scores.team1 || 0,
           team2: game.scores.team2 || 0
         }
-      };
-      setCurrentHandSummary(handSummary);
-      setShowHandSummary(true);
-
-      // Send the hand scores to the server
-      socket.emit('update_hand_scores', {
-        gameId: game.id,
-        handScores: handSummary
       });
+      setShowHandSummary(true);
     };
     
     // Register event listener for hand completion
@@ -1367,12 +1284,23 @@ export default function GameTable({
         {showHandSummary && (
           <HandSummaryModal
             isOpen={showHandSummary}
-            onClose={handleHandSummaryClose}
+            onClose={() => {
+              setShowHandSummary(false);
+              setCurrentHandSummary(null);
+            }}
             // Pass the received hand scores state
             handScores={currentHandSummary} 
             minPoints={game.minPoints}
             maxPoints={game.maxPoints}
-            onGameOver={handleGameOver}
+            onGameOver={(winner) => {
+              setShowHandSummary(false);
+              setCurrentHandSummary(null);
+              if (winner === 1) {
+                setShowWinner(true);
+              } else {
+                setShowLoser(true);
+              }
+            }}
           />
         )}
 
