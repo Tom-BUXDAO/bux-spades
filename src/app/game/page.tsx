@@ -98,11 +98,14 @@ export default function GamePage() {
   // Create wrapper functions to match old API
   const createGame = (user: any, rules?: any) => {
     if (!socket) return;
-    // Ensure minPoints and maxPoints are included in the rules
+    // Create a complete gameRules object with defaults
     const gameRules = {
-      ...rules,
-      minPoints: rules?.minPoints ?? -250,
-      maxPoints: rules?.maxPoints ?? 500
+      gameType: 'REGULAR',
+      allowNil: true,
+      allowBlindNil: false,
+      minPoints: -250,
+      maxPoints: 500,
+      ...rules // Spread any provided rules on top of defaults
     };
     socketApi.createGame(socket, user, gameRules);
   };
