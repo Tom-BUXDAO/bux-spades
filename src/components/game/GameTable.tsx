@@ -1129,17 +1129,39 @@ export default function GameTable({
 
   // Effect to handle game completion
   useEffect(() => {
+    if (!socket) return;
+
+    const handleGameOver = (data: { team1Score: number; team2Score: number; winningTeam: 1 | 2 }) => {
+      console.log('Game over event received:', data);
+      setShowHandSummary(false);
+      setCurrentHandSummary(null);
+      if (data.winningTeam === 1) {
+        setShowWinner(true);
+      } else {
+        setShowLoser(true);
+      }
+    };
+
+    socket.on('game_over', handleGameOver);
+
+    return () => {
+      socket.off('game_over', handleGameOver);
+    };
+  }, [socket]);
+
+  // Effect to handle game status changes
+  useEffect(() => {
     if (game.status === "FINISHED") {
-      const currentPlayerTeam = currentPlayer?.team;
       const winningTeam = game.winningTeam === "team1" ? 1 : 2;
-      
-      if (currentPlayerTeam === winningTeam) {
+      setShowHandSummary(false);
+      setCurrentHandSummary(null);
+      if (winningTeam === 1) {
         setShowWinner(true);
       } else {
         setShowLoser(true);
       }
     }
-  }, [game.status, game.winningTeam, currentPlayer?.team]);
+  }, [game.status, game.winningTeam]);
 
   const [showGameInfo, setShowGameInfo] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
@@ -1332,10 +1354,27 @@ export default function GameTable({
         {showWinner && (
           <WinnerModal
             isOpen={true}
-            onClose={() => {}}
+            onClose={() => {
+              setShowWinner(false);
+              onLeaveTable();
+            }}
             team1Score={game.scores.team1}
             team2Score={game.scores.team2}
-            winningTeam={game.winningTeam === "team1" ? 1 : 2}
+            winningTeam={1}
+          />
+        )}
+
+        {/* Loser Modal */}
+        {showLoser && (
+          <LoserModal
+            isOpen={true}
+            onClose={() => {
+              setShowLoser(false);
+              onLeaveTable();
+            }}
+            team1Score={game.scores.team1}
+            team2Score={game.scores.team2}
+            winningTeam={2}
           />
         )}
       </div>
