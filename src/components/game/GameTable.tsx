@@ -206,6 +206,10 @@ const countSpades = (hand: Card[]): number => {
   return hand.filter(card => card.suit === 'S').length;
 };
 
+interface PlayAgainEventData {
+  playerId: string;
+}
+
 export default function GameTable({ 
   game, 
   socket, 
@@ -1106,6 +1110,39 @@ export default function GameTable({
     }).filter(Boolean);
   };
 
+  const [playersWantToPlayAgain, setPlayersWantToPlayAgain] = useState<Set<string>>(new Set());
+
+  const handlePlayAgain = () => {
+    if (!socket) return;
+    socket.emit('play_again', { gameId: game.id });
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('player_wants_to_play_again', ({ playerId }: PlayAgainEventData) => {
+      setPlayersWantToPlayAgain(prev => new Set([...prev, playerId]));
+    });
+
+    socket.on('game_restarting', () => {
+      setPlayersWantToPlayAgain(new Set());
+      // Reset game state
+      setCurrentHandSummary(null);
+      setShowHandSummary(false);
+      setShowWinner(false);
+      setShowLoser(false);
+      if (socket) {
+        socket.emit('leave_game', { gameId: game.id, userId: session?.user?.id });
+      }
+      onLeaveTable();
+    });
+
+    return () => {
+      socket.off('player_wants_to_play_again');
+      socket.off('game_restarting');
+    };
+  }, [socket, session?.user?.id, onLeaveTable]);
+
   // Return the JSX for the component
   return (
     <>
@@ -1295,13 +1332,11 @@ export default function GameTable({
         {showWinner && (
           <WinnerModal
             isOpen={true}
-            onClose={() => {
-              setShowWinner(false);
-              onLeaveTable();
-            }}
+            onClose={handleLeaveTable}
             team1Score={game.scores.team1}
             team2Score={game.scores.team2}
             winningTeam={1}
+            onPlayAgain={handlePlayAgain}
           />
         )}
 
@@ -1309,13 +1344,11 @@ export default function GameTable({
         {showLoser && (
           <LoserModal
             isOpen={true}
-            onClose={() => {
-              setShowLoser(false);
-              onLeaveTable();
-            }}
+            onClose={handleLeaveTable}
             team1Score={game.scores.team1}
             team2Score={game.scores.team2}
             winningTeam={2}
+            onPlayAgain={handlePlayAgain}
           />
         )}
       </div>
