@@ -212,16 +212,10 @@ export function createGame(socket: typeof Socket | null, user: { id: string; nam
   // Log the game rules being sent
   console.log('Creating game with rules:', rules);
   
-  // Send the game rules in the correct format
+  // Send the game rules in the correct format - exactly as the server expects
   socket.emit('create_game', { 
     user, 
-    gameRules: {
-      gameType: rules.gameType,
-      allowNil: rules.allowNil,
-      allowBlindNil: rules.allowBlindNil,
-      minPoints: rules.minPoints,
-      maxPoints: rules.maxPoints
-    }
+    gameRules: rules // Send the entire rules object as is
   });
 }
 
