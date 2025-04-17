@@ -36,10 +36,10 @@ export default function GameRulesModal({ isOpen, onClose, onSave }: GameRulesMod
     const currentValue = type === 'min' ? rules.minPoints : rules.maxPoints;
     const newValue = currentValue + delta;
     
-    // Validate ranges
-    if (type === 'min' && newValue >= -250 && newValue <= -100) {
+    // Allow the default values to be used without restriction
+    if (type === 'min' && newValue >= -250 && newValue <= 0) {
       setRules({ ...rules, minPoints: newValue });
-    } else if (type === 'max' && newValue >= 100 && newValue <= 650) {
+    } else if (type === 'max' && newValue >= 100 && newValue <= 1000) {
       setRules({ ...rules, maxPoints: newValue });
     }
   };
