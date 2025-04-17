@@ -501,23 +501,19 @@ export default function GameTable({
   useEffect(() => {
     if (!socket) return;
 
-    const handleTrickComplete = (trick: CompletedTrick) => {
-      console.log('Trick completed:', trick);
+    const handleTrickComplete = (data: {
+      cards: Card[];
+      winningCard: Card;
+      winningPlayerId: string;
+    }) => {
+      setCompletedTrick(data);
       
-      // Wait for all 4 cards to be rendered
-      if (game.currentTrick.length === 4) {
-        // Hold for 2 seconds to show all cards
-        setTimeout(() => {
-          setCompletedTrick(trick);
-          setShowTrickAnimation(true);
+      // Clear completed trick after delay
+      const timer = setTimeout(() => {
+        setCompletedTrick(null);
+      }, 3000);
 
-          // Hold for 4 more seconds showing winning card and animation
-          setTimeout(() => {
-            setShowTrickAnimation(false);
-            setCompletedTrick(null);
-          }, 4000);
-        }, 2000);
-      }
+      return () => clearTimeout(timer);
     };
 
     socket.on('trick_complete', handleTrickComplete);
@@ -525,7 +521,7 @@ export default function GameTable({
     return () => {
       socket.off('trick_complete', handleTrickComplete);
     };
-  }, [socket, game.currentTrick]);
+  }, [socket]);
 
   // Add CSS classes for card animations
   const cardAnimationClass = (card: Card) => {
@@ -1040,42 +1036,13 @@ export default function GameTable({
     };
   }, [showGameInfo]);
 
-  // Add this state near the top of the component with other state declarations
-  const [completedTrickDisplay, setCompletedTrickDisplay] = useState<{
-    cards: Card[];
-    winningIndex: number;
-  } | null>(null);
-
-  // Add this effect to handle trick completion and display
-  useEffect(() => {
-    // When a trick is completed (all 4 cards played)
-    if (game.currentTrick.length === 4) {
-      // Store the completed trick for display
-      const winningIndex = determineWinningCard(game.currentTrick);
-      setCompletedTrickDisplay({
-        cards: [...game.currentTrick],
-        winningIndex
-      });
-
-      // Clear the completed trick display after delay
-      const timer = setTimeout(() => {
-        setCompletedTrickDisplay(null);
-      }, 2000); // 2 second delay
-
-      return () => clearTimeout(timer);
-    }
-  }, [game.currentTrick]);
-
   // Modify the renderTrickCards function
   const renderTrickCards = () => {
-    // Use completedTrickDisplay if available, otherwise use current trick
-    const displayTrick = completedTrickDisplay || game.currentTrick.length === 4 
-      ? completedTrickDisplay 
-      : { cards: game.currentTrick, winningIndex: -1 };
+    // Use completed trick if available, otherwise use current trick
+    const displayTrick = completedTrick ? completedTrick.cards : game.currentTrick;
+    if (!displayTrick?.length) return null;
 
-    if (!displayTrick?.cards.length) return null;
-
-    return displayTrick.cards.map((card, index) => {
+    return displayTrick.map((card: Card, index: number) => {
       if (!card.playedBy) {
         console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
         return null;
@@ -1095,7 +1062,9 @@ export default function GameTable({
         3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
       };
 
-      const isWinningCard = displayTrick.winningIndex === index;
+      const isWinningCard = completedTrick && 
+        card.suit === completedTrick.winningCard.suit && 
+        card.rank === completedTrick.winningCard.rank;
 
       // Calculate card dimensions using the same approach as player's hand
       const isMobile = windowSize.width < 640;
