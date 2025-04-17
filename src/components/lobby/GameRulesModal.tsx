@@ -28,16 +28,25 @@ export default function GameRulesModal({ isOpen, onClose, onSave }: GameRulesMod
   if (!isOpen) return null;
 
   const handleSave = () => {
+    // Ensure all required fields are present and properly typed
+    const validatedRules: GameRules = {
+      gameType: rules.gameType,
+      allowNil: rules.allowNil,
+      allowBlindNil: rules.allowBlindNil,
+      minPoints: Number(rules.minPoints),
+      maxPoints: Number(rules.maxPoints)
+    };
+
     // Validate rules before saving
-    if (typeof rules.minPoints !== 'number' || typeof rules.maxPoints !== 'number') {
+    if (isNaN(validatedRules.minPoints) || isNaN(validatedRules.maxPoints)) {
       console.error('Invalid game rules: minPoints and maxPoints must be numbers');
       return;
     }
 
     // Log the rules being saved
-    console.log('Saving game rules:', rules);
+    console.log('Saving game rules:', validatedRules);
     
-    onSave(rules);
+    onSave(validatedRules);
     onClose();
   };
 
