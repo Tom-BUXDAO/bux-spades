@@ -192,31 +192,7 @@ export function authenticateUser(socket: typeof Socket | null, userId: string) {
 
 export function createGame(socket: typeof Socket | null, user: { id: string; name?: string | null }, gameRules?: GameRules) {
   if (!socket) return;
-  
-  // Ensure gameRules is properly structured
-  const rules = {
-    gameType: 'REGULAR',
-    allowNil: true,
-    allowBlindNil: false,
-    minPoints: -250,
-    maxPoints: 500,
-    ...gameRules // Spread any provided rules on top of defaults
-  };
-
-  // Validate that minPoints and maxPoints are numbers
-  if (typeof rules.minPoints !== 'number' || typeof rules.maxPoints !== 'number') {
-    console.error('Invalid game rules: minPoints and maxPoints must be numbers');
-    return;
-  }
-
-  // Log the game rules being sent
-  console.log('Creating game with rules:', rules);
-  
-  // Send the game rules in the correct format - exactly as the server expects
-  socket.emit('create_game', { 
-    user, 
-    gameRules: rules // Send the entire rules object as is
-  });
+  socket.emit('create_game', { user, gameRules });
 }
 
 interface JoinOptions {

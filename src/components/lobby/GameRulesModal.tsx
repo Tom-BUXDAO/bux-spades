@@ -28,25 +28,7 @@ export default function GameRulesModal({ isOpen, onClose, onSave }: GameRulesMod
   if (!isOpen) return null;
 
   const handleSave = () => {
-    // Ensure all required fields are present and properly typed
-    const validatedRules: GameRules = {
-      gameType: rules.gameType,
-      allowNil: rules.allowNil,
-      allowBlindNil: rules.allowBlindNil,
-      minPoints: Number(rules.minPoints),
-      maxPoints: Number(rules.maxPoints)
-    };
-
-    // Validate rules before saving
-    if (isNaN(validatedRules.minPoints) || isNaN(validatedRules.maxPoints)) {
-      console.error('Invalid game rules: minPoints and maxPoints must be numbers');
-      return;
-    }
-
-    // Log the rules being saved
-    console.log('Saving game rules:', validatedRules);
-    
-    onSave(validatedRules);
+    onSave(rules);
     onClose();
   };
 
@@ -54,10 +36,10 @@ export default function GameRulesModal({ isOpen, onClose, onSave }: GameRulesMod
     const currentValue = type === 'min' ? rules.minPoints : rules.maxPoints;
     const newValue = currentValue + delta;
     
-    // Allow the default values to be used without restriction
-    if (type === 'min' && newValue >= -250 && newValue <= 0) {
+    // Validate ranges
+    if (type === 'min' && newValue >= -250 && newValue <= -100) {
       setRules({ ...rules, minPoints: newValue });
-    } else if (type === 'max' && newValue >= 100 && newValue <= 1000) {
+    } else if (type === 'max' && newValue >= 100 && newValue <= 650) {
       setRules({ ...rules, maxPoints: newValue });
     }
   };
