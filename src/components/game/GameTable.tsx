@@ -201,6 +201,11 @@ declare global {
   }
 }
 
+// Helper function to count spades in a hand
+const countSpades = (hand: Card[]): number => {
+  return hand.filter(card => card.suit === 'S').length;
+};
+
 export default function GameTable({ 
   game, 
   socket, 
@@ -1302,6 +1307,9 @@ export default function GameTable({
                       gameId={game.id}
                       playerId={currentPlayerId}
                       currentPlayerTurn={game.currentPlayer}
+                      gameType={game.rules.gameType}
+                      numSpades={currentPlayer ? countSpades(currentPlayer.hand) : 0}
+                      isCurrentPlayer={game.currentPlayer === currentPlayerId}
                     />
                   </div>
                 ) : game.status === "BIDDING" && game.currentPlayer !== currentPlayerId ? (

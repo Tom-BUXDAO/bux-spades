@@ -36,6 +36,7 @@ export interface GameRules {
   allowBlindNil: boolean;
   minPoints: number;
   maxPoints: number;
+  numHands?: number;
 }
 
 export interface TeamScore extends Omit<ScoringTeamScore, 'team'> {
@@ -71,6 +72,7 @@ export interface GameState {
   rules: GameRules;
   minPoints: number;
   maxPoints: number;
+  round?: number;
 }
 
 export interface LobbyState {
