@@ -28,7 +28,10 @@ export interface Player {
 
 export type GameStatus = "WAITING" | "BIDDING" | "PLAYING" | "FINISHED";
 
+export type GameType = 'REGULAR' | 'WHIZ' | 'SOLO' | 'MIRROR';
+
 export interface GameRules {
+  gameType: GameType;
   allowNil: boolean;
   allowBlindNil: boolean;
   minPoints: number;

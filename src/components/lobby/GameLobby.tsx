@@ -57,6 +57,7 @@ export default function GameLobby({
   });
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [gameRules, setGameRules] = useState<GameRules>({
+    gameType: 'REGULAR',
     allowNil: true,
     allowBlindNil: false,
     minPoints: -250,
@@ -403,15 +404,17 @@ export default function GameLobby({
                 {(() => {
                   const rules = game.rules;
                   let max = 500, min = -150, nil = '❌N', bn = '❌BN';
+                  let gameType = 'REG';
                   if (rules) {
                     max = rules.maxPoints;
                     min = rules.minPoints;
                     nil = rules.allowNil ? '✅N' : '❌N';
                     bn = rules.allowBlindNil ? '✅BN' : '❌BN';
+                    gameType = rules.gameType;
                   }
                   return (
                     <h3 className="text-sm font-medium">
-                      REG {max}/{min} {nil} {bn}
+                      {gameType} {max}/{min} {gameType === 'REGULAR' || gameType === 'SOLO' ? `${nil} ${bn}` : ''}
                     </h3>
                   );
                 })()}
