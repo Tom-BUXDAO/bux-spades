@@ -121,7 +121,14 @@ export default function GamePage() {
     // Log the game rules being sent
     console.log('Creating game with rules:', gameRules);
     
-    socketApi.createGame(socket, user, gameRules);
+    // Send the game rules in the correct format
+    socketApi.createGame(socket, user, {
+      gameType: gameRules.gameType,
+      allowNil: gameRules.allowNil,
+      allowBlindNil: gameRules.allowBlindNil,
+      minPoints: gameRules.minPoints,
+      maxPoints: gameRules.maxPoints
+    });
   };
 
   const joinGame = (gameId: string, userId: string, options?: any) => {
