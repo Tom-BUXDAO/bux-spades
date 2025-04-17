@@ -1040,14 +1040,42 @@ export default function GameTable({
     };
   }, [showGameInfo]);
 
+  // Add this state near the top of the component with other state declarations
+  const [completedTrickDisplay, setCompletedTrickDisplay] = useState<{
+    cards: Card[];
+    winningIndex: number;
+  } | null>(null);
+
+  // Add this effect to handle trick completion and display
+  useEffect(() => {
+    // When a trick is completed (all 4 cards played)
+    if (game.currentTrick.length === 4) {
+      // Store the completed trick for display
+      const winningIndex = determineWinningCard(game.currentTrick);
+      setCompletedTrickDisplay({
+        cards: [...game.currentTrick],
+        winningIndex
+      });
+
+      // Clear the completed trick display after delay
+      const timer = setTimeout(() => {
+        setCompletedTrickDisplay(null);
+      }, 2000); // 2 second delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [game.currentTrick]);
+
+  // Modify the renderTrickCards function
   const renderTrickCards = () => {
-    const cardsToRender = showTrickAnimation && completedTrick 
-      ? completedTrick.cards 
-      : game?.currentTrick || [];
+    // Use completedTrickDisplay if available, otherwise use current trick
+    const displayTrick = completedTrickDisplay || game.currentTrick.length === 4 
+      ? completedTrickDisplay 
+      : { cards: game.currentTrick, winningIndex: -1 };
 
-    if (!cardsToRender.length) return null;
+    if (!displayTrick?.cards.length) return null;
 
-    return cardsToRender.map((card, index) => {
+    return displayTrick.cards.map((card, index) => {
       if (!card.playedBy) {
         console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
         return null;
@@ -1067,9 +1095,7 @@ export default function GameTable({
         3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
       };
 
-      const isWinningCard = showTrickAnimation && 
-        completedTrick?.winningCard.suit === card.suit && 
-        completedTrick?.winningCard.rank === card.rank;
+      const isWinningCard = displayTrick.winningIndex === index;
 
       // Calculate card dimensions using the same approach as player's hand
       const isMobile = windowSize.width < 640;
@@ -1080,7 +1106,7 @@ export default function GameTable({
         <div
           key={`${card.suit}-${card.rank}-${index}`}
           className={`${positions[relativePosition]} z-10 transition-all duration-500
-            ${isWinningCard ? 'opacity-100 scale-110 border-2 border-yellow-400 z-10' : showTrickAnimation ? 'opacity-40 scale-95' : ''}`}
+            ${isWinningCard ? 'ring-2 ring-yellow-400 scale-110 z-20' : ''}`}
           style={{
             width: `${trickCardWidth}px`,
             height: `${trickCardHeight}px`,
@@ -1099,7 +1125,7 @@ export default function GameTable({
               objectFit: 'contain'
             }}
           />
-          {isWinningCard && showTrickAnimation && (
+          {isWinningCard && (
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
               bg-yellow-400 text-black font-bold rounded-full px-3 py-1
               animate-bounce">
