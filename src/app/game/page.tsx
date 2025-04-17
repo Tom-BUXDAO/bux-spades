@@ -97,7 +97,14 @@ export default function GamePage() {
 
   // Create wrapper functions to match old API
   const createGame = (user: any, rules?: any) => {
-    if (socket) socketApi.createGame(socket, user, rules);
+    if (!socket) return;
+    // Ensure minPoints and maxPoints are included in the rules
+    const gameRules = {
+      ...rules,
+      minPoints: rules?.minPoints ?? -250,
+      maxPoints: rules?.maxPoints ?? 500
+    };
+    socketApi.createGame(socket, user, gameRules);
   };
 
   const joinGame = (gameId: string, userId: string, options?: any) => {
