@@ -98,6 +98,10 @@ export default function GamePage() {
   // Create wrapper functions to match old API
   const createGame = (user: any, rules?: any) => {
     if (!socket) return;
+    
+    // Ensure rules is an object
+    const providedRules = rules || {};
+    
     // Create a complete gameRules object with defaults
     const gameRules = {
       gameType: 'REGULAR',
@@ -105,8 +109,18 @@ export default function GamePage() {
       allowBlindNil: false,
       minPoints: -250,
       maxPoints: 500,
-      ...rules // Spread any provided rules on top of defaults
+      ...providedRules // Spread any provided rules on top of defaults
     };
+
+    // Validate that minPoints and maxPoints are numbers
+    if (typeof gameRules.minPoints !== 'number' || typeof gameRules.maxPoints !== 'number') {
+      console.error('Invalid game rules: minPoints and maxPoints must be numbers');
+      return;
+    }
+
+    // Log the game rules being sent
+    console.log('Creating game with rules:', gameRules);
+    
     socketApi.createGame(socket, user, gameRules);
   };
 

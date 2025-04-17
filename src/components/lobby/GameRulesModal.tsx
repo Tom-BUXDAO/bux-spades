@@ -28,6 +28,15 @@ export default function GameRulesModal({ isOpen, onClose, onSave }: GameRulesMod
   if (!isOpen) return null;
 
   const handleSave = () => {
+    // Validate rules before saving
+    if (typeof rules.minPoints !== 'number' || typeof rules.maxPoints !== 'number') {
+      console.error('Invalid game rules: minPoints and maxPoints must be numbers');
+      return;
+    }
+
+    // Log the rules being saved
+    console.log('Saving game rules:', rules);
+    
     onSave(rules);
     onClose();
   };
