@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import type { GameState, Card, Suit, Player, TeamScore, HandSummary } from "@/types/game";
+import type { GameState, Card, Suit, Player, TeamScore, HandSummary, PlayAgainEventData } from "@/types/game";
 import type { Socket } from "socket.io-client";
 import { useSocket, sendChatMessage, debugTrickWinner, setupTrickCompletionDelay } from "@/lib/socket";
 import Chat from './Chat';
@@ -206,8 +206,10 @@ const countSpades = (hand: Card[]): number => {
   return hand.filter(card => card.suit === 'S').length;
 };
 
-interface PlayAgainEventData {
+interface ChatMessage {
+  message: string;
   playerId: string;
+  timestamp: number;
 }
 
 export default function GameTable({ 
@@ -540,7 +542,6 @@ export default function GameTable({
     if (currentPlayerId && socket) {
       socket.emit("leave_game", { gameId: game.id, userId: currentPlayerId });
     }
-    // Always call onLeaveTable even if we couldn't emit the event
     onLeaveTable();
   };
 
@@ -1120,7 +1121,8 @@ export default function GameTable({
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('player_wants_to_play_again', ({ playerId }: PlayAgainEventData) => {
+    socket.on('player_wants_to_play_again', (data: { playerId: string }) => {
+      const { playerId } = data;
       setPlayersWantToPlayAgain(prev => new Set([...prev, playerId]));
     });
 

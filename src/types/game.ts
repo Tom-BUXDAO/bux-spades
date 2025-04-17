@@ -98,4 +98,8 @@ export interface HandSummary {
     team1: number;
     team2: number;
   };
+}
+
+export interface PlayAgainEventData {
+  playerId: string;
 } 
