@@ -527,12 +527,6 @@ export default function GameTable({
         };
         setCurrentHandSummary(handSummary);
         setShowHandSummary(true);
-
-        // Send the hand scores to the server
-        socket.emit('update_hand_scores', {
-          gameId: game.id,
-          handScores: handSummary
-        });
       }
     };
 
@@ -541,116 +535,157 @@ export default function GameTable({
     return () => {
       socket.off('trick_complete', handleTrickComplete);
     };
-  }, [socket, game.completedTricks]);
+  }, [socket, game.completedTricks, game.players, game.scores]);
 
-  // Modify renderTrickCards to show animation
-  const renderTrickCards = () => {
-    const cardsToRender = showTrickAnimation && completedTrick 
-      ? completedTrick.cards 
-      : game?.currentTrick || [];
+  // Effect to handle hand completion
+  useEffect(() => {
+    if (!socket) return;
 
-    if (!cardsToRender.length) return null;
-
-    return cardsToRender.map((card, index) => {
-      if (!card.playedBy) {
-        console.error(`Card ${card.rank}${card.suit} is missing playedBy information`);
-        return null;
+    // Listen for hand completion event
+    const handleHandCompleted = () => {
+      console.log('Hand completed - calculating scores for display');
+      
+      // Only calculate and show scores if we haven't already
+      if (!showHandSummary) {
+        // Calculate scores using the scoring algorithm
+        const calculatedScores = calculateHandScore(game.players);
+        
+        console.log('Hand scores calculated:', calculatedScores);
+        
+        // Set the hand scores and show the modal
+        setCurrentHandSummary({
+          team1Score: { ...calculatedScores.team1, team: 1 as const },
+          team2Score: { ...calculatedScores.team2, team: 2 as const },
+          totalScores: {
+            team1: game.scores.team1 || 0,
+            team2: game.scores.team2 || 0
+          }
+        });
+        setShowHandSummary(true);
       }
+    };
+    
+    // Register event listener for hand completion
+    socket.on('hand_completed', handleHandCompleted);
+    
+    // Handle scoring state change directly in case the server doesn't emit the event
+    if (game.status === "PLAYING" && game.players.every(p => p.hand.length === 0) && !showHandSummary) {
+      handleHandCompleted();
+    }
+    
+    return () => {
+      socket.off('hand_completed', handleHandCompleted);
+    };
+  }, [socket, game.id, game.status, game.players, game.scores, showHandSummary]);
 
-      const relativePosition = (4 + card.playedBy.position - (currentPlayerPosition ?? 0)) % 4;
+  // Initialize the global variable
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.lastCompletedTrick = null;
+    }
+  }, []);
 
-      const positions: Record<number, string> = windowSize.width < 640 ? {
-        0: 'absolute bottom-16 left-1/2 transform -translate-x-1/2',
-        1: 'absolute left-8 top-1/2 transform -translate-y-1/2',
-        2: 'absolute top-16 left-1/2 transform -translate-x-1/2',
-        3: 'absolute right-8 top-1/2 transform -translate-y-1/2'
-      } : {
-        0: 'absolute bottom-[20%] left-1/2 transform -translate-x-1/2',
-        1: 'absolute left-[20%] top-1/2 transform -translate-y-1/2',
-        2: 'absolute top-[20%] left-1/2 transform -translate-x-1/2',
-        3: 'absolute right-[20%] top-1/2 transform -translate-y-1/2'
-      };
+  // Fix completed tricks check
+  const hasCompletedTricks = game.completedTricks.length > 0;
 
-      const isWinningCard = showTrickAnimation && 
-        completedTrick?.winningCard.suit === card.suit && 
-        completedTrick?.winningCard.rank === card.rank;
+  // Calculate scores
+  const team1Score = game?.scores?.['team1'] ?? 0;
+  const team2Score = game?.scores?.['team2'] ?? 0;
+  const team1Bags = Math.abs(team1Score) % 10;
+  const team2Bags = Math.abs(team2Score) % 10;
 
-      // Calculate card dimensions using the same approach as player's hand
-      const isMobile = windowSize.width < 640;
-      const trickCardWidth = windowSize.width < 640 ? 25 : Math.floor(96 * getScaleFactor());
-      const trickCardHeight = windowSize.width < 640 ? 38 : Math.floor(144 * getScaleFactor());
-
-      return (
-        <div
-          key={`${card.suit}-${card.rank}-${index}`}
-          className={`${positions[relativePosition]} z-10 transition-all duration-300
-            ${isWinningCard ? 'ring-4 ring-yellow-400 scale-110' : ''}`}
-          style={{
-            width: `${trickCardWidth}px`,
-            height: `${trickCardHeight}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: 'unset'
-          }}
-        >
-          <img
-            src={`/cards/${getCardImage(card)}`}
-            alt={`${card.rank} of ${card.suit}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain'
-            }}
-          />
-          {isWinningCard && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 
-              bg-yellow-400 text-black font-bold rounded-full px-3 py-1
-              animate-bounce">
-              +1
-            </div>
-          )}
-        </div>
-      );
-    }).filter(Boolean);
+  // Utility function to get player for a card if the mapping is missing that card
+  const getPlayerForCardIndex = (index: number, existingMapping: Record<string, string>) => {
+    // First, try to get from the existing mapping
+    const playerId = existingMapping[index.toString()];
+    if (playerId) {
+      const player = game.players.find(p => p.id === playerId);
+      if (player) return player;
+    }
+    
+    // If we don't have a mapping for this card, we need to deduce who played it
+    // We can do this by working backward from the current player (next to play)
+    const currentPlayerInfo = game.players.find(p => p.id === game.currentPlayer);
+    if (!currentPlayerInfo || currentPlayerInfo.position === undefined) return null;
+    
+    // For a complete trick, we know the player who is due to play next
+    // won the trick with their card
+    if (game.currentTrick.length === 4) {
+      // Find how many positions back we need to go from current player
+      const stepsBack = game.currentTrick.length - index;
+      const position = (currentPlayerInfo.position - stepsBack + 4) % 4;
+      return game.players.find(p => p.position === position) || null;
+    }
+    
+    // For an in-progress trick, the player who played this card is
+    // the player who is (trick.length - index) positions before the current player
+    const stepsBack = game.currentTrick.length - index;
+    const position = (currentPlayerInfo.position - stepsBack + 4) % 4;
+    return game.players.find(p => p.position === position) || null;
   };
 
-  const handleLeaveTable = () => {
-    if (currentPlayerId && socket) {
-      socket.emit("leave_game", { gameId: game.id, userId: currentPlayerId });
+  // Update cardPlayers when game state changes
+  useEffect(() => {
+    if (game.cardPlayers) {
+      setCardPlayers(game.cardPlayers);
     }
-    // Always call onLeaveTable even if we couldn't emit the event
-    onLeaveTable();
-  };
+  }, [game.cardPlayers]);
 
-  const handleStartGame = async () => {
-    if (!currentPlayerId) return;
-    
-    // Make sure the game is in the WAITING state
-    if (game.status !== "WAITING") {
-      console.error(`Cannot start game: game is in ${game.status} state, not WAITING`);
-      return;
+  // Effect to handle game completion
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleGameOver = (data: { team1Score: number; team2Score: number; winningTeam: 1 | 2 }) => {
+      console.log('Game over event received:', data);
+      setShowHandSummary(false);
+      setCurrentHandSummary(null);
+      if (data.winningTeam === 1) {
+        setShowWinner(true);
+      } else {
+        setShowLoser(true);
+      }
+    };
+
+    socket.on('game_over', handleGameOver);
+
+    return () => {
+      socket.off('game_over', handleGameOver);
+    };
+  }, [socket]);
+
+  // Effect to handle game status changes
+  useEffect(() => {
+    if (game.status === "FINISHED") {
+      const winningTeam = game.winningTeam === "team1" ? 1 : 2;
+      setShowHandSummary(false);
+      setCurrentHandSummary(null);
+      if (winningTeam === 1) {
+        setShowWinner(true);
+      } else {
+        setShowLoser(true);
+      }
     }
-    
-    // Make sure the game has enough players
-    if (game.players.length < 4) {
-      console.error(`Cannot start game: only ${game.players.length}/4 players joined`);
-      return;
+  }, [game.status, game.winningTeam]);
+
+  const [showGameInfo, setShowGameInfo] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (infoRef.current && !infoRef.current.contains(event.target as Node)) {
+        setShowGameInfo(false);
+      }
     }
-    
-    // Make sure current user is the creator (first player)
-    if (game.players[0]?.id !== currentPlayerId) {
-      console.error(`Cannot start game: current user ${currentPlayerId} is not the creator ${game.players[0]?.id}`);
-      return;
+    if (showGameInfo) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
     }
-    
-    try {
-      console.log(`Starting game ${game.id} as user ${currentPlayerId}, creator: ${game.players[0]?.id}`);
-      await startGame(game.id, currentPlayerId);
-    } catch (error) {
-      console.error("Failed to start game:", error);
-    }
-  };
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showGameInfo]);
 
   // Keep the getScaleFactor function
   const getScaleFactor = () => {
@@ -937,14 +972,14 @@ export default function GameTable({
           return (
             <div
               key={`${card.suit}${card.rank}`}
-                className={`relative transition-transform hover:-translate-y-4 hover:z-10 ${
-                isPlayable ? 'cursor-pointer' : 'cursor-not-allowed'
-              }`}
+              className={`relative transition-transform hover:-translate-y-4 hover:z-10 ${
+              isPlayable ? 'cursor-pointer' : 'cursor-not-allowed'
+            }`}
               style={{ 
                 width: `${cardUIWidth}px`, 
                 height: `${cardUIHeight}px`,
-                  marginLeft: index > 0 ? `${overlapOffset}px` : '0',
-                  zIndex: index
+                marginLeft: index > 0 ? `${overlapOffset}px` : '0',
+                zIndex: index
               }}
               onClick={() => isPlayable && handlePlayCard(card)}
             >
@@ -955,8 +990,8 @@ export default function GameTable({
                   width={cardUIWidth}
                   height={cardUIHeight}
                   className={`rounded-lg shadow-md ${
-                    isPlayable ? 'hover:shadow-lg' : ''
-                  }`}
+                      isPlayable ? 'hover:shadow-lg' : ''
+                    }`}
                   style={{ width: 'auto', height: 'auto' }}
                   priority={true}
                 />
@@ -972,152 +1007,95 @@ export default function GameTable({
     );
   };
 
-  // Effect to handle hand completion
-  useEffect(() => {
-    if (!socket) return;
-
-    // Listen for hand completion event
-    const handleHandCompleted = () => {
-      console.log('Hand completed - calculating scores for display');
-      
-      // Calculate scores using the scoring algorithm
-      const calculatedScores = calculateHandScore(game.players);
-      
-      console.log('Hand scores calculated:', calculatedScores);
-      
-      // Set the hand scores and show the modal
-      setCurrentHandSummary({
-        team1Score: { ...calculatedScores.team1, team: 1 as const },
-        team2Score: { ...calculatedScores.team2, team: 2 as const },
-        totalScores: {
-          team1: game.scores.team1 || 0,
-          team2: game.scores.team2 || 0
-        }
-      });
-      setShowHandSummary(true);
-    };
-    
-    // Register event listener for hand completion
-    socket.on('hand_completed', handleHandCompleted);
-    
-    // Handle scoring state change directly in case the server doesn't emit the event
-    if (game.status === "PLAYING" && game.players.every(p => p.hand.length === 0) && !showHandSummary) {
-      handleHandCompleted();
+  const handleLeaveTable = () => {
+    if (currentPlayerId && socket) {
+      socket.emit("leave_game", { gameId: game.id, userId: currentPlayerId });
     }
-    
-    return () => {
-      socket.off('hand_completed', handleHandCompleted);
-    };
-  }, [socket, game.id, game.status, game.players, showHandSummary]);
-
-  // Initialize the global variable
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.lastCompletedTrick = null;
-    }
-  }, []);
-
-  // Fix completed tricks check
-  const hasCompletedTricks = game.completedTricks.length > 0;
-
-  // Calculate scores
-  const team1Score = game?.scores?.['team1'] ?? 0;
-  const team2Score = game?.scores?.['team2'] ?? 0;
-  const team1Bags = Math.abs(team1Score) % 10;
-  const team2Bags = Math.abs(team2Score) % 10;
-
-  // Utility function to get player for a card if the mapping is missing that card
-  const getPlayerForCardIndex = (index: number, existingMapping: Record<string, string>) => {
-    // First, try to get from the existing mapping
-    const playerId = existingMapping[index.toString()];
-    if (playerId) {
-      const player = game.players.find(p => p.id === playerId);
-      if (player) return player;
-    }
-    
-    // If we don't have a mapping for this card, we need to deduce who played it
-    // We can do this by working backward from the current player (next to play)
-    const currentPlayerInfo = game.players.find(p => p.id === game.currentPlayer);
-    if (!currentPlayerInfo || currentPlayerInfo.position === undefined) return null;
-    
-    // For a complete trick, we know the player who is due to play next
-    // won the trick with their card
-    if (game.currentTrick.length === 4) {
-      // Find how many positions back we need to go from current player
-      const stepsBack = game.currentTrick.length - index;
-      const position = (currentPlayerInfo.position - stepsBack + 4) % 4;
-      return game.players.find(p => p.position === position) || null;
-    }
-    
-    // For an in-progress trick, the player who played this card is
-    // the player who is (trick.length - index) positions before the current player
-    const stepsBack = game.currentTrick.length - index;
-    const position = (currentPlayerInfo.position - stepsBack + 4) % 4;
-    return game.players.find(p => p.position === position) || null;
+    // Always call onLeaveTable even if we couldn't emit the event
+    onLeaveTable();
   };
 
-  // Update cardPlayers when game state changes
-  useEffect(() => {
-    if (game.cardPlayers) {
-      setCardPlayers(game.cardPlayers);
+  const handleStartGame = async () => {
+    if (!currentPlayerId) return;
+    
+    // Make sure the game is in the WAITING state
+    if (game.status !== "WAITING") {
+      console.error(`Cannot start game: game is in ${game.status} state, not WAITING`);
+      return;
     }
-  }, [game.cardPlayers]);
-
-  // Effect to handle game completion
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleGameOver = (data: { team1Score: number; team2Score: number; winningTeam: 1 | 2 }) => {
-      console.log('Game over event received:', data);
-      setShowHandSummary(false);
-      setCurrentHandSummary(null);
-      if (data.winningTeam === 1) {
-        setShowWinner(true);
-      } else {
-        setShowLoser(true);
-      }
-    };
-
-    socket.on('game_over', handleGameOver);
-
-    return () => {
-      socket.off('game_over', handleGameOver);
-    };
-  }, [socket]);
-
-  // Effect to handle game status changes
-  useEffect(() => {
-    if (game.status === "FINISHED") {
-      const winningTeam = game.winningTeam === "team1" ? 1 : 2;
-      setShowHandSummary(false);
-      setCurrentHandSummary(null);
-      if (winningTeam === 1) {
-        setShowWinner(true);
-      } else {
-        setShowLoser(true);
-      }
+    
+    // Make sure the game has enough players
+    if (game.players.length < 4) {
+      console.error(`Cannot start game: only ${game.players.length}/4 players joined`);
+      return;
     }
-  }, [game.status, game.winningTeam]);
-
-  const [showGameInfo, setShowGameInfo] = useState(false);
-  const infoRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (infoRef.current && !infoRef.current.contains(event.target as Node)) {
-        setShowGameInfo(false);
-      }
+    
+    // Make sure current user is the creator (first player)
+    if (game.players[0]?.id !== currentPlayerId) {
+      console.error(`Cannot start game: current user ${currentPlayerId} is not the creator ${game.players[0]?.id}`);
+      return;
     }
-    if (showGameInfo) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
+    
+    try {
+      console.log(`Starting game ${game.id} as user ${currentPlayerId}, creator: ${game.players[0]?.id}`);
+      await startGame(game.id, currentPlayerId);
+    } catch (error) {
+      console.error("Failed to start game:", error);
     }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showGameInfo]);
+  };
+
+  const renderTrickCards = () => {
+    if (!game.currentTrick || game.currentTrick.length === 0) return null;
+
+    // Calculate card dimensions based on screen size
+    const isMobile = windowSize.isMobile;
+    const cardUIWidth = Math.floor(isMobile ? 70 : 84 * scaleFactor);
+    const cardUIHeight = Math.floor(isMobile ? 100 : 120 * scaleFactor);
+
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative w-full h-full">
+          {game.currentTrick.map((card: Card, index: number) => {
+            if (!card.playedBy) return null;
+            const player = game.players.find(p => p.id === card.playedBy?.id);
+            if (!player) return null;
+
+            // Calculate position based on player's position
+            const position = game.players.indexOf(player);
+            const angle = (position * 90) % 360; // 0, 90, 180, 270 degrees
+            const radius = isMobile ? 80 : 120; // Distance from center
+            const x = Math.cos((angle * Math.PI) / 180) * radius;
+            const y = Math.sin((angle * Math.PI) / 180) * radius;
+
+            return (
+              <div
+                key={`${card.suit}${card.rank}`}
+                className="absolute transition-all duration-300"
+                style={{
+                  left: `calc(50% + ${x}px)`,
+                  top: `calc(50% + ${y}px)`,
+                  transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                  width: `${cardUIWidth}px`,
+                  height: `${cardUIHeight}px`,
+                  zIndex: index
+                }}
+              >
+                <Image
+                  src={`/cards/${getCardImage(card)}`}
+                  alt={`${card.rank}${card.suit}`}
+                  width={cardUIWidth}
+                  height={cardUIHeight}
+                  className="rounded-lg shadow-md"
+                  style={{ width: 'auto', height: 'auto' }}
+                  priority={true}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   // Return the JSX for the component
   return (
