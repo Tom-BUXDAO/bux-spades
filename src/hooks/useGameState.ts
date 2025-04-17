@@ -3,7 +3,7 @@ import { useSocket } from './index';
 
 export interface GameState {
   id: string;
-  status: 'WAITING' | 'BIDDING' | 'PLAYING' | 'COMPLETE';
+  status: 'WAITING' | 'BIDDING' | 'PLAYING' | 'FINISHED';
   players: Player[];
   currentPlayer?: string;
   scores?: { team1: number, team2: number };
