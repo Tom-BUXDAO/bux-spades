@@ -517,15 +517,22 @@ export default function GameTable({
       if (isHandComplete) {
         // Calculate hand summary before moving to next hand
         const scores = calculateHandScore(game.players);
-        setCurrentHandSummary({
-          team1Score: { ...scores.team1, team: 1 },
-          team2Score: { ...scores.team2, team: 2 },
+        const handSummary: HandSummary = {
+          team1Score: { ...scores.team1, team: 1 as const },
+          team2Score: { ...scores.team2, team: 2 as const },
           totalScores: {
             team1: game.scores.team1 || 0,
             team2: game.scores.team2 || 0
           }
-        });
+        };
+        setCurrentHandSummary(handSummary);
         setShowHandSummary(true);
+
+        // Send the hand scores to the server
+        socket.emit('update_hand_scores', {
+          gameId: game.id,
+          handScores: handSummary
+        });
       }
     };
 
@@ -1055,15 +1062,22 @@ export default function GameTable({
       console.log('Hand scores calculated:', calculatedScores);
       
       // Set the hand scores and show the modal
-      setCurrentHandSummary({
-        team1Score: { ...calculatedScores.team1, team: 1 },
-        team2Score: { ...calculatedScores.team2, team: 2 },
+      const handSummary: HandSummary = {
+        team1Score: { ...calculatedScores.team1, team: 1 as const },
+        team2Score: { ...calculatedScores.team2, team: 2 as const },
         totalScores: {
           team1: game.scores.team1 || 0,
           team2: game.scores.team2 || 0
         }
-      });
+      };
+      setCurrentHandSummary(handSummary);
       setShowHandSummary(true);
+
+      // Send the hand scores to the server
+      socket.emit('update_hand_scores', {
+        gameId: game.id,
+        handScores: handSummary
+      });
     };
     
     // Register event listener for hand completion
