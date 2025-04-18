@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   try {
     const { username, email, password } = await req.json();
 
-    // Validate input
+    // For username/password registration, all fields are required
     if (!username?.trim() || !email?.trim() || !password?.trim()) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -51,10 +51,18 @@ export async function POST(req: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: existingUser.username === username ? 'Username already taken' : 'Email already registered' },
-        { status: 400 }
-      );
+      if (existingUser.username === username) {
+        return NextResponse.json(
+          { error: 'Username already taken' },
+          { status: 400 }
+        );
+      }
+      if (existingUser.email === email) {
+        return NextResponse.json(
+          { error: 'Email already registered' },
+          { status: 400 }
+        );
+      }
     }
 
     // Hash password
@@ -65,12 +73,13 @@ export async function POST(req: Request) {
       data: {
         username,
         email,
-        password: hashedPassword,
+        hashedPassword,
+        name: username, // Set display name to username initially
       },
     });
 
-    // Don't send the password back
-    const { password: _, ...userWithoutPassword } = user;
+    // Don't send the hashedPassword back
+    const { hashedPassword: _, ...userWithoutPassword } = user;
 
     return NextResponse.json(userWithoutPassword, { status: 201 });
   } catch (error) {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import WelcomeModal from "@/components/WelcomeModal";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +48,9 @@ export default function LoginPage() {
           throw new Error(data.error || 'Registration failed');
         }
 
+        // Show welcome modal after successful registration
+        setShowWelcomeModal(true);
+
         // If registration successful, log them in
         const result = await signIn("credentials", {
           redirect: false,
@@ -57,7 +62,8 @@ export default function LoginPage() {
         if (result?.error) {
           throw new Error('Failed to log in after registration');
         } else if (result?.url) {
-          window.location.href = result.url;
+          // Wait for user to close welcome modal before redirecting
+          return;
         }
       } else {
         const result = await signIn("credentials", {
@@ -82,6 +88,18 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       setIsLoading(false);
     }
+  };
+
+  const handleDiscordSignIn = () => {
+    // Show welcome modal for new Discord users
+    // Note: This is just for UX, the actual coins are set in the database
+    setShowWelcomeModal(true);
+    signIn("discord", { callbackUrl: "/game" });
+  };
+
+  const handleWelcomeModalClose = () => {
+    setShowWelcomeModal(false);
+    window.location.href = "/game";
   };
 
   return (
@@ -173,7 +191,7 @@ export default function LoginPage() {
         </div>
 
         <button
-          onClick={() => signIn("discord", { callbackUrl: "/game" })}
+          onClick={handleDiscordSignIn}
           className="w-full flex items-center justify-center gap-3 bg-[#5865F2] text-white py-3 px-4 rounded-lg hover:bg-[#4752C4] transition-colors"
           disabled={isLoading}
         >
@@ -195,6 +213,11 @@ export default function LoginPage() {
           Sign in with Discord
         </button>
       </div>
+
+      <WelcomeModal 
+        isOpen={showWelcomeModal} 
+        onClose={handleWelcomeModalClose}
+      />
     </div>
   );
 } 
