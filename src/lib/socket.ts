@@ -173,10 +173,13 @@ export function useSocket(clientId: string = '') {
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
-        regularSocket.off('connect', onConnect);
-        regularSocket.off('disconnect', onDisconnect);
-        regularSocket.off('error', onError);
-        regularSocket.off('connect_error', onError);
+        if (regularSocket) {
+          regularSocket.off('connect', onConnect);
+          regularSocket.off('disconnect', onDisconnect);
+          regularSocket.off('error', onError);
+          regularSocket.off('connect_error', onError);
+          regularSocket.disconnect();
+        }
       };
     }
   }, [clientId, isTestConnection]);
