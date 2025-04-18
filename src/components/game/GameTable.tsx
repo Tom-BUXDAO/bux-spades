@@ -542,6 +542,10 @@ export default function GameTable({
     if (currentPlayerId && socket) {
       socket.emit("leave_game", { gameId: game.id, userId: currentPlayerId });
     }
+    setShowWinner(false);
+    setShowLoser(false);
+    setShowHandSummary(false);
+    setCurrentHandSummary(null);
     onLeaveTable();
   };
 
@@ -912,8 +916,8 @@ export default function GameTable({
         team1Score: { ...calculatedScores.team1, team: 1 as const },
         team2Score: { ...calculatedScores.team2, team: 2 as const },
         totalScores: {
-          team1: game.scores.team1 || 0,
-          team2: game.scores.team2 || 0
+          team1: (game.scores.team1 || 0) + calculatedScores.team1.score,
+          team2: (game.scores.team2 || 0) + calculatedScores.team2.score
         }
       });
       setShowHandSummary(true);
