@@ -33,7 +33,11 @@ export default function Home() {
               height={20} 
               className="inline-block"
             />
-            <p className="text-lg font-bold">{session.user.coins >= 1000000 ? `${Math.floor(session.user.coins / 1000000)} mil` : session.user.coins.toLocaleString()}</p>
+            <p className="text-lg font-bold text-yellow-400">
+              {session.user.coins >= 1000000 
+                ? `${Math.floor(session.user.coins / 1000000)} mil` 
+                : session.user.coins.toLocaleString()}
+            </p>
           </div>
           <Link
             href="/game"

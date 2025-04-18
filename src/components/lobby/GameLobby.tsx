@@ -388,7 +388,7 @@ export default function GameLobby({
                     <span className="text-white font-medium hidden sm:block">
                       {user.name}
                     </span>
-                    <div className="flex items-center space-x-1 text-yellow-400 hidden sm:block">
+                    <div className="flex items-center space-x-1 text-yellow-400 text-sm font-bold hidden sm:block">
                       <Image 
                         src={COIN_ICON} 
                         alt="Coins" 
@@ -396,7 +396,7 @@ export default function GameLobby({
                         height={16} 
                         className="inline-block"
                       />
-                      <span className="text-lg font-bold">{user.coins ? ((user.coins >= 1000000) ? `${Math.floor(user.coins / 1000000)} mil` : user.coins.toLocaleString()) : '0'}</span>
+                      <span>{user.coins ? ((user.coins >= 1000000) ? `${Math.floor(user.coins / 1000000)} mil` : user.coins.toLocaleString()) : '0'}</span>
                     </div>
                   </div>
                 </div>
@@ -534,7 +534,7 @@ export default function GameLobby({
                                   </>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1 mt-1 text-yellow-400">
+                              <div className="flex items-center gap-1 mt-1 text-yellow-400 text-sm font-bold">
                                 <Image 
                                   src={COIN_ICON} 
                                   alt="Coins" 
@@ -542,7 +542,7 @@ export default function GameLobby({
                                   height={14} 
                                   className="inline-block"
                                 />
-                                <span className="text-base font-bold">{rules?.coinAmount ? `${(rules.coinAmount / 1000)}k` : '100k'}</span>
+                                <span>{rules?.coinAmount ? `${(rules.coinAmount / 1000)}k` : '100k'}</span>
                               </div>
                             </div>
                           );
@@ -623,9 +623,97 @@ export default function GameLobby({
                           )
                         )}
                       </div>
+                      
+                      {/* South position */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 0) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(0) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 0))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 0)?.name}
+                            </div>
+                          </div>
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(0), 0)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(0) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
+                      
+                      {/* West position */}
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 1) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 1))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 1)?.name}
+                            </div>
+                          </div>
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(1), 1)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Game actions buttons */}
+                    <div className="flex gap-2">
+                      {/* Show Join Game button if the player has already joined the game */}
+                      {game.status !== "WAITING" && game.players.some(p => isControlledByThisBrowser(p.id, p.browserSessionId)) && (
+                        <button
+                          onClick={() => onGameSelect(game)}
+                          className="flex-1 px-2 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                        >
+                          Join Game
+                        </button>
+                      )}
+                      
+                      {/* Watch button for spectators */}
+                      <button
+                        onClick={() => onGameSelect(game)}
+                        className="flex-1 px-2 py-1 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+                      >
+                        Watch
+                      </button>
                     </div>
                   </div>
                 ))}
+                {games.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-gray-400 bg-gray-800 rounded-lg border border-gray-700">
+                    No games available. Create one to start playing!
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -640,6 +728,44 @@ export default function GameLobby({
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <GameRulesModal
+        isOpen={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+        onSave={handleSaveRules}
+        initialRules={gameRules}
+        userCoins={user.coins || 0}
+      />
+
+      {showNameInput && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-xl">
+            <h2 className="text-xl font-bold mb-4 text-white">Enter Your Name</h2>
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded mb-4"
+              placeholder="Your name"
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowNameInput(false)}
+                className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleNameSubmit}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Join Game
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+} 
