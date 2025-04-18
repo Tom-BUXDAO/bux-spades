@@ -1,159 +1,127 @@
-import { AuthOptions } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { getServerSession } from "next-auth";
+import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "./prisma";
+import { env } from "@/env.mjs";
+import { compare } from "bcryptjs";
+import { type User } from "@prisma/client";
 
-interface DiscordProfile {
-  id: string;
-  username: string;
-  email: string | null;
-  avatar: string | null;
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name: string | null;
+      email: string | null;
+      username: string;
+      coins: number;
+    };
+  }
 }
 
-export const authOptions: AuthOptions = {
+declare module "next-auth/adapters" {
+  interface AdapterUser {
+    id: string;
+    name: string | null;
+    email: string | null;
+    username: string;
+    coins: number;
+    hashedPassword: string | null;
+  }
+}
+
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma) as any,
+  session: {
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/login",
+  },
   providers: [
-    DiscordProvider({
-      clientId: process.env.DISCORD_CLIENT_ID ?? "",
-      clientSecret: process.env.DISCORD_CLIENT_SECRET ?? "",
-      authorization: {
-        params: {
-          scope: "identify email",
-          prompt: "consent"
-        }
-      },
-      profile(profile: DiscordProfile) {
-        return {
-          id: profile.id,
-          name: profile.username,
-          username: profile.username,
-          email: profile.email,
-          image: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null,
-          coins: 5000000,
-        };
-      },
-    }),
     CredentialsProvider({
-      id: "credentials",
-      name: "Guest",
+      name: "credentials",
       credentials: {
-        name: { label: "Name", type: "text" },
-        type: { label: "Type", type: "text" }
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.name || credentials.type !== "guest") {
+        if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        // Generate a unique username for the guest
-        const guestUsername = `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-        // Create a guest user in the database
-        const user = await prisma.user.create({
-          data: {
-            id: guestUsername,
-            name: credentials.name,
-            username: guestUsername,
-            coins: 5000000,
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email,
+          },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            username: true,
+            coins: true,
+            hashedPassword: true,
+            emailVerified: true,
+            createdAt: true,
+            updatedAt: true,
+            image: true,
           },
         });
+
+        if (!user || !user.hashedPassword) {
+          return null;
+        }
+
+        const isPasswordValid = await compare(credentials.password, user.hashedPassword);
+
+        if (!isPasswordValid) {
+          return null;
+        }
 
         return {
           id: user.id,
           name: user.name,
+          email: user.email,
           username: user.username,
-          isGuest: true,
           coins: user.coins,
-          email: null,
-          image: null
+          emailVerified: user.emailVerified,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          image: user.image,
         };
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      try {
-        // Skip database operations for test users
-        if (user.id?.startsWith('test_')) {
-          return true;
-        }
-
-        // For Discord users, ensure they exist in the database
-        if (account?.provider === "discord" && profile) {
-          const discordProfile = profile as DiscordProfile;
-          
-          // Try to find or create user with Discord ID
-          const dbUser = await prisma.user.upsert({
-            where: { id: discordProfile.id },
-            update: {
-              name: discordProfile.username,
-              username: discordProfile.username,
-              email: discordProfile.email,
-              image: user.image,
-            },
-            create: {
-              id: discordProfile.id,
-              name: discordProfile.username,
-              username: discordProfile.username,
-              email: discordProfile.email,
-              image: user.image,
-              coins: 5000000,
-            },
-          });
-          
-          user.id = discordProfile.id;
-          user.coins = dbUser.coins;
-          user.username = dbUser.username;
-        }
-        return true;
-      } catch (error) {
-        console.error("Error in signIn callback:", error);
-        return false;
-      }
-    },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.name = user.name;
-        token.username = user.username;
-        token.isGuest = user.isGuest;
-        token.coins = user.coins;
+        return {
+          ...token,
+          id: user.id,
+          username: user.username,
+          coins: user.coins,
+          emailVerified: user.emailVerified,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        };
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.name = token.name as string;
-        session.user.username = token.username as string;
-        session.user.isGuest = token.isGuest as boolean;
-        session.user.coins = token.coins as number;
-      }
-      return session;
-    }
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id as string,
+          username: token.username as string,
+          coins: token.coins as number,
+          emailVerified: token.emailVerified as Date | null,
+          createdAt: token.createdAt as Date,
+          updatedAt: token.updatedAt as Date,
+        },
+      };
+    },
   },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24 hours
-    updateAge: 12 * 60 * 60 // Only update session every 12 hours
-  },
-  jwt: {
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === 'production' ? '__Secure-next-auth.session-token' : 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production'
-      }
-    }
-  },
-  debug: false
-}; 
+};
+
+export const getAuthSession = () => getServerSession(authOptions); 
