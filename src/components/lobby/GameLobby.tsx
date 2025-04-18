@@ -258,7 +258,28 @@ export default function GameLobby({
   const handleSaveRules = (rules: GameRules) => {
     setGameRules(rules);
     if (user) {
+      // Create the game
       createGame(user, rules);
+      
+      // Listen for game creation and automatically join position 4 (South)
+      const handleGameCreated = ({ gameId, game }: { gameId: string; game: GameState }) => {
+        console.log('Game created, joining as creator in South position');
+        joinGame(gameId, user.id, {
+          name: user.name || 'Player',
+          team: 1, // South is team 1
+          position: 4, // South position
+          image: user.image || undefined,
+          browserSessionId
+        });
+        // Remove the listener after joining
+        if (socket) {
+          socket.off('game_created', handleGameCreated);
+        }
+      };
+
+      if (socket) {
+        socket.on('game_created', handleGameCreated);
+      }
     }
   };
 
