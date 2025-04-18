@@ -3,67 +3,103 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function LoginPage() {
-  // const [guestName, setGuestName] = useState(""); // Removed guestName state
-  const [isLoading, setIsLoading] = useState(false); // Kept isLoading for other potential logins
+  const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  // Removed handleGuestLogin function
-  // const handleGuestLogin = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (!guestName.trim()) return;
-  //   
-  //   setIsLoading(true);
-  //   try {
-  //     const result = await signIn("credentials", {
-  //       redirect: false,
-  //       name: guestName,
-  //       type: "guest"
-  //     });
-  //
-  //     if (result?.error) {
-  //       console.error("Login failed:", result.error);
-  //       setIsLoading(false);
-  //     } else {
-  //       window.location.href = "/game";
-  //     }
-  //   } catch (error) {
-  //     console.error("Login error:", error);
-  //     setIsLoading(false);
-  //   }
-  // };
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter both username and password.");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await signIn("credentials", {
+        redirect: false,
+        username: username,
+        password: password,
+        callbackUrl: "/game"
+      });
+
+      if (result?.error) {
+        console.error("Login failed:", result.error);
+        setError("Invalid username or password.");
+        setIsLoading(false);
+      } else if (result?.url) {
+        // Successful login, NextAuth handles the redirect based on callbackUrl
+        // No need to manually redirect here if callbackUrl is set
+        // window.location.href = result.url; // Let NextAuth handle redirect
+      } else {
+        setError("An unexpected error occurred during login.");
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An error occurred during login. Please try again.");
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-8">
+      <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
         <h1 className="text-3xl font-bold text-white text-center">Join Spades Game</h1>
 
-        {/* Quick Guest Login Form Removed */}
-        {/* <form onSubmit={handleGuestLogin} className="space-y-4">
-          <div className="flex gap-2">
+        <form onSubmit={handleCredentialsLogin} className="space-y-4">
+          <div>
+            <label htmlFor="username" className="sr-only">Username</label>
             <input
+              id="username"
+              name="username"
               type="text"
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              className="flex-1 px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="Enter your name to play"
+              autoComplete="username"
               required
-              minLength={2}
-              maxLength={20}
-              pattern="[A-Za-z0-9 ]+"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Username"
             />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50"
-              disabled={isLoading || !guestName.trim()}
-            >
-              {isLoading ? "Joining..." : "Play Now"}
-            </button>
           </div>
+          <div>
+            <label htmlFor="password"className="sr-only">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Password"
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-500 text-center">{error}</p>
+          )}
+
+          <button
+            type="submit"
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+            disabled={isLoading}
+          >
+            {isLoading ? "Logging in..." : "Login"}
+          </button>
           <p className="text-sm text-gray-400 text-center">
-            No account needed - just enter a name and start playing!
+            Don't have an account?{' '}
+            <Link href="/register" className="font-medium text-blue-400 hover:text-blue-300">
+              Register here
+            </Link>
           </p>
-        </form> */}
+        </form>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -74,7 +110,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Discord Login */}
         <button
           onClick={() => signIn("discord", { callbackUrl: "/game" })}
           className="w-full flex items-center justify-center gap-3 bg-[#5865F2] text-white py-3 px-4 rounded-lg hover:bg-[#4752C4] transition-colors"
