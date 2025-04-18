@@ -6,6 +6,7 @@ import type { Socket } from 'socket.io-client';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import Image from 'next/image';
+import { v4 as uuidv4 } from 'uuid';
 
 interface LobbyChatProps {
   socket: typeof Socket | null;
@@ -216,7 +217,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     const onUserJoined = (data: { userId: string; userName: string }) => {
       try {
         const systemMessage: ChatMessage = {
-          id: `system-${Date.now()}-${Math.random()}`,
+          id: uuidv4(),
           userId: 'system',
           userName: 'System',
           message: `${data.userName} joined the lobby`,
@@ -232,7 +233,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     const onUserLeft = (data: { userId: string; userName: string }) => {
       try {
         const systemMessage: ChatMessage = {
-          id: `system-${Date.now()}-${Math.random()}`,
+          id: uuidv4(),
           userId: 'system',
           userName: 'System',
           message: `${data.userName} left the lobby`,
@@ -261,7 +262,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
         }
         
         if (!chatMessage.id) {
-          chatMessage.id = `${Date.now()}-${chatMessage.userId || 'system'}-${Math.random().toString(36).substr(2, 9)}`;
+          chatMessage.id = uuidv4();
         }
         
         if (!chatMessage.timestamp) {
@@ -358,8 +359,9 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       console.log('Sending lobby message:', chatMessage);
       activeSocket.emit('lobby_message', chatMessage);
       
-      // Add message locally for immediate feedback
-      setMessages(prev => [...prev, { ...chatMessage, id: `local-${Date.now()}` }]);
+      // Add message locally for immediate feedback with same ID format as server
+      const localId = uuidv4();
+      setMessages(prev => [...prev, { ...chatMessage, id: localId }]);
       setMessage('');
       setShowEmojiPicker(false);
     }
