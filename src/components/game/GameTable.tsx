@@ -1198,8 +1198,8 @@ export default function GameTable({
                           </>
                         )}
                         <div className="mt-2 pt-2 border-t border-gray-700">
-                          <div><span className="text-gray-400">Buy-in:</span> {game.rules?.coinAmount ? `${(game.rules.coinAmount / 1000)}k` : '100k'}</div>
-                          <div><span className="text-gray-400">Prize Pool:</span> {game.rules?.coinAmount ? `${((game.rules.coinAmount * 4 * 0.9) / 1000)}k` : '360k'}</div>
+                          <div><span className="text-gray-400">Buy-in:</span> <span className="text-base font-bold">{game.rules?.coinAmount ? `${(game.rules.coinAmount / 1000)}k` : '100k'}</span></div>
+                          <div><span className="text-gray-400">Prize Pool:</span> <span className="text-base font-bold">{game.rules?.coinAmount ? `${((game.rules.coinAmount * 4 * 0.9) / 1000)}k` : '360k'}</span></div>
                         </div>
                       </div>
                     </div>
