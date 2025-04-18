@@ -33,7 +33,28 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: env.DISCORD_CLIENT_ID,
       clientSecret: env.DISCORD_CLIENT_SECRET,
-      authorization: { params: { scope: "identify email" } },
+      authorization: {
+        params: {
+          scope: "identify email guilds",
+          prompt: "consent",
+        },
+      },
+      profile(profile) {
+        console.log("[Discord Provider] Profile data:", JSON.stringify(profile));
+        if (profile.avatar === null) {
+          const defaultAvatarNumber = parseInt(profile.discriminator) % 5;
+          profile.image_url = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
+        } else {
+          const format = profile.avatar.startsWith("a_") ? "gif" : "png";
+          profile.image_url = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
+        }
+        return {
+          id: profile.id,
+          name: profile.username,
+          email: profile.email,
+          image: profile.image_url,
+        };
+      },
     }),
     CredentialsProvider({
       name: "credentials",
