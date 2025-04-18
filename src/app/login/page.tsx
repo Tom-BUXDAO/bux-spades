@@ -92,10 +92,11 @@ export default function LoginPage() {
   };
 
   const handleDiscordSignIn = () => {
-    // Show welcome modal for new Discord users
-    setShowWelcomeModal(true);
-    // Then initiate Discord sign in
-    signIn("discord", { callbackUrl: "/game" });
+    // Initiate Discord sign in without showing welcome modal first
+    signIn("discord", { 
+      callbackUrl: "/game",
+      redirect: true
+    });
   };
 
   const handleWelcomeModalClose = () => {

@@ -2,19 +2,36 @@
 
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import GameLobby from "@/components/lobby/GameLobby";
 import GameTable from "@/components/game/GameTable";
 import type { GameState } from "@/types/game";
 import { useSocket } from "@/lib/socket";
 import * as socketApi from "@/lib/socket";
+import WelcomeModal from "@/components/WelcomeModal";
 
 export default function GamePage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
   const [guestUser, setGuestUser] = useState<any>(null);
   const [games, setGames] = useState<GameState[]>([]);
   const { socket, isConnected } = useSocket("");
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    // Check if this is a new Discord user by checking the URL for the 'new' parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('new') === 'true') {
+      setShowWelcomeModal(true);
+    }
+  }, []);
 
   useEffect(() => {
     // Check for guest user in localStorage
@@ -137,28 +154,34 @@ export default function GamePage() {
   }
 
   return (
-    <main className="container mx-auto p-4 min-h-screen overflow-y-auto">
-      {currentGame ? (
-        <GameTable 
-          game={currentGame} 
-          socket={socket}
-          createGame={createGame}
-          joinGame={joinGame}
-          onGamesUpdate={setGames}
-          onLeaveTable={handleLeaveTable}
-          startGame={startGame}
-          user={user}
-        />
-      ) : (
-        <GameLobby 
-          onGameSelect={handleGameSelect} 
-          user={user}
-          socket={socket}
-          createGame={createGame}
-          joinGame={joinGame}
-          onGamesUpdate={onGamesUpdate}
-        />
-      )}
-    </main>
+    <>
+      <main className="container mx-auto p-4 min-h-screen overflow-y-auto">
+        {currentGame ? (
+          <GameTable 
+            game={currentGame} 
+            socket={socket}
+            createGame={createGame}
+            joinGame={joinGame}
+            onGamesUpdate={setGames}
+            onLeaveTable={handleLeaveTable}
+            startGame={startGame}
+            user={user}
+          />
+        ) : (
+          <GameLobby 
+            onGameSelect={handleGameSelect} 
+            user={user}
+            socket={socket}
+            createGame={createGame}
+            joinGame={joinGame}
+            onGamesUpdate={onGamesUpdate}
+          />
+        )}
+      </main>
+      <WelcomeModal 
+        isOpen={showWelcomeModal} 
+        onClose={() => setShowWelcomeModal(false)} 
+      />
+    </>
   );
 } 
