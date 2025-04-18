@@ -362,30 +362,6 @@ export default function GameLobby({
             <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
           </div>
 
-          {/* Mobile Toggle - Only visible on mobile */}
-          <div className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center bg-gray-700 rounded-full p-0.5">
-            <button
-              onClick={() => setShowChat(false)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                !showChat 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Games
-            </button>
-            <button
-              onClick={() => setShowChat(true)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                showChat 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:text-white'
-              }`}
-            >
-              Chat
-            </button>
-          </div>
-
           <div className="flex items-center space-x-4">
             {user.isGuest ? (
               <button
@@ -420,6 +396,32 @@ export default function GameLobby({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Toggle - Only visible on mobile */}
+      <div className="lg:hidden flex-none h-12 flex items-center justify-center bg-gray-800 border-t border-gray-700">
+        <div className="flex items-center space-x-3">
+          <span className={`text-sm font-medium ${!showChat ? 'text-white' : 'text-gray-400'}`}>Games</span>
+          <div className="flex items-center bg-gray-700 rounded-full p-0.5">
+            <button
+              onClick={() => setShowChat(false)}
+              className={`w-8 h-5 rounded-full text-sm font-medium transition-colors ${
+                !showChat 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300'
+              }`}
+            />
+            <button
+              onClick={() => setShowChat(true)}
+              className={`w-8 h-5 rounded-full text-sm font-medium transition-colors ${
+                showChat 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300'
+              }`}
+            />
+          </div>
+          <span className={`text-sm font-medium ${showChat ? 'text-white' : 'text-gray-400'}`}>Chat</span>
         </div>
       </div>
 
