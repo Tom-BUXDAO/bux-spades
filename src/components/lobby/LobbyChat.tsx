@@ -323,38 +323,45 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
 
       {/* Input form */}
       <form onSubmit={handleSubmit} className="flex-none px-2 py-2 bg-gray-800 border-t border-gray-700">
-        <div className="flex items-center space-x-1">
-          <button
-            type="button"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="flex-none w-8 h-8 flex items-center justify-center text-gray-300 hover:text-gray-100"
-          >
-            😊
-          </button>
+        <div className="relative flex-1">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 px-3 py-2 bg-gray-700 text-white border border-gray-600 rounded-lg placeholder-gray-400 min-w-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder={screenSize.width < 640 ? "Type..." : "Type a message..."}
+            className="bg-gray-700 text-white rounded-l w-full px-3 py-2 outline-none border-0"
+            style={{ fontSize: `${fontSize}px` }}
           />
           <button
-            type="submit"
-            disabled={!isConnected}
-            className={`flex-none w-16 h-8 rounded-lg text-sm ${
-              isConnected
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-            }`}
+            type="button"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-xl text-yellow-300 hover:text-yellow-200"
           >
-            Send
+            😊
           </button>
+          {showEmojiPicker && (
+            <div className="absolute bottom-full right-0 mb-2 z-10">
+              <Picker 
+                data={data} 
+                onEmojiSelect={onEmojiSelect}
+                theme="dark"
+                previewPosition="none"
+                skinTonePosition="none"
+              />
+            </div>
+          )}
         </div>
-        {showEmojiPicker && (
-          <div className="absolute bottom-full right-0 mb-2">
-            <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
-          </div>
-        )}
+        <button
+          type="submit"
+          disabled={!isConnected}
+          className={`bg-blue-600 text-white rounded-r hover:bg-blue-700 flex items-center justify-center w-10 ${
+            !isConnected && 'opacity-50 cursor-not-allowed'
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
+          </svg>
+        </button>
       </form>
     </div>
   );
