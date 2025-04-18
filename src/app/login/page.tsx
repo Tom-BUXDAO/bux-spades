@@ -108,13 +108,12 @@ export default function LoginPage() {
         <div className="flex items-center justify-center space-x-4">
           <div className="relative w-12 h-12">
             <Image
-              src="/bux-neon-logo.png"
+              src="/apple-touch-icon.png"
               alt="BUX Logo"
               fill
               className="object-contain"
               priority
               sizes="(max-width: 768px) 48px, 48px"
-              unoptimized={true}
             />
           </div>
           <h1 className="text-3xl font-bold text-white">BUX Spades</h1>
