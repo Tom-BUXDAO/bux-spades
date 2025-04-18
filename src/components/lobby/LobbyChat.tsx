@@ -36,6 +36,9 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<typeof Socket | null>(null);
   const handlersSetupRef = useRef(false);
+  const reconnectAttemptsRef = useRef(0);
+  const lastReconnectTimeRef = useRef(0);
+  const rateLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Add responsive sizing state
   const [screenSize, setScreenSize] = useState({
@@ -88,27 +91,77 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       console.log('Lobby chat connected for user:', userId);
       setIsConnected(true);
       setError(null);
+      reconnectAttemptsRef.current = 0;
       
       // Join the lobby room with additional user info
       activeSocket.emit('join_lobby', { 
         userId, 
         userName,
-        isDiscordUser: /^\d+$/.test(userId), // Check if userId is a Discord ID (numeric)
+        isDiscordUser: /^\d+$/.test(userId),
         timestamp: Date.now()
       });
+
+      // Request online users count after a short delay to avoid rate limiting
+      setTimeout(() => {
+        activeSocket.emit('get_online_users');
+      }, 1000);
     };
     
     const onDisconnect = (reason: string) => {
       console.log('Lobby chat disconnected:', reason, 'for user:', userId);
       setIsConnected(false);
       handlersSetupRef.current = false;
+
+      // Only attempt reconnect if not rate limited
+      if (reason === 'transport close' || reason === 'ping timeout') {
+        handleReconnect();
+      }
     };
     
     const onError = (err: any) => {
       console.error('Lobby chat error for user:', userId, 'error:', err);
-      setError(err.message || 'Connection error');
+      const errorMessage = err.message || 'Connection error';
+      
+      // Handle rate limiting
+      if (errorMessage.includes('rate limit') || errorMessage.includes('too many requests')) {
+        setError('Too many connection attempts. Please wait a moment...');
+        if (rateLimitTimeoutRef.current) {
+          clearTimeout(rateLimitTimeoutRef.current);
+        }
+        rateLimitTimeoutRef.current = setTimeout(() => {
+          setError(null);
+          handleReconnect();
+        }, 5000);
+        return;
+      }
+      
+      setError(errorMessage);
       setIsConnected(false);
       handlersSetupRef.current = false;
+    };
+
+    const handleReconnect = () => {
+      const now = Date.now();
+      const timeSinceLastReconnect = now - lastReconnectTimeRef.current;
+      
+      // Implement exponential backoff
+      if (reconnectAttemptsRef.current > 0) {
+        const backoffTime = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+        if (timeSinceLastReconnect < backoffTime) {
+          console.log(`Waiting ${backoffTime - timeSinceLastReconnect}ms before reconnecting...`);
+          return;
+        }
+      }
+      
+      reconnectAttemptsRef.current++;
+      lastReconnectTimeRef.current = now;
+      
+      console.log(`Attempting reconnect (${reconnectAttemptsRef.current}/5) for user:`, userId);
+      if (reconnectAttemptsRef.current <= 5) {
+        activeSocket?.connect();
+      } else {
+        setError('Unable to connect. Please refresh the page.');
+      }
     };
 
     const onOnlineUsersUpdate = (count: number) => {
@@ -208,13 +261,18 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
         isDiscordUser: /^\d+$/.test(userId),
         timestamp: Date.now()
       });
+      
+      // Request online users count after a short delay
+      setTimeout(() => {
+        activeSocket.emit('get_online_users');
+      }, 1000);
     }
-
-    // Ping for online users count on connection
-    activeSocket.emit('get_online_users');
 
     return () => {
       console.log('Cleaning up socket event handlers for user:', userId);
+      if (rateLimitTimeoutRef.current) {
+        clearTimeout(rateLimitTimeoutRef.current);
+      }
       if (socketRef.current) {
         socketRef.current.off('connect', onConnect);
         socketRef.current.off('disconnect', onDisconnect);
@@ -227,7 +285,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       }
       handlersSetupRef.current = false;
     };
-  }, [activeSocket, userId, userName, isConnected]);
+  }, [activeSocket, userId, userName]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
