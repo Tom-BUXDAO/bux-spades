@@ -366,75 +366,73 @@ export default function GameLobby({
   return (
     <div className="h-[100vh] flex flex-col overflow-hidden bg-gray-900">
       {/* Header - fixed height */}
-      <div className="flex-none h-16 px-4 bg-gray-800 shadow-md">
-        <div className="flex justify-between items-center h-full">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {user.id && !user.isGuest ? (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-3">
-                  <ProfilePictureUpload
-                    currentImage={user.image || GUEST_AVATAR}
-                    onImageUpdate={() => {
-                      // Force a re-render to show the new image
-                      router.refresh();
-                    }}
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-white font-medium hidden sm:block">
-                      {user.name}
-                    </span>
-                    <div className="flex items-center space-x-1 text-yellow-400 hidden sm:block">
-                      <Image 
-                        src={COIN_ICON} 
-                        alt="Coins" 
-                        width={16} 
-                        height={16} 
-                        className="inline-block"
-                      />
-                      <span className="text-lg font-bold">{user.coins ? ((user.coins >= 1000000) ? `${Math.floor(user.coins / 1000000)} mil` : user.coins.toLocaleString()) : '0'}</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-400 hover:text-white transition-colors"
-                  title="Sign Out"
-                >
-                  <LogOut size={20} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full overflow-hidden">
-                    <Image
-                      src={GUEST_AVATAR}
-                      alt={user.name || "Guest"}
-                      width={32}
-                      height={32}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <span className="text-white font-medium hidden sm:block">
-                    {user.name || "Guest"}
-                  </span>
-                </div>
-                <button
-                  onClick={handleSignIn}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                  title="Sign In / Register"
-                >
-                  Sign In / Register
-                </button>
-              </div>
-            )}
-          </div>
+      <header className="flex-none h-16 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4">
+        <div className="flex items-center space-x-3">
+          <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
         </div>
-      </div>
+
+        <div className="flex items-center space-x-4">
+          {user.id && !user.isGuest ? (
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <ProfilePictureUpload
+                  currentImage={user.image || GUEST_AVATAR}
+                  onImageUpdate={() => {
+                    // Force a re-render to show the new image
+                    router.refresh();
+                  }}
+                />
+                <div className="flex flex-col">
+                  <span className="text-white font-medium hidden sm:block">
+                    {user.name}
+                  </span>
+                  <div className="flex items-center space-x-1 text-yellow-400 hidden sm:block">
+                    <Image 
+                      src={COIN_ICON} 
+                      alt="Coins" 
+                      width={16} 
+                      height={16} 
+                      className="inline-block"
+                    />
+                    <span className="text-lg font-bold">{user.coins ? ((user.coins >= 1000000) ? `${Math.floor(user.coins / 1000000)} mil` : user.coins.toLocaleString()) : '0'}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-gray-400 hover:text-white transition-colors"
+                title="Sign Out"
+              >
+                <LogOut size={20} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-full overflow-hidden">
+                  <Image
+                    src={GUEST_AVATAR}
+                    alt={user.name || "Guest"}
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <span className="text-white font-medium hidden sm:block">
+                  {user.name || "Guest"}
+                </span>
+              </div>
+              <button
+                onClick={handleSignIn}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                title="Sign In / Register"
+              >
+                Sign In / Register
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
 
       {/* Mobile Toggle - Only visible on mobile */}
       <div className="lg:hidden flex-none h-12 flex items-center justify-center bg-gray-800 border-t border-gray-700">
@@ -462,7 +460,7 @@ export default function GameLobby({
         </div>
       </div>
 
-      {/* Main content area */}
+      {/* Main content area - flex-1 to take remaining space */}
       <div className="flex-1 min-h-0">
         <div 
           className="h-full p-4 flex space-x-4 overflow-hidden"
@@ -639,6 +637,13 @@ export default function GameLobby({
           </div>
         </div>
       </div>
+
+      <GameRulesModal
+        isOpen={showRulesModal}
+        onClose={() => setShowRulesModal(false)}
+        onSave={handleSaveRules}
+        userCoins={user.coins || 0}
+      />
     </div>
   );
 }
