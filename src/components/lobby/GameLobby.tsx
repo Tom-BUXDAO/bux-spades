@@ -354,7 +354,7 @@ export default function GameLobby({
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-gray-900">
+    <div className="h-[100vh] flex flex-col overflow-hidden bg-gray-900">
       {/* Header - fixed height */}
       <div className="flex-none h-16 px-4 bg-gray-800 shadow-md">
         <div className="flex justify-between items-center h-full">
@@ -425,253 +425,255 @@ export default function GameLobby({
         </div>
       </div>
 
-      {/* Main content - fills remaining height */}
-      <div 
-        className="flex-1 p-4 flex space-x-4 overflow-hidden min-h-0"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-      >
-        {/* Games List Section */}
-        <div className={`flex-1 flex flex-col min-w-0 ${showChat ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="flex-none flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-xl font-semibold text-white">Available Games</h2>
-              <p className="text-gray-400 text-sm">{games.length} games available</p>
+      {/* Main content area */}
+      <div className="flex-1 min-h-0">
+        <div 
+          className="h-full p-4 flex space-x-4 overflow-hidden"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          {/* Games List Section */}
+          <div className={`flex-1 flex flex-col min-w-0 ${showChat ? 'hidden lg:flex' : 'flex'}`}>
+            <div className="flex-none flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-white">Available Games</h2>
+                <p className="text-gray-400 text-sm">{games.length} games available</p>
+              </div>
+              <button
+                onClick={() => setShowRulesModal(true)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Create Game
+              </button>
             </div>
-            <button
-              onClick={() => setShowRulesModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Create Game
-            </button>
-          </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pr-2">
-              {games.map((game) => (
-                <div
-                  key={game.id}
-                  className="border border-gray-700 rounded-lg p-4 bg-gray-800 shadow-md"
-                >
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="text-white">
-                      {(() => {
-                        const rules = game.rules;
-                        let max = 500, min = -150, nil = '❌N', bn = '❌BN';
-                        let gameType = 'REG';
-                        if (rules) {
-                          max = rules.maxPoints;
-                          min = rules.minPoints;
-                          nil = rules.allowNil ? '✅N' : '❌N';
-                          bn = rules.allowBlindNil ? '✅BN' : '❌BN';
-                          // Map game type to display value
-                          switch (rules.gameType) {
-                            case 'REGULAR':
-                              gameType = 'REG';
-                              break;
-                            case 'WHIZ':
-                              gameType = 'WHIZ';
-                              break;
-                            case 'SOLO':
-                              gameType = 'SOLO';
-                              break;
-                            case 'MIRROR':
-                              gameType = 'MIRR';
-                              break;
-                            default:
-                              gameType = 'REG';
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pr-2">
+                {games.map((game) => (
+                  <div
+                    key={game.id}
+                    className="border border-gray-700 rounded-lg p-4 bg-gray-800 shadow-md"
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="text-white">
+                        {(() => {
+                          const rules = game.rules;
+                          let max = 500, min = -150, nil = '❌N', bn = '❌BN';
+                          let gameType = 'REG';
+                          if (rules) {
+                            max = rules.maxPoints;
+                            min = rules.minPoints;
+                            nil = rules.allowNil ? '✅N' : '❌N';
+                            bn = rules.allowBlindNil ? '✅BN' : '❌BN';
+                            // Map game type to display value
+                            switch (rules.gameType) {
+                              case 'REGULAR':
+                                gameType = 'REG';
+                                break;
+                              case 'WHIZ':
+                                gameType = 'WHIZ';
+                                break;
+                              case 'SOLO':
+                                gameType = 'SOLO';
+                                break;
+                              case 'MIRROR':
+                                gameType = 'MIRR';
+                                break;
+                              default:
+                                gameType = 'REG';
+                            }
                           }
-                        }
-                        return (
-                          <h3 className="text-sm font-medium">
-                            {gameType} {max}/{min} {gameType === 'REG' || gameType === 'SOLO' ? `${nil} ${bn}` : ''}
-                          </h3>
-                        );
-                      })()}
+                          return (
+                            <h3 className="text-sm font-medium">
+                              {gameType} {max}/{min} {gameType === 'REG' || gameType === 'SOLO' ? `${nil} ${bn}` : ''}
+                            </h3>
+                          );
+                        })()}
+                      </div>
+                      <div className={`px-2 py-0.5 rounded-full text-xs ${
+                        game.status === "WAITING" ? "bg-yellow-500 text-black" :
+                        game.status === "BIDDING" ? "bg-blue-500 text-white" :
+                        game.status === "PLAYING" ? "bg-green-500 text-white" :
+                        "bg-gray-500 text-white"
+                      }`}>
+                        {game.status}
+                      </div>
                     </div>
-                    <div className={`px-2 py-0.5 rounded-full text-xs ${
-                      game.status === "WAITING" ? "bg-yellow-500 text-black" :
-                      game.status === "BIDDING" ? "bg-blue-500 text-white" :
-                      game.status === "PLAYING" ? "bg-green-500 text-white" :
-                      "bg-gray-500 text-white"
-                    }`}>
-                      {game.status}
-                    </div>
-                  </div>
 
-                  {/* Table visualization */}
-                  <div className="relative mb-3 mx-auto" style={{ 
-                    width: "320px", 
-                    height: "200px",
-                    maxWidth: "100%" 
-                  }}>
-                    {/* Table background */}
-                    <div className="absolute inset-[15%] rounded-full bg-[#316785] border-4 border-[#855f31]"></div>
-                    
-                    {/* North position */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-16">
-                      {game.players.find(p => p.position === 2) ? (
-                        <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
-                          getTeamForPosition(2) === 1 ? 'border-red-500' : 'border-blue-500'
-                        } flex items-center justify-center bg-white`}>
-                          <Image 
-                            src={getPlayerAvatar(game.players.find(p => p.position === 2))} 
-                            alt="Player avatar" 
-                            className="w-full h-full object-cover"
-                            width={64}
-                            height={64}
-                          />
-                          <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
-                            {game.players.find(p => p.position === 2)?.name}
+                    {/* Table visualization */}
+                    <div className="relative mb-3 mx-auto" style={{ 
+                      width: "320px", 
+                      height: "200px",
+                      maxWidth: "100%" 
+                    }}>
+                      {/* Table background */}
+                      <div className="absolute inset-[15%] rounded-full bg-[#316785] border-4 border-[#855f31]"></div>
+                      
+                      {/* North position */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 2) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(2) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 2))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 2)?.name}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        game.status === "WAITING" && (
-                          <button 
-                            onClick={() => handleJoinGame(game.id, getTeamForPosition(2), 2)}
-                            className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
-                              getTeamForPosition(2) === 1 ? 'border-red-500' : 'border-blue-500'
-                            } text-white`}
-                          >
-                            Join
-                          </button>
-                        )
-                      )}
-                    </div>
-                    
-                    {/* East position */}
-                    <div className="absolute right-5 top-1/2 -translate-y-1/2 w-16 h-16">
-                      {game.players.find(p => p.position === 3) ? (
-                        <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
-                          getTeamForPosition(3) === 1 ? 'border-red-500' : 'border-blue-500'
-                        } flex items-center justify-center bg-white`}>
-                          <Image 
-                            src={getPlayerAvatar(game.players.find(p => p.position === 3))} 
-                            alt="Player avatar" 
-                            className="w-full h-full object-cover"
-                            width={64}
-                            height={64}
-                          />
-                          <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
-                            {game.players.find(p => p.position === 3)?.name}
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(2), 2)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(2) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
+                      
+                      {/* East position */}
+                      <div className="absolute right-5 top-1/2 -translate-y-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 3) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(3) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 3))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 3)?.name}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        game.status === "WAITING" && (
-                          <button 
-                            onClick={() => handleJoinGame(game.id, getTeamForPosition(3), 3)}
-                            className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
-                              getTeamForPosition(3) === 1 ? 'border-red-500' : 'border-blue-500'
-                            } text-white`}
-                          >
-                            Join
-                          </button>
-                        )
-                      )}
-                    </div>
-                    
-                    {/* South position */}
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16">
-                      {game.players.find(p => p.position === 0) ? (
-                        <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
-                          getTeamForPosition(0) === 1 ? 'border-red-500' : 'border-blue-500'
-                        } flex items-center justify-center bg-white`}>
-                          <Image 
-                            src={getPlayerAvatar(game.players.find(p => p.position === 0))} 
-                            alt="Player avatar" 
-                            className="w-full h-full object-cover"
-                            width={64}
-                            height={64}
-                          />
-                          <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
-                            {game.players.find(p => p.position === 0)?.name}
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(3), 3)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(3) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
+                      
+                      {/* South position */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 0) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(0) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 0))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 0)?.name}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        game.status === "WAITING" && (
-                          <button 
-                            onClick={() => handleJoinGame(game.id, getTeamForPosition(0), 0)}
-                            className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
-                              getTeamForPosition(0) === 1 ? 'border-red-500' : 'border-blue-500'
-                            } text-white`}
-                          >
-                            Join
-                          </button>
-                        )
-                      )}
-                    </div>
-                    
-                    {/* West position */}
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-16 h-16">
-                      {game.players.find(p => p.position === 1) ? (
-                        <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
-                          getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
-                        } flex items-center justify-center bg-white`}>
-                          <Image 
-                            src={getPlayerAvatar(game.players.find(p => p.position === 1))} 
-                            alt="Player avatar" 
-                            className="w-full h-full object-cover"
-                            width={64}
-                            height={64}
-                          />
-                          <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
-                            {game.players.find(p => p.position === 1)?.name}
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(0), 0)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(0) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
+                      
+                      {/* West position */}
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 1) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 1))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 1)?.name}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        game.status === "WAITING" && (
-                          <button 
-                            onClick={() => handleJoinGame(game.id, getTeamForPosition(1), 1)}
-                            className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
-                              getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
-                            } text-white`}
-                          >
-                            Join
-                          </button>
-                        )
-                      )}
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(1), 1)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Game actions buttons */}
-                  <div className="flex gap-2">
-                    {/* Show Join Game button if the player has already joined the game */}
-                    {game.status !== "WAITING" && game.players.some(p => isControlledByThisBrowser(p.id, p.browserSessionId)) && (
+                    {/* Game actions buttons */}
+                    <div className="flex gap-2">
+                      {/* Show Join Game button if the player has already joined the game */}
+                      {game.status !== "WAITING" && game.players.some(p => isControlledByThisBrowser(p.id, p.browserSessionId)) && (
+                        <button
+                          onClick={() => onGameSelect(game)}
+                          className="flex-1 px-2 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                        >
+                          Join Game
+                        </button>
+                      )}
+                      
+                      {/* Watch button for spectators */}
                       <button
                         onClick={() => onGameSelect(game)}
-                        className="flex-1 px-2 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                        className="flex-1 px-2 py-1 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
                       >
-                        Join Game
+                        Watch
                       </button>
-                    )}
-                    
-                    {/* Watch button for spectators */}
-                    <button
-                      onClick={() => onGameSelect(game)}
-                      className="flex-1 px-2 py-1 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
-                    >
-                      Watch
-                    </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {games.length === 0 && (
-                <div className="col-span-full text-center py-8 text-gray-400 bg-gray-800 rounded-lg border border-gray-700">
-                  No games available. Create one to start playing!
-                </div>
-              )}
+                ))}
+                {games.length === 0 && (
+                  <div className="col-span-full text-center py-8 text-gray-400 bg-gray-800 rounded-lg border border-gray-700">
+                    No games available. Create one to start playing!
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Chat Section */}
-        <div className={`w-full lg:w-96 ${showChat ? 'flex' : 'hidden lg:block'}`}>
-          <LobbyChat
-            socket={socket}
-            userId={user.id}
-            userName={user.name || "Guest"}
-          />
+          {/* Chat Section */}
+          <div className={`w-full lg:w-96 ${showChat ? 'flex' : 'hidden lg:block'}`}>
+            <LobbyChat
+              socket={socket}
+              userId={user.id}
+              userName={user.name || "Guest"}
+            />
+          </div>
         </div>
       </div>
 
