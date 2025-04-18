@@ -83,7 +83,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       setError(null);
       
       // Join the lobby room
-      activeSocket.emit('join_lobby', { userId });
+      activeSocket.emit('join_lobby', { userId, userName });
     };
     
     const onDisconnect = () => {
@@ -99,17 +99,43 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     const onOnlineUsersUpdate = (count: number) => {
       setOnlineUsers(count);
     };
+
+    const onUserJoined = (data: { userId: string; userName: string }) => {
+      const systemMessage: ChatMessage = {
+        id: `system-${Date.now()}-${Math.random()}`,
+        userId: 'system',
+        userName: 'System',
+        message: `${data.userName} joined the lobby`,
+        timestamp: Date.now(),
+        isSystemMessage: true
+      };
+      setMessages(prev => [...prev, systemMessage]);
+    };
+
+    const onUserLeft = (data: { userId: string; userName: string }) => {
+      const systemMessage: ChatMessage = {
+        id: `system-${Date.now()}-${Math.random()}`,
+        userId: 'system',
+        userName: 'System',
+        message: `${data.userName} left the lobby`,
+        timestamp: Date.now(),
+        isSystemMessage: true
+      };
+      setMessages(prev => [...prev, systemMessage]);
+    };
     
     activeSocket.on('connect', onConnect);
     activeSocket.on('disconnect', onDisconnect);
     activeSocket.on('connect_error', onError);
     activeSocket.on('error', onError);
     activeSocket.on('online_users_update', onOnlineUsersUpdate);
+    activeSocket.on('user_joined_lobby', onUserJoined);
+    activeSocket.on('user_left_lobby', onUserLeft);
     
     setIsConnected(activeSocket.connected);
     
     if (activeSocket.connected) {
-      activeSocket.emit('join_lobby', { userId });
+      activeSocket.emit('join_lobby', { userId, userName });
     }
 
     return () => {
@@ -118,8 +144,10 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       activeSocket.off('connect_error', onError);
       activeSocket.off('error', onError);
       activeSocket.off('online_users_update', onOnlineUsersUpdate);
+      activeSocket.off('user_joined_lobby', onUserJoined);
+      activeSocket.off('user_left_lobby', onUserLeft);
     };
-  }, [activeSocket, userId]);
+  }, [activeSocket, userId, userName]);
 
   useEffect(() => {
     if (!activeSocket) return;
