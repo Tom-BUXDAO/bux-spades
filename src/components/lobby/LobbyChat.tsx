@@ -39,6 +39,8 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   const reconnectAttemptsRef = useRef(0);
   const lastReconnectTimeRef = useRef(0);
   const rateLimitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastEventTimeRef = useRef<Record<string, number>>({});
+  const eventTimeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
   
   // Add responsive sizing state
   const [screenSize, setScreenSize] = useState({
@@ -79,6 +81,33 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   const regularSocket = !socket ? useSocket() : null;
   const activeSocket = socket || regularSocket?.socket;
 
+  // Rate limit helper function
+  const shouldThrottleEvent = (eventName: string, minDelay: number = 2000) => {
+    const now = Date.now();
+    const lastTime = lastEventTimeRef.current[eventName] || 0;
+    
+    if (now - lastTime < minDelay) {
+      return true;
+    }
+    
+    lastEventTimeRef.current[eventName] = now;
+    return false;
+  };
+
+  // Debounced emit helper
+  const debouncedEmit = (eventName: string, data: any, delay: number = 2000) => {
+    if (eventTimeoutsRef.current[eventName]) {
+      clearTimeout(eventTimeoutsRef.current[eventName]);
+    }
+
+    eventTimeoutsRef.current[eventName] = setTimeout(() => {
+      if (activeSocket?.connected) {
+        activeSocket.emit(eventName, data);
+      }
+      delete eventTimeoutsRef.current[eventName];
+    }, delay);
+  };
+
   // Setup socket event handlers
   useEffect(() => {
     if (!activeSocket || handlersSetupRef.current) return;
@@ -93,18 +122,28 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       setError(null);
       reconnectAttemptsRef.current = 0;
       
-      // Join the lobby room with additional user info
-      activeSocket.emit('join_lobby', { 
-        userId, 
-        userName,
-        isDiscordUser: /^\d+$/.test(userId),
-        timestamp: Date.now()
-      });
-
-      // Request online users count after a short delay to avoid rate limiting
+      // Clear any existing timeouts
+      Object.values(eventTimeoutsRef.current).forEach(timeout => clearTimeout(timeout));
+      eventTimeoutsRef.current = {};
+      
+      // Join the lobby room with additional user info - delay to avoid rate limiting
       setTimeout(() => {
-        activeSocket.emit('get_online_users');
-      }, 1000);
+        if (!shouldThrottleEvent('join_lobby')) {
+          activeSocket.emit('join_lobby', { 
+            userId, 
+            userName,
+            isDiscordUser: /^\d+$/.test(userId),
+            timestamp: Date.now()
+          });
+        }
+      }, 500);
+
+      // Request online users count after a delay
+      setTimeout(() => {
+        if (!shouldThrottleEvent('get_online_users')) {
+          activeSocket.emit('get_online_users');
+        }
+      }, 1500);
     };
     
     const onDisconnect = (reason: string) => {
@@ -270,6 +309,9 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
 
     return () => {
       console.log('Cleaning up socket event handlers for user:', userId);
+      // Clear all timeouts
+      Object.values(eventTimeoutsRef.current).forEach(timeout => clearTimeout(timeout));
+      eventTimeoutsRef.current = {};
       if (rateLimitTimeoutRef.current) {
         clearTimeout(rateLimitTimeoutRef.current);
       }
@@ -284,6 +326,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
         socketRef.current.off('lobby_message', handleMessage);
       }
       handlersSetupRef.current = false;
+      lastEventTimeRef.current = {};
     };
   }, [activeSocket, userId, userName]);
 
@@ -297,7 +340,9 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     if (!message.trim()) return;
     if (!activeSocket?.connected) {
       console.log('Socket not connected, attempting to reconnect...');
-      activeSocket?.connect();
+      if (!shouldThrottleEvent('reconnect', 5000)) {
+        activeSocket?.connect();
+      }
       return;
     }
 
@@ -308,13 +353,16 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       timestamp: Date.now()
     };
 
-    console.log('Sending lobby message:', chatMessage);
-    activeSocket.emit('lobby_message', chatMessage);
-    
-    // Add message locally for immediate feedback
-    setMessages(prev => [...prev, { ...chatMessage, id: `local-${Date.now()}` }]);
-    setMessage('');
-    setShowEmojiPicker(false);
+    // Use debounced emit for chat messages
+    if (!shouldThrottleEvent('lobby_message', 500)) {
+      console.log('Sending lobby message:', chatMessage);
+      activeSocket.emit('lobby_message', chatMessage);
+      
+      // Add message locally for immediate feedback
+      setMessages(prev => [...prev, { ...chatMessage, id: `local-${Date.now()}` }]);
+      setMessage('');
+      setShowEmojiPicker(false);
+    }
   };
 
   const onEmojiSelect = (emoji: any) => {
