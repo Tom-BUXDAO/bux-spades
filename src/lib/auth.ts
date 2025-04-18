@@ -1,4 +1,4 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { getServerSession } from "next-auth";
 import { type NextAuthOptions, type User as NextAuthUser } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -20,15 +20,8 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/adapters" {
-  interface AdapterUser extends PrismaAdapterUser {
-    username: string;
-    coins: number;
-  }
-}
-
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
   session: {
     strategy: "jwt",
   },
@@ -53,14 +46,14 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const whereInput: Prisma.UserWhereInput = {
-          OR: [
-            { email: credentials.username },
-            { username: credentials.username }
-          ]
-        };
-
-        const user: PrismaUser | null = await prisma.user.findFirst({ where: whereInput });
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: credentials.username },
+              { username: credentials.username },
+            ],
+          },
+        });
 
         if (!user || !user.hashedPassword) {
           return null;
@@ -72,48 +65,41 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        return user;
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          coins: user.coins,
+          image: user.image,
+        };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, isNewUser }) {
-      const dbUser = user as PrismaUser | undefined;
+    async jwt({ token, user, account }) {
+      const sessionUser = user as (PrismaUser & { id: string, username?: string, email?: string, coins?: number, image?: string }) | undefined;
 
-      if (dbUser) {
-        let userCoins = dbUser.coins ?? 0;
-        let finalUsername = dbUser.username;
-        let dbUpdateData: Prisma.UserUpdateInput = {};
+      if (sessionUser) {
+        let finalUsername = sessionUser.username;
+        let finalCoins = sessionUser.coins ?? 0;
 
-        if (account?.provider === "discord") {
-          if (!dbUser.username) {
-            const generatedUsername = dbUser.email?.split("@")[0] || `user_${Date.now()}`;
-            dbUpdateData.username = generatedUsername;
-            finalUsername = generatedUsername;
-          }
-
-          if (isNewUser) {
-            if (dbUser.coins === null || dbUser.coins === undefined || dbUser.coins === 0) {
-                userCoins = 5000000;
-                dbUpdateData.coins = userCoins;
-            }
-          }
-        }
-
-        if (Object.keys(dbUpdateData).length > 0) {
+        if (account?.provider === "discord" && !sessionUser.username) {
+          const generatedUsername = sessionUser.email?.split("@")[0] || `user_${Date.now()}`;
+          finalUsername = generatedUsername;
           try {
             await prisma.user.update({
-              where: { id: dbUser.id },
-              data: dbUpdateData
+              where: { id: sessionUser.id },
+              data: { username: generatedUsername },
             });
           } catch (error) {
-            console.error("Failed to update user during JWT callback:", error);
+            console.error("Failed to update username for Discord user:", error);
           }
         }
 
-        token.id = dbUser.id;
+        token.id = sessionUser.id;
         token.username = finalUsername;
-        token.coins = userCoins;
+        token.coins = finalCoins;
       }
       return token;
     },
