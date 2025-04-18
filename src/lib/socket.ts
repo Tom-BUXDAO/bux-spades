@@ -428,21 +428,33 @@ function handleGameCompletion(socket: typeof Socket, gameId: string) {
 }
 
 // Modify startGame to use completion handling
-export async function startGame(gameId: string) {
-  const socket = getSocket();
-  if (!socket) throw new Error('Socket not connected');
-
-  try {
-    // Start the game
-    socket.emit('start_game', { gameId });
+export function startGame(socket: typeof Socket | null, gameId: string, userId?: string) {
+  if (!socket) return Promise.reject("No socket connection");
+  
+  return new Promise((resolve, reject) => {
+    console.log('Starting game:', { gameId, userId });
     
-    // Wait for completion
-    const result = await handleGameCompletion(socket, gameId);
-    return result;
-  } catch (error) {
-    console.error('Error in startGame:', error);
-    throw error;
-  }
+    const cleanup = () => {
+      socket.off('game_started', onGameStarted);
+      socket.off('game_error', onGameError);
+    };
+
+    const onGameStarted = (gameState: GameState) => {
+      cleanup();
+      resolve(gameState);
+    };
+
+    const onGameError = (error: any) => {
+      console.error('Error starting game:', error);
+      cleanup();
+      reject(error);
+    };
+
+    socket.on('game_started', onGameStarted);
+    socket.on('game_error', onGameError);
+    
+    socket.emit('start_game', { gameId, userId });
+  });
 }
 
 export function makeMove(socket: typeof Socket | null, gameId: string, userId: string, move: any) {
