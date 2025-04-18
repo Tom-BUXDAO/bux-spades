@@ -428,10 +428,10 @@ function handleGameCompletion(socket: typeof Socket, gameId: string) {
 }
 
 // Modify startGame to use completion handling
-export function startGame(socket: typeof Socket | null, gameId: string, userId?: string) {
+export function startGame(socket: typeof Socket | null, gameId: string, userId?: string): Promise<void> {
   if (!socket) return Promise.reject("No socket connection");
   
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     console.log('Starting game:', { gameId, userId });
     
     const cleanup = () => {
@@ -441,7 +441,7 @@ export function startGame(socket: typeof Socket | null, gameId: string, userId?:
 
     const onGameStarted = (gameState: GameState) => {
       cleanup();
-      resolve(gameState);
+      resolve(); // Resolve without passing the gameState
     };
 
     const onGameError = (error: any) => {
