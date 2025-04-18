@@ -396,7 +396,7 @@ export default function GameLobby({
                         height={16} 
                         className="inline-block"
                       />
-                      <span>{user.coins?.toLocaleString()}</span>
+                      <span>{user.coins ? ((user.coins >= 1000000) ? `${(user.coins / 1000000).toFixed(1)}mil` : user.coins.toLocaleString()) : '0'}</span>
                     </div>
                   </div>
                 </div>
@@ -542,7 +542,7 @@ export default function GameLobby({
                                   height={14} 
                                   className="inline-block"
                                 />
-                                <span className="text-sm">{rules?.coinAmount?.toLocaleString() || '100,000'} each</span>
+                                <span className="text-sm">{rules?.coinAmount ? `${(rules.coinAmount / 1000)}k` : '100k'}</span>
                               </div>
                             </div>
                           );
