@@ -28,8 +28,6 @@ export default function LoginPage() {
     setError(null);
     try {
       if (isRegistering) {
-        // Handle registration logic here
-        // You'll need to implement this endpoint
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
@@ -42,8 +40,10 @@ export default function LoginPage() {
           }),
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-          throw new Error('Registration failed');
+          throw new Error(data.error || 'Registration failed');
         }
 
         // If registration successful, log them in
@@ -54,7 +54,9 @@ export default function LoginPage() {
           callbackUrl: "/game"
         });
         
-        if (result?.url) {
+        if (result?.error) {
+          throw new Error('Failed to log in after registration');
+        } else if (result?.url) {
           window.location.href = result.url;
         }
       } else {
@@ -66,7 +68,6 @@ export default function LoginPage() {
         });
 
         if (result?.error) {
-          console.error("Login failed:", result.error);
           setError("Invalid username or password.");
           setIsLoading(false);
         } else if (result?.url) {
@@ -78,7 +79,7 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error(isRegistering ? "Registration error:" : "Login error:", err);
-      setError(`An error occurred during ${isRegistering ? 'registration' : 'login'}. Please try again.`);
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       setIsLoading(false);
     }
   };
