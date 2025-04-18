@@ -353,9 +353,10 @@ export default function GameLobby({
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
-      <div className="flex-none p-4 bg-gray-800 shadow-md">
-        <div className="flex justify-between items-center">
+    <div className="flex flex-col h-screen overflow-hidden bg-gray-900">
+      {/* Header - fixed height */}
+      <div className="flex-none h-16 px-4 bg-gray-800 shadow-md">
+        <div className="flex justify-between items-center h-full">
           <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
           <div className="flex items-center space-x-4">
             <button
@@ -383,15 +384,16 @@ export default function GameLobby({
         </div>
       </div>
 
+      {/* Main content - fills remaining height */}
       <div 
-        className="flex-1 p-4 flex space-x-4 overflow-hidden"
+        className="flex-1 p-4 flex space-x-4 overflow-hidden min-h-0"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
         {/* Games List Section */}
-        <div className={`flex-1 flex flex-col space-y-4 min-w-0 ${showChat ? 'hidden lg:flex' : 'flex'}`}>
-          <div className="flex justify-between items-center">
+        <div className={`flex-1 flex flex-col min-w-0 ${showChat ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="flex-none flex justify-between items-center mb-4">
             <div>
               <h2 className="text-xl font-semibold text-white">Available Games</h2>
               <p className="text-gray-400 text-sm">{games.length} games available</p>
@@ -404,8 +406,8 @@ export default function GameLobby({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pr-2">
               {games.map((game) => (
                 <div
                   key={game.id}
@@ -623,7 +625,7 @@ export default function GameLobby({
         </div>
 
         {/* Chat Section */}
-        <div className={`w-full lg:w-96 overflow-hidden ${showChat ? 'flex' : 'hidden lg:block'}`}>
+        <div className={`w-full lg:w-96 ${showChat ? 'flex' : 'hidden lg:block'}`}>
           <LobbyChat
             socket={socket}
             userId={user.id}
