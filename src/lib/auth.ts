@@ -1,12 +1,12 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { getServerSession } from "next-auth";
-import { type NextAuthOptions } from "next-auth";
+import { type NextAuthOptions, type User as NextAuthUser } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from "./prisma";
 import { env } from "@/env.mjs";
 import { compare } from "bcryptjs";
-import { type User, Prisma } from "@prisma/client";
+import { type User as PrismaUser, Prisma } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -21,16 +21,14 @@ declare module "next-auth" {
 }
 
 declare module "next-auth/adapters" {
-  interface AdapterUser extends User {
-    id: string;
+  interface AdapterUser extends PrismaAdapterUser {
     username: string;
     coins: number;
-    hashedPassword: string | null;
   }
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
   },
@@ -55,14 +53,14 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: credentials.username },
-              { username: credentials.username } as Prisma.UserWhereInput
-            ]
-          }
-        });
+        const whereInput: Prisma.UserWhereInput = {
+          OR: [
+            { email: credentials.username },
+            { username: credentials.username }
+          ]
+        };
+
+        const user: PrismaUser | null = await prisma.user.findFirst({ where: whereInput });
 
         if (!user || !user.hashedPassword) {
           return null;
@@ -74,65 +72,58 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          username: user.username,
-          coins: user.coins,
-          emailVerified: user.emailVerified,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
-          image: user.image,
-        };
+        return user;
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        // For Discord login, create a username from the email
-        if (account?.provider === "discord" && !user.username) {
-          const username = user.email?.split("@")[0] || `user_${Date.now()}`;
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { username }
-          });
-          return {
-            ...token,
-            id: user.id,
-            username,
-            coins: user.coins || 5000000,
-            emailVerified: user.emailVerified,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt,
-          };
+    async jwt({ token, user, account, isNewUser }) {
+      const dbUser = user as PrismaUser | undefined;
+
+      if (dbUser) {
+        let userCoins = dbUser.coins ?? 0;
+        let finalUsername = dbUser.username;
+        let dbUpdateData: Prisma.UserUpdateInput = {};
+
+        if (account?.provider === "discord") {
+          if (!dbUser.username) {
+            const generatedUsername = dbUser.email?.split("@")[0] || `user_${Date.now()}`;
+            dbUpdateData.username = generatedUsername;
+            finalUsername = generatedUsername;
+          }
+
+          if (isNewUser) {
+            if (dbUser.coins === null || dbUser.coins === undefined || dbUser.coins === 0) {
+                userCoins = 5000000;
+                dbUpdateData.coins = userCoins;
+            }
+          }
         }
-        return {
-          ...token,
-          id: user.id,
-          username: (user as any).username,
-          coins: (user as any).coins,
-          emailVerified: user.emailVerified,
-          createdAt: (user as any).createdAt,
-          updatedAt: (user as any).updatedAt,
-        };
+
+        if (Object.keys(dbUpdateData).length > 0) {
+          try {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: dbUpdateData
+            });
+          } catch (error) {
+            console.error("Failed to update user during JWT callback:", error);
+          }
+        }
+
+        token.id = dbUser.id;
+        token.username = finalUsername;
+        token.coins = userCoins;
       }
       return token;
     },
     async session({ session, token }) {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id as string,
-          username: token.username as string,
-          coins: token.coins as number,
-          emailVerified: token.emailVerified as Date | null,
-          createdAt: token.createdAt as Date,
-          updatedAt: token.updatedAt as Date,
-        },
-      };
+      if (token.id && session.user) {
+        session.user.id = token.id as string;
+        session.user.username = token.username as string;
+        session.user.coins = token.coins as number;
+      }
+      return session;
     },
   },
 };
