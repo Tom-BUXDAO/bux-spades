@@ -34,6 +34,8 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   const [error, setError] = useState<string | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<typeof Socket | null>(null);
+  const handlersSetupRef = useRef(false);
   
   // Add responsive sizing state
   const [screenSize, setScreenSize] = useState({
@@ -73,9 +75,14 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   // Only use regular socket if not in test mode
   const regularSocket = !socket ? useSocket() : null;
   const activeSocket = socket || regularSocket?.socket;
-  
+
+  // Setup socket event handlers
   useEffect(() => {
-    if (!activeSocket) return;
+    if (!activeSocket || handlersSetupRef.current) return;
+
+    console.log('Setting up socket event handlers for chat');
+    handlersSetupRef.current = true;
+    socketRef.current = activeSocket;
     
     const onConnect = () => {
       console.log('Lobby chat connected');
@@ -86,15 +93,17 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       activeSocket.emit('join_lobby', { userId, userName });
     };
     
-    const onDisconnect = () => {
-      console.log('Lobby chat disconnected');
+    const onDisconnect = (reason: string) => {
+      console.log('Lobby chat disconnected:', reason);
       setIsConnected(false);
+      handlersSetupRef.current = false;
     };
     
     const onError = (err: any) => {
       console.error('Lobby chat error:', err);
       setError(err.message || 'Connection error');
       setIsConnected(false);
+      handlersSetupRef.current = false;
     };
 
     const onOnlineUsersUpdate = (count: number) => {
@@ -132,39 +141,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
         console.error('Error handling user left:', err);
       }
     };
-    
-    // Set up event listeners
-    activeSocket.on('connect', onConnect);
-    activeSocket.on('disconnect', onDisconnect);
-    activeSocket.on('connect_error', onError);
-    activeSocket.on('error', onError);
-    activeSocket.on('online_users_update', onOnlineUsersUpdate);
-    activeSocket.on('user_joined_lobby', onUserJoined);
-    activeSocket.on('user_left_lobby', onUserLeft);
-    
-    // Set initial connection state and join lobby if connected
-    if (activeSocket.connected) {
-      setIsConnected(true);
-      activeSocket.emit('join_lobby', { userId, userName });
-    } else {
-      setIsConnected(false);
-      activeSocket.connect();
-    }
 
-    return () => {
-      activeSocket.off('connect', onConnect);
-      activeSocket.off('disconnect', onDisconnect);
-      activeSocket.off('connect_error', onError);
-      activeSocket.off('error', onError);
-      activeSocket.off('online_users_update', onOnlineUsersUpdate);
-      activeSocket.off('user_joined_lobby', onUserJoined);
-      activeSocket.off('user_left_lobby', onUserLeft);
-    };
-  }, [activeSocket, userId, userName]);
-
-  useEffect(() => {
-    if (!activeSocket) return;
-    
     const handleMessage = (data: any) => {
       try {
         console.log('Received lobby chat message:', data);
@@ -200,12 +177,38 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       }
     };
     
+    // Set up event listeners
+    activeSocket.on('connect', onConnect);
+    activeSocket.on('disconnect', onDisconnect);
+    activeSocket.on('connect_error', onError);
+    activeSocket.on('error', onError);
+    activeSocket.on('online_users_update', onOnlineUsersUpdate);
+    activeSocket.on('user_joined_lobby', onUserJoined);
+    activeSocket.on('user_left_lobby', onUserLeft);
     activeSocket.on('lobby_message', handleMessage);
     
+    // Set initial connection state and join lobby if connected
+    if (activeSocket.connected) {
+      console.log('Socket already connected, joining lobby');
+      setIsConnected(true);
+      activeSocket.emit('join_lobby', { userId, userName });
+    }
+
     return () => {
-      activeSocket.off('lobby_message', handleMessage);
+      console.log('Cleaning up socket event handlers');
+      if (socketRef.current) {
+        socketRef.current.off('connect', onConnect);
+        socketRef.current.off('disconnect', onDisconnect);
+        socketRef.current.off('connect_error', onError);
+        socketRef.current.off('error', onError);
+        socketRef.current.off('online_users_update', onOnlineUsersUpdate);
+        socketRef.current.off('user_joined_lobby', onUserJoined);
+        socketRef.current.off('user_left_lobby', onUserLeft);
+        socketRef.current.off('lobby_message', handleMessage);
+      }
+      handlersSetupRef.current = false;
     };
-  }, [activeSocket]);
+  }, [activeSocket, userId, userName]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
