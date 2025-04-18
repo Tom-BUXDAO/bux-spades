@@ -68,7 +68,8 @@ export default function GameLobby({
     allowNil: true,
     allowBlindNil: false,
     minPoints: -250,
-    maxPoints: 500
+    maxPoints: 500,
+    coinAmount: 100000
   });
   const [showChat, setShowChat] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -522,19 +523,33 @@ export default function GameLobby({
                             }
                           }
                           return (
-                            <h3 className="text-sm font-medium">
-                              {gameType} {max}/{min} {gameType === 'REG' || gameType === 'SOLO' ? `${nil} ${bn}` : ''}
-                            </h3>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold">{gameType}</span>
+                                <span className="text-sm">{max}/{min}</span>
+                                {(rules?.gameType === 'REGULAR' || rules?.gameType === 'SOLO') && (
+                                  <>
+                                    <span className="text-sm">{nil}</span>
+                                    <span className="text-sm">{bn}</span>
+                                  </>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1 text-yellow-400">
+                                <Image 
+                                  src={COIN_ICON} 
+                                  alt="Coins" 
+                                  width={14} 
+                                  height={14} 
+                                  className="inline-block"
+                                />
+                                <span className="text-sm">{rules?.coinAmount?.toLocaleString() || '100,000'} each</span>
+                              </div>
+                            </div>
                           );
                         })()}
                       </div>
-                      <div className={`px-2 py-0.5 rounded-full text-xs ${
-                        game.status === "WAITING" ? "bg-yellow-500 text-black" :
-                        game.status === "BIDDING" ? "bg-blue-500 text-white" :
-                        game.status === "PLAYING" ? "bg-green-500 text-white" :
-                        "bg-gray-500 text-white"
-                      }`}>
-                        {game.status}
+                      <div className="text-gray-400 text-sm">
+                        {game.players.length}/4
                       </div>
                     </div>
 
@@ -720,6 +735,7 @@ export default function GameLobby({
         onClose={() => setShowRulesModal(false)}
         onSave={handleSaveRules}
         initialRules={gameRules}
+        userCoins={user.coins || 0}
       />
 
       {showNameInput && (

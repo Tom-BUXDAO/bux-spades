@@ -1197,6 +1197,12 @@ export default function GameTable({
                             <div><span className="text-gray-400">Blind Nil:</span> {game.rules?.allowBlindNil ? '✅ Allowed' : '❌ Not allowed'}</div>
                           </>
                         )}
+                        <div className="mt-2 pt-2 border-t border-gray-700">
+                          <div><span className="text-gray-400">Buy-in:</span> {game.rules?.coinAmount?.toLocaleString() || '100,000'}</div>
+                          <div><span className="text-gray-400">Prize Pool:</span> {((game.rules?.coinAmount || 100000) * 4 * 0.9).toLocaleString()}</div>
+                          <div className="text-xs text-gray-500">Winners get {((game.rules?.coinAmount || 100000) * 4 * 0.9 / 2).toLocaleString()} each</div>
+                          <div className="text-xs text-gray-500">10% house fee applied</div>
+                        </div>
                       </div>
                     </div>
                   )}

@@ -37,6 +37,7 @@ export interface GameRules {
   minPoints: number;
   maxPoints: number;
   numHands?: number;
+  coinAmount: number;  // Amount of coins each player must put in
 }
 
 export interface TeamScore extends Omit<ScoringTeamScore, 'team'> {

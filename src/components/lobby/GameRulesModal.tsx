@@ -7,6 +7,7 @@ interface GameRulesModalProps {
   onClose: () => void;
   onSave: (rules: GameRules) => void;
   initialRules?: GameRules;
+  userCoins: number;
 }
 
 export interface GameRules {
@@ -15,6 +16,7 @@ export interface GameRules {
   allowBlindNil: boolean;
   minPoints: number;
   maxPoints: number;
+  coinAmount: number;
 }
 
 const defaultRules: GameRules = {
@@ -22,15 +24,20 @@ const defaultRules: GameRules = {
   allowNil: true,
   allowBlindNil: false,
   minPoints: -250,
-  maxPoints: 500
+  maxPoints: 500,
+  coinAmount: 100000
 };
 
-export default function GameRulesModal({ isOpen, onClose, onSave, initialRules }: GameRulesModalProps) {
+export default function GameRulesModal({ isOpen, onClose, onSave, initialRules, userCoins }: GameRulesModalProps) {
   const [rules, setRules] = useState<GameRules>(initialRules || defaultRules);
 
   if (!isOpen) return null;
 
   const handleSave = () => {
+    if (rules.coinAmount > userCoins) {
+      alert("You don't have enough coins for this table!");
+      return;
+    }
     onSave(rules);
     onClose();
   };
@@ -44,6 +51,16 @@ export default function GameRulesModal({ isOpen, onClose, onSave, initialRules }
       setRules({ ...rules, minPoints: newValue });
     } else if (type === 'max' && newValue >= 100 && newValue <= 650) {
       setRules({ ...rules, maxPoints: newValue });
+    }
+  };
+
+  const handleCoinAmountChange = (delta: number) => {
+    const currentAmount = rules.coinAmount;
+    const newAmount = currentAmount + delta;
+    
+    // Validate ranges (minimum 10k, maximum user's coins)
+    if (newAmount >= 10000 && newAmount <= userCoins) {
+      setRules({ ...rules, coinAmount: newAmount });
     }
   };
 
@@ -68,6 +85,32 @@ export default function GameRulesModal({ isOpen, onClose, onSave, initialRules }
               <option value="SOLO">Solo</option>
               <option value="MIRROR">Mirror</option>
             </select>
+          </div>
+
+          {/* Coin Amount */}
+          <div>
+            <label className="text-white block mb-2">Coin Amount (per player)</label>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handleCoinAmountChange(-10000)}
+                className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
+              >
+                -10k
+              </button>
+              <span className="text-white flex-1 text-center">{rules.coinAmount.toLocaleString()}</span>
+              <button
+                onClick={() => handleCoinAmountChange(10000)}
+                className="px-3 py-1 bg-gray-700 text-white rounded hover:bg-gray-600"
+              >
+                +10k
+              </button>
+            </div>
+            <p className="text-sm text-gray-400 mt-1">
+              Prize pool: {(rules.coinAmount * 4 * 0.9).toLocaleString()} (after 10% house fee)
+            </p>
+            <p className="text-sm text-gray-400">
+              Winners get: {(rules.coinAmount * 4 * 0.9 / 2).toLocaleString()} each
+            </p>
           </div>
 
           {/* Nil Options - Only show for REGULAR and SOLO */}
