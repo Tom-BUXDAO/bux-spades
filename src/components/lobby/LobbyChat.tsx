@@ -80,34 +80,45 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   useEffect(() => {
     if (!activeSocket || handlersSetupRef.current) return;
 
-    console.log('Setting up socket event handlers for chat');
+    console.log('Setting up socket event handlers for chat, userId:', userId, 'userName:', userName);
     handlersSetupRef.current = true;
     socketRef.current = activeSocket;
     
     const onConnect = () => {
-      console.log('Lobby chat connected');
+      console.log('Lobby chat connected for user:', userId);
       setIsConnected(true);
       setError(null);
       
-      // Join the lobby room
-      activeSocket.emit('join_lobby', { userId, userName });
+      // Join the lobby room with additional user info
+      activeSocket.emit('join_lobby', { 
+        userId, 
+        userName,
+        isDiscordUser: /^\d+$/.test(userId), // Check if userId is a Discord ID (numeric)
+        timestamp: Date.now()
+      });
     };
     
     const onDisconnect = (reason: string) => {
-      console.log('Lobby chat disconnected:', reason);
+      console.log('Lobby chat disconnected:', reason, 'for user:', userId);
       setIsConnected(false);
       handlersSetupRef.current = false;
     };
     
     const onError = (err: any) => {
-      console.error('Lobby chat error:', err);
+      console.error('Lobby chat error for user:', userId, 'error:', err);
       setError(err.message || 'Connection error');
       setIsConnected(false);
       handlersSetupRef.current = false;
     };
 
     const onOnlineUsersUpdate = (count: number) => {
+      console.log('Online users update:', count, 'for user:', userId);
       setOnlineUsers(count);
+      // If we get a count but aren't marked as connected, fix that
+      if (count > 0 && !isConnected) {
+        setIsConnected(true);
+        setError(null);
+      }
     };
 
     const onUserJoined = (data: { userId: string; userName: string }) => {
@@ -189,13 +200,21 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     
     // Set initial connection state and join lobby if connected
     if (activeSocket.connected) {
-      console.log('Socket already connected, joining lobby');
+      console.log('Socket already connected, joining lobby for user:', userId);
       setIsConnected(true);
-      activeSocket.emit('join_lobby', { userId, userName });
+      activeSocket.emit('join_lobby', { 
+        userId, 
+        userName,
+        isDiscordUser: /^\d+$/.test(userId),
+        timestamp: Date.now()
+      });
     }
 
+    // Ping for online users count on connection
+    activeSocket.emit('get_online_users');
+
     return () => {
-      console.log('Cleaning up socket event handlers');
+      console.log('Cleaning up socket event handlers for user:', userId);
       if (socketRef.current) {
         socketRef.current.off('connect', onConnect);
         socketRef.current.off('disconnect', onDisconnect);
@@ -208,7 +227,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       }
       handlersSetupRef.current = false;
     };
-  }, [activeSocket, userId, userName]);
+  }, [activeSocket, userId, userName, isConnected]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -217,7 +236,12 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !activeSocket) return;
+    if (!message.trim()) return;
+    if (!activeSocket?.connected) {
+      console.log('Socket not connected, attempting to reconnect...');
+      activeSocket?.connect();
+      return;
+    }
 
     const chatMessage: ChatMessage = {
       userId,
@@ -226,7 +250,11 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       timestamp: Date.now()
     };
 
+    console.log('Sending lobby message:', chatMessage);
     activeSocket.emit('lobby_message', chatMessage);
+    
+    // Add message locally for immediate feedback
+    setMessages(prev => [...prev, { ...chatMessage, id: `local-${Date.now()}` }]);
     setMessage('');
     setShowEmojiPicker(false);
   };
