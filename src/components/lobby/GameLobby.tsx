@@ -197,26 +197,15 @@ export default function GameLobby({
       // Set up game creation handler
       const handleGameCreated = ({ gameId, game }: { gameId: string; game: GameState }) => {
         console.log("Game created:", gameId);
-        setCurrentPlayerId(user.id);
-        
-        // Explicitly join the game after creation
-        console.log("Explicitly joining game after creation:", gameId);
-        socket.emit("join_game", { 
-          gameId, 
-          userId: user.id, 
-          testPlayer: { 
-            name: user.name || "Unknown Player", 
-            team: 1 
-          } 
-        });
-        
-        onGameSelect(game);
+        // Just update the games list when a game is created
+        requestGames();
       };
       
       // Set up game update handler
       const handleGameUpdate = (game: GameState) => {
         console.log("Received game_update for game:", game.id, "with players:", game.players);
-        onGameSelect(game);
+        // Update the games list when a game is updated
+        requestGames();
       };
       
       // Register event handlers
@@ -261,6 +250,7 @@ export default function GameLobby({
       // Set up the listener before creating the game
       const handleGameCreated = ({ gameId, game }: { gameId: string; game: GameState }) => {
         console.log('Game created, joining as creator in South position');
+        // Join the game as creator in South position
         joinGame(gameId, user.id, {
           name: user.name || 'Player',
           team: 1, // South is team 1
@@ -268,7 +258,9 @@ export default function GameLobby({
           image: user.image || undefined,
           browserSessionId
         });
-        // Remove the listener after joining
+        // Select this game to show the game table
+        onGameSelect(game);
+        // Remove the listener after handling
         socket.off('game_created', handleGameCreated);
       };
 
