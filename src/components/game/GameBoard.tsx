@@ -38,9 +38,9 @@ export default function GameBoard({ gameId }: GameBoardProps) {
     (p) => p.id === session?.user?.id
   );
 
-  const handlePlayCard = (card: Card) => {
+  const handlePlayCard = (card: Card, index: number) => {
     if (!session?.user?.id || !game || !socket) return;
-    playCardFn(socket, game.id, session.user.id, card);
+    playCardFn(socket, game.id, session.user.id, index);
   };
 
   const handleMakeBid = (bid: number) => {
@@ -124,7 +124,7 @@ export default function GameBoard({ gameId }: GameBoardProps) {
             {currentPlayer.hand.map((card, index) => (
               <button
                 key={index}
-                onClick={() => handlePlayCard(card)}
+                onClick={() => handlePlayCard(card, index)}
                 disabled={game.status !== "PLAYING" || game.currentPlayer !== currentPlayer.id}
                 className={`p-2 bg-white rounded border text-center min-w-[60px] ${
                   game.status === "PLAYING" && game.currentPlayer === currentPlayer.id
