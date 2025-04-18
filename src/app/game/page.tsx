@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { redirect, useRouter } from "next/navigation";
 import GameLobby from "@/components/lobby/GameLobby";
 import GameTable from "@/components/game/GameTable";
-import type { GameState, GameRules } from "@/types/game";
+import type { GameState } from "@/types/game";
 import { useSocket } from "@/lib/socket";
 import * as socketApi from "@/lib/socket";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -127,7 +127,7 @@ export default function GamePage() {
   const user = session?.user || guestUser;
 
   // Create wrapper functions to match old API
-  const createGame = (user: { id: string; name?: string | null; image?: string | null }, rules?: GameRules) => {
+  const createGame = (user: any, rules?: any) => {
     if (socket) socketApi.createGame(socket, user, rules);
   };
 

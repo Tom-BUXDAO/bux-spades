@@ -3,46 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 import type { GameState, Card, GameRules } from '@/types/game';
-import { PrismaClient, GameStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 // Create separate socket instances for regular and test connections
 let regularSocket: typeof Socket | null = null;
 const testSockets: Map<string, typeof Socket> = new Map();
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
-
-// Rate limit handling
-const eventQueue = new Map<string, Array<{ event: string; data: any; }>>();
-const rateLimitedEvents = new Set<string>();
-const MAX_QUEUE_SIZE = 10;
-const BASE_RETRY_DELAY = 1000;
-
-function handleRateLimit(socket: typeof Socket, event: string, data: any) {
-  // Add to queue if not full
-  if (!eventQueue.has(event)) {
-    eventQueue.set(event, []);
-  }
-  const queue = eventQueue.get(event)!;
-  if (queue.length < MAX_QUEUE_SIZE) {
-    queue.push({ event, data });
-  }
-  
-  // Mark event as rate limited
-  rateLimitedEvents.add(event);
-  
-  // Set retry with exponential backoff
-  const retryDelay = BASE_RETRY_DELAY * Math.pow(2, queue.length);
-  setTimeout(() => {
-    if (socket.connected && rateLimitedEvents.has(event)) {
-      const nextEvent = queue.shift();
-      if (nextEvent) {
-        rateLimitedEvents.delete(event);
-        safeEmit(socket, nextEvent.event, nextEvent.data);
-      }
-    }
-  }, retryDelay);
-}
 
 export function useSocket(clientId: string = '') {
   const isTestConnection = clientId.startsWith('test_');
@@ -50,8 +15,6 @@ export function useSocket(clientId: string = '') {
   const [isConnected, setIsConnected] = useState(false);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const lastReconnectAttemptRef = useRef<number>(0);
   
   useEffect(() => {
     // For test connections, create a new socket for each client
@@ -63,7 +26,7 @@ export function useSocket(clientId: string = '') {
         console.log('Creating new test socket for client:', clientId);
         
         testSocket = io(SOCKET_URL, {
-          transports: ['websocket'],
+          transports: ['websocket', 'polling'],
           reconnectionAttempts: maxReconnectAttempts,
           reconnectionDelay: 1000,
           reconnectionDelayMax: 5000,
@@ -81,35 +44,20 @@ export function useSocket(clientId: string = '') {
         console.log('Test socket connected for client:', clientId);
         setIsConnected(true);
         reconnectAttempts.current = 0;
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = undefined;
-        }
       };
       
       const onDisconnect = (reason: string) => {
         console.log('Test socket disconnected for client:', clientId, 'reason:', reason);
         setIsConnected(false);
         
-        const now = Date.now();
-        const timeSinceLastReconnect = now - lastReconnectAttemptRef.current;
-        
         if (
-          (reason === 'io server disconnect' || reason === 'transport close') &&
-          reconnectAttempts.current < maxReconnectAttempts &&
-          timeSinceLastReconnect > 5000 // At least 5 seconds between reconnect attempts
+          reason === 'io server disconnect' || 
+          reason === 'transport close' || 
+          reconnectAttempts.current >= maxReconnectAttempts
         ) {
           console.log(`Test socket attempting reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
           reconnectAttempts.current++;
-          lastReconnectAttemptRef.current = now;
-          
-          // Exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (testSocket && !testSocket.connected) {
-              testSocket.connect();
-            }
-          }, delay);
+          setTimeout(() => testSocket?.connect(), 1000);
         }
       };
       
@@ -120,20 +68,17 @@ export function useSocket(clientId: string = '') {
       setIsConnected(testSocket.connected);
       
       return () => {
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-        }
         testSocket.off('connect', onConnect);
         testSocket.off('disconnect', onDisconnect);
         // Don't disconnect test sockets on unmount
       };
     } else {
-      // For regular connections, use a singleton socket with proper cleanup
+      // For regular connections, use a singleton socket
       if (!regularSocket) {
         console.log('Creating new regular socket connection');
         
         regularSocket = io(SOCKET_URL, {
-          transports: ['websocket'],
+          transports: ['websocket', 'polling'],
           reconnectionAttempts: maxReconnectAttempts,
           reconnectionDelay: 1000,
           reconnectionDelayMax: 5000,
@@ -149,71 +94,33 @@ export function useSocket(clientId: string = '') {
         console.log('Regular socket connected with ID:', regularSocket?.id);
         setIsConnected(true);
         reconnectAttempts.current = 0;
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = undefined;
-        }
       };
       
       const onDisconnect = (reason: string) => {
         console.log('Regular socket disconnected:', reason);
         setIsConnected(false);
         
-        const now = Date.now();
-        const timeSinceLastReconnect = now - lastReconnectAttemptRef.current;
-        
         if (
-          (reason === 'io server disconnect' || reason === 'transport close') &&
-          reconnectAttempts.current < maxReconnectAttempts &&
-          timeSinceLastReconnect > 5000 // At least 5 seconds between reconnect attempts
+          reason === 'io server disconnect' || 
+          reason === 'transport close' || 
+          reconnectAttempts.current >= maxReconnectAttempts
         ) {
           console.log(`Regular socket attempting reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
           reconnectAttempts.current++;
-          lastReconnectAttemptRef.current = now;
-          
-          // Exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 30000);
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (regularSocket && !regularSocket.connected) {
-              regularSocket.connect();
-            }
-          }, delay);
+          setTimeout(() => regularSocket?.connect(), 1000);
         }
-      };
-      
-      const onError = (error: Error) => {
-        console.error('Socket error:', error);
-        // If it's a rate limit error, handle with queue system
-        if (error.message?.includes('rate limit') || error.message?.includes('too many requests')) {
-          const event = error.message.match(/rate limiting (\w+)/)?.[1];
-          if (event) {
-            rateLimitedEvents.add(event);
-            console.log(`Rate limited for event: ${event}, will retry with backoff`);
-          }
-          return;
-        }
-        // Other error handling...
       };
       
       regularSocket.on('connect', onConnect);
       regularSocket.on('disconnect', onDisconnect);
-      regularSocket.on('error', onError);
-      regularSocket.on('connect_error', onError);
       
       // Set initial connection state
       setIsConnected(regularSocket.connected);
       
       return () => {
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-        }
-        if (regularSocket) {
-          regularSocket.off('connect', onConnect);
-          regularSocket.off('disconnect', onDisconnect);
-          regularSocket.off('error', onError);
-          regularSocket.off('connect_error', onError);
-          regularSocket.disconnect();
-        }
+        regularSocket?.off('connect', onConnect);
+        regularSocket?.off('disconnect', onDisconnect);
+        // Don't disconnect regular socket on unmount
       };
     }
   }, [clientId, isTestConnection]);
@@ -224,42 +131,11 @@ export function useSocket(clientId: string = '') {
   };
 }
 
-interface JoinOptions {
-  name?: string;
-  team?: 1 | 2;
-  browserSessionId?: string;
-  position?: number;
-  image?: string;
-}
-
-// Helper function to safely emit events
-function safeEmit(socket: typeof Socket | null, event: string, data: any) {
-  if (!socket) return;
-  if (!socket.connected) {
-    console.log(`Socket not connected, queueing ${event} event`);
-    socket.once('connect', () => {
-      console.log(`Socket reconnected, emitting queued ${event} event`);
-      if (!rateLimitedEvents.has(event)) {
-        socket.emit(event, data);
-      } else {
-        handleRateLimit(socket, event, data);
-      }
-    });
-    return;
-  }
-  
-  if (rateLimitedEvents.has(event)) {
-    handleRateLimit(socket, event, data);
-  } else {
-    socket.emit(event, data);
-  }
-}
-
 // Helper function to explicitly join a game room
 export function joinGameRoom(socket: typeof Socket | null, gameId: string) {
   if (!socket || !gameId) return;
   console.log(`Explicitly joining game room: ${gameId}`);
-  safeEmit(socket, 'join_room', { gameId });
+  socket.emit('join_room', { gameId });
 }
 
 // API Functions using socket
@@ -272,12 +148,6 @@ export function getGames(socket: typeof Socket | null, callback: (games: GameSta
     callback(games);
   };
 
-  // Remove any existing listeners to prevent duplicates
-  socket.off('games_update');
-  socket.off('game_update');
-  socket.off('game_over');
-  socket.off('connect');
-
   // Listen for games update from server
   socket.on('games_update', wrappedCallback);
   
@@ -285,33 +155,33 @@ export function getGames(socket: typeof Socket | null, callback: (games: GameSta
   socket.on('game_update', (updatedGame: GameState) => {
     console.log(`Received game_update for game: ${updatedGame.id}, status: ${updatedGame.status}, currentPlayer: ${updatedGame.currentPlayer}`);
     // Request full game list to ensure everything is in sync
-    safeEmit(socket, 'get_games', undefined);
+    socket.emit('get_games');
   });
   
   // Listen for game_over event
-  socket.on('game_over', () => {
-    console.log('Game over event received, requesting updated games list');
+  socket.on('game_over', (data: { team1Score: number, team2Score: number, winningTeam: 1 | 2, team1Bags: number, team2Bags: number }) => {
+    console.log('Game over event received:', data);
     // Request full game list to ensure everything is in sync
-    safeEmit(socket, 'get_games', undefined);
+    socket.emit('get_games');
   });
+  
+  // Initial request
+  socket.emit('get_games');
   
   // Request games again when reconnecting
   socket.on('connect', () => {
     console.log('Socket reconnected, requesting games list');
-    safeEmit(socket, 'get_games', undefined);
+    socket.emit('get_games');
   });
-  
-  // Initial request if already connected
-  if (socket.connected) {
-    safeEmit(socket, 'get_games', undefined);
-  }
   
   // Return cleanup function
   return () => {
     socket.off('games_update', wrappedCallback);
     socket.off('game_update');
     socket.off('game_over');
-    socket.off('connect');
+    socket.off('connect', () => {
+      socket.emit('get_games');
+    });
   };
 }
 
@@ -322,13 +192,21 @@ export function authenticateUser(socket: typeof Socket | null, userId: string) {
 
 export function createGame(socket: typeof Socket | null, user: { id: string; name?: string | null }, gameRules?: GameRules) {
   if (!socket) return;
-  safeEmit(socket, 'create_game', { user, gameRules });
+  socket.emit('create_game', { user, gameRules });
+}
+
+interface JoinOptions {
+  name?: string;
+  team?: 1 | 2;
+  browserSessionId?: string;
+  position?: number;
+  image?: string;
 }
 
 export function joinGame(socket: typeof Socket | null, gameId: string, userId: string, options?: JoinOptions) {
   if (!socket) return;
   console.log(`SOCKET JOIN: Game=${gameId}, Player=${userId}, Position=${options?.position}, Team=${options?.team}`);
-  safeEmit(socket, 'join_game', { 
+  socket.emit('join_game', { 
     gameId, 
     userId, 
     testPlayer: options ? {
@@ -344,116 +222,68 @@ export function joinGame(socket: typeof Socket | null, gameId: string, userId: s
 
 export function leaveGame(socket: typeof Socket | null, gameId: string, userId: string) {
   if (!socket) return;
-  safeEmit(socket, 'leave_game', { gameId, userId });
+  socket.emit('leave_game', { gameId, userId });
 }
 
-// Get socket instance
-function getSocket(): typeof Socket | null {
-  return regularSocket;
-}
-
-// Game completion handling
-function handleGameCompletion(socket: typeof Socket, gameId: string) {
-  return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      socket.off('game_complete', onGameComplete);
-      socket.off('game_error', onGameError);
-    };
-
-    const onGameComplete = async (data: { 
-      gameId: string;
-      winners: Array<{ userId: string; coins: number; position: number }>;
-      timestamp: number;
-    }) => {
-      if (data.gameId !== gameId) return;
-      
-      try {
-        // Update player stats and coins
-        for (const winner of data.winners) {
-          await prisma.user.update({
-            where: { id: winner.userId },
-            data: { 
-              coins: { increment: winner.coins },
-              // Update game player record with final score
-              gamePlayers: {
-                update: {
-                  where: {
-                    gameId_position: {
-                      gameId: gameId,
-                      position: winner.position
-                    }
-                  },
-                  data: {
-                    score: { increment: winner.coins }
-                  }
-                }
-              }
-            }
-          });
-        }
-        
-        // Mark game as completed
-        await prisma.game.update({
-          where: { id: gameId },
-          data: { 
-            status: GameStatus.FINISHED,
-            updatedAt: new Date(data.timestamp)
-          }
-        });
-
-        cleanup();
-        resolve(data);
-      } catch (error) {
-        console.error('Error handling game completion:', error);
-        cleanup();
-        reject(error);
-      }
-    };
-
-    const onGameError = (error: any) => {
-      console.error('Game error:', error);
-      cleanup();
-      reject(error);
-    };
-
-    socket.on('game_complete', onGameComplete);
-    socket.on('game_error', onGameError);
-
-    // Set timeout for completion
-    setTimeout(() => {
-      cleanup();
-      reject(new Error('Game completion timeout'));
-    }, 30000); // 30 second timeout
-  });
-}
-
-// Modify startGame to use completion handling
-export function startGame(socket: typeof Socket | null, gameId: string, userId?: string): Promise<void> {
-  if (!socket) return Promise.reject("No socket connection");
+export function startGame(socket: typeof Socket | null, gameId: string, userId?: string) {
+  if (!socket) return Promise.reject('No socket connection');
+  
+  console.log(`Attempting to start game: ${gameId} with user: ${userId || 'unknown'}`);
   
   return new Promise<void>((resolve, reject) => {
-    console.log('Starting game:', { gameId, userId });
+    if (!socket) {
+      reject('No socket connection');
+      return;
+    }
     
-    const cleanup = () => {
-      socket.off('game_started', onGameStarted);
-      socket.off('game_error', onGameError);
+    // Log the current game state if possible
+    socket.emit('get_game', { gameId }, (game: GameState | null) => {
+      if (game) {
+        console.log(`Current game state before starting:`, {
+          id: game.id,
+          status: game.status,
+          playerCount: game.players.length,
+          creatorId: game.players[0]?.id,
+          requestingUserId: userId
+        });
+      } else {
+        console.log(`Could not get game state for ${gameId}`);
+      }
+    });
+    
+    const handleUpdate = (updatedGame: GameState) => {
+      if (updatedGame.id === gameId) {
+        console.log(`Game ${gameId} updated, status: ${updatedGame.status}`);
+        if (updatedGame.status === 'BIDDING') {
+          socket.off('game_update', handleUpdate);
+          resolve();
+        }
+      }
     };
-
-    const onGameStarted = (gameState: GameState) => {
-      cleanup();
-      resolve(); // Resolve without passing the gameState
-    };
-
-    const onGameError = (error: any) => {
-      console.error('Error starting game:', error);
-      cleanup();
+    
+    const handleError = (error: any) => {
+      console.error("Start game error:", error);
+      // Check if the error contains detailed information
+      if (typeof error === 'object') {
+        console.error("Error details:", JSON.stringify(error));
+      }
+      socket.off('error', handleError);
+      socket.off('game_update', handleUpdate);
       reject(error);
     };
-
-    socket.on('game_started', onGameStarted);
-    socket.on('game_error', onGameError);
     
+    socket.on('game_update', handleUpdate);
+    socket.on('error', handleError);
+    
+    console.log(`Sending start_game command for game ${gameId}${userId ? ` with user ${userId}` : ''}`);
     socket.emit('start_game', { gameId, userId });
+    
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      socket.off('game_update', handleUpdate);
+      socket.off('error', handleError);
+      reject('Timeout waiting for game to start');
+    }, 5000);
   });
 }
 
@@ -464,24 +294,33 @@ export function makeMove(socket: typeof Socket | null, gameId: string, userId: s
 
 export function makeBid(socket: typeof Socket | null, gameId: string, userId: string, bid: number) {
   if (!socket) return;
-  safeEmit(socket, 'make_bid', { gameId, userId, bid });
+  socket.emit('make_bid', { gameId, userId, bid });
 }
 
-export function playCard(socket: typeof Socket | null, gameId: string, userId: string, cardIndex: number) {
+export function playCard(socket: typeof Socket | null, gameId: string, userId: string, card: Card) {
   if (!socket) return;
-  safeEmit(socket, 'play_card', { gameId, userId, cardIndex });
+  socket.emit('play_card', { gameId, userId, card });
 }
 
-export function sendChatMessage(socket: typeof Socket | null, gameId: string, userId: string, message: string) {
-  if (!socket) return;
-  if (!message.trim()) return;
+export function sendChatMessage(socket: typeof Socket | null, gameId: string, message: any) {
+  if (!socket) {
+    console.error('Cannot send chat message: socket is null');
+    return;
+  }
   
-  safeEmit(socket, 'chat_message', {
-    gameId,
-    userId,
-    message: message.trim(),
-    timestamp: Date.now()
-  });
+  try {
+    console.log(`Sending chat message to game ${gameId}:`, message);
+    
+    // Ensure the message has all required fields
+    const chatMessage = {
+      gameId,
+      ...message
+    };
+    
+    socket.emit('chat_message', chatMessage);
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+  }
 }
 
 // Add a new debug function that logs trick winner information received from server
@@ -495,21 +334,31 @@ interface TrickWinnerData {
   gameId?: string;
 }
 
-export function debugTrickWinner(socket: typeof Socket | null, gameId: string) {
-  if (!socket) return () => {};
+export function debugTrickWinner(socket: typeof Socket | null, gameId: string, onTrickWinnerDetermined?: (data: TrickWinnerData) => void) {
+  if (!socket) {
+    console.error('Cannot setup debug: socket is null');
+    return;
+  }
   
-  const handleTrickWinner = (data: { trickCards: Card[], winningIndex: number }) => {
-    console.log('Trick winner debug:', {
-      cards: data.trickCards.map(card => `${card.suit}${card.rank}`),
-      winningIndex: data.winningIndex,
-      winningCard: data.trickCards[data.winningIndex]
-    });
-  };
+  // Listen for trick winner events
+  socket.on('trick_winner', (data: TrickWinnerData) => {
+    console.log('🎯 DEBUG TRICK WINNER:', data);
+    
+    if (data.winningCard && data.winningPlayerId) {
+      // Log correct player name to verify server data
+      const playerName = data.playerName || 'Unknown player';
+      console.log(`✅ Server indicates trick won by ${playerName} (ID: ${data.winningPlayerId}) with card ${data.winningCard.rank}${data.winningCard.suit}`);
+      
+      // Call the callback if provided
+      if (onTrickWinnerDetermined && data.gameId === gameId) {
+        onTrickWinnerDetermined(data);
+      }
+    }
+  });
   
-  socket.on('trick_winner', handleTrickWinner);
-  
+  // Return cleanup function
   return () => {
-    socket.off('trick_winner', handleTrickWinner);
+    socket.off('trick_winner');
   };
 }
 
@@ -520,14 +369,75 @@ export function setupTrickCompletionDelay(
 ) {
   if (!socket) return () => {};
   
-  // Remove any existing listeners
-  socket.off('trick_winner');
-  socket.off('game_update');
+  // Keep track of trick cards and state
+  let lastCompleteTrick: Card[] = [];
+  let previousTrickCards: Card[] = [];
+  let lastWinningData: TrickWinnerData | null = null;
   
-  const handleTrickWinner = (data: { trickCards: Card[], winningIndex: number }) => {
-    onTrickComplete(data);
+  // Handle the trick_winner event from the server
+  const handleTrickWinner = (data: TrickWinnerData) => {
+    // Only process for our game
+    if (data.gameId !== gameId) return;
+    
+    console.log('🎉 TRICK WINNER EVENT RECEIVED:', data);
+    
+    // Store the winning data for later use
+    lastWinningData = data;
+    
+    // The game state at this point will still have the complete trick
+    // The server is now showing the trick for 5 seconds before clearing it
+    // We don't need to explicitly call onTrickComplete here, as the
+    // game state update will handle showing the completed trick with highlight
   };
   
+  // Also listen for game_update to keep track of tricks
+  socket.on('game_update', (data: GameState) => {
+    if (data.id !== gameId) return;
+    
+    // If we have a complete trick (4 cards)
+    if (data.currentTrick && data.currentTrick.length === 4) {
+      console.log('Complete trick in game update:', 
+                data.currentTrick.map(c => `${c.rank}${c.suit}`).join(', '));
+      
+      lastCompleteTrick = [...data.currentTrick];
+      
+      // If we already received a trick_winner event for this trick,
+      // we can update the UI now with the winning card highlighted
+      if (lastWinningData && lastWinningData.winningCard) {
+        const winningIndex = lastCompleteTrick.findIndex(
+          card => card.rank === lastWinningData?.winningCard?.rank && 
+                 card.suit === lastWinningData?.winningCard?.suit
+        );
+        
+        if (winningIndex >= 0) {
+          console.log(`Found winning card at index ${winningIndex}: ${lastWinningData.winningCard.rank}${lastWinningData.winningCard.suit}`);
+          
+          // Use the callback to update UI with the highlight
+          onTrickComplete({
+            trickCards: lastCompleteTrick,
+            winningIndex
+          });
+        }
+      }
+    }
+    else if (data.currentTrick && data.currentTrick.length > 0) {
+      // Save the current in-progress trick
+      previousTrickCards = [...data.currentTrick];
+    }
+    else if (data.currentTrick && data.currentTrick.length === 0) {
+      // Trick has been cleared - this happens after the delay
+      // Let existing UI code handle any cleanup if needed
+      console.log('Trick cleared in game state');
+      
+      // Clear our stored data for this completed trick
+      if (lastCompleteTrick.length > 0) {
+        lastCompleteTrick = [];
+        lastWinningData = null;
+      }
+    }
+  });
+  
+  // Listen for events
   socket.on('trick_winner', handleTrickWinner);
   
   // Return cleanup function

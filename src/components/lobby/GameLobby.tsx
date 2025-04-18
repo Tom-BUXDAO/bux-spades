@@ -9,7 +9,6 @@ import GameRulesModal, { GameRules } from './GameRulesModal';
 import LobbyChat from './LobbyChat';
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import ProfilePictureUpload from '../ProfilePictureUpload';
 
 // Add avatar constants at the top of the file
 const GUEST_AVATAR = "/guest-avatar.png";
@@ -197,15 +196,26 @@ export default function GameLobby({
       // Set up game creation handler
       const handleGameCreated = ({ gameId, game }: { gameId: string; game: GameState }) => {
         console.log("Game created:", gameId);
-        // Just update the games list when a game is created
-        requestGames();
+        setCurrentPlayerId(user.id);
+        
+        // Explicitly join the game after creation
+        console.log("Explicitly joining game after creation:", gameId);
+        socket.emit("join_game", { 
+          gameId, 
+          userId: user.id, 
+          testPlayer: { 
+            name: user.name || "Unknown Player", 
+            team: 1 
+          } 
+        });
+        
+        onGameSelect(game);
       };
       
       // Set up game update handler
       const handleGameUpdate = (game: GameState) => {
         console.log("Received game_update for game:", game.id, "with players:", game.players);
-        // Update the games list when a game is updated
-        requestGames();
+        onGameSelect(game);
       };
       
       // Register event handlers
@@ -246,33 +256,9 @@ export default function GameLobby({
 
   const handleSaveRules = (rules: GameRules) => {
     setGameRules(rules);
-    if (user && socket) {
-      // Create the game first
+    if (user) {
       createGame(user, rules);
-      
-      // Set up a one-time listener for game creation
-      const handleGameCreated = ({ gameId, game }: { gameId: string; game: GameState }) => {
-        console.log('Game created, joining as creator in South position');
-        // Remove the listener immediately to prevent duplicate joins
-        socket.off('game_created', handleGameCreated);
-        
-        // Join the game as creator in South position
-        joinGame(gameId, user.id, {
-          name: user.name || 'Player',
-          team: 1, // South is team 1
-          position: 4, // South position
-          image: user.image || undefined,
-          browserSessionId
-        });
-        
-        // Select this game to show the game table
-        onGameSelect(game);
-      };
-
-      // Add the one-time listener
-      socket.once('game_created', handleGameCreated);
     }
-    setShowRulesModal(false);
   };
 
   const handleJoinGame = async (gameId: string, team: 1 | 2, position?: number) => {
@@ -379,73 +365,77 @@ export default function GameLobby({
   return (
     <div className="h-[100vh] flex flex-col overflow-hidden bg-gray-900">
       {/* Header - fixed height */}
-      <header className="flex-none h-16 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-4">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
-        </div>
+      <div className="flex-none h-16 px-4 bg-gray-800 shadow-md">
+        <div className="flex justify-between items-center h-full">
+          <div className="flex items-center space-x-3">
+            <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
+          </div>
 
-        <div className="flex items-center space-x-4">
-          {user.id && !user.isGuest ? (
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <ProfilePictureUpload
-                  currentImage={user.image || GUEST_AVATAR}
-                  onImageUpdate={() => {
-                    // Force a re-render to show the new image
-                    router.refresh();
-                  }}
-                />
-                <div className="flex flex-col">
-                  <span className="text-white font-medium hidden sm:block">
-                    {user.name}
-                  </span>
-                  <div className="flex items-center space-x-1 text-yellow-400 hidden sm:block">
-                    <Image 
-                      src={COIN_ICON} 
-                      alt="Coins" 
-                      width={16} 
-                      height={16} 
-                      className="inline-block"
+          <div className="flex items-center space-x-4">
+            {user.id && !user.isGuest ? (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden">
+                    <Image
+                      src={user.image || GUEST_AVATAR}
+                      alt={user.name || "User"}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
                     />
-                    <span className="text-lg font-bold">{user.coins ? ((user.coins >= 1000000) ? `${Math.floor(user.coins / 1000000)} mil` : user.coins.toLocaleString()) : '0'}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-white font-medium hidden sm:block">
+                      {user.name}
+                    </span>
+                    <div className="flex items-center space-x-1 text-yellow-400 hidden sm:block">
+                      <Image 
+                        src={COIN_ICON} 
+                        alt="Coins" 
+                        width={16} 
+                        height={16} 
+                        className="inline-block"
+                      />
+                      <span className="text-lg font-bold">{user.coins ? ((user.coins >= 1000000) ? `${Math.floor(user.coins / 1000000)} mil` : user.coins.toLocaleString()) : '0'}</span>
+                    </div>
                   </div>
                 </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut size={20} />
+                </button>
               </div>
-              <button
-                onClick={handleLogout}
-                className="text-gray-400 hover:text-white transition-colors"
-                title="Sign Out"
-              >
-                <LogOut size={20} />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-full overflow-hidden">
-                  <Image
-                    src={GUEST_AVATAR}
-                    alt={user.name || "Guest"}
-                    width={32}
-                    height={32}
-                    className="w-full h-full object-cover"
-                  />
+            ) : (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden">
+                    <Image
+                      src={GUEST_AVATAR}
+                      alt={user.name || "Guest"}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-white font-medium hidden sm:block">
+                    {user.name || "Guest"}
+                  </span>
                 </div>
-                <span className="text-white font-medium hidden sm:block">
-                  {user.name || "Guest"}
-                </span>
+                <button
+                  onClick={handleSignIn}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                  title="Sign In / Register"
+                >
+                  Sign In / Register
+                </button>
               </div>
-              <button
-                onClick={handleSignIn}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                title="Sign In / Register"
-              >
-                Sign In / Register
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </header>
+      </div>
 
       {/* Mobile Toggle - Only visible on mobile */}
       <div className="lg:hidden flex-none h-12 flex items-center justify-center bg-gray-800 border-t border-gray-700">
@@ -473,7 +463,7 @@ export default function GameLobby({
         </div>
       </div>
 
-      {/* Main content area - flex-1 to take remaining space */}
+      {/* Main content area */}
       <div className="flex-1 min-h-0">
         <div 
           className="h-full p-4 flex space-x-4 overflow-hidden"
@@ -633,68 +623,6 @@ export default function GameLobby({
                           )
                         )}
                       </div>
-
-                      {/* South position */}
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16">
-                        {game.players.find(p => p.position === 4) ? (
-                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
-                            getTeamForPosition(4) === 1 ? 'border-red-500' : 'border-blue-500'
-                          } flex items-center justify-center bg-white`}>
-                            <Image 
-                              src={getPlayerAvatar(game.players.find(p => p.position === 4))} 
-                              alt="Player avatar" 
-                              className="w-full h-full object-cover"
-                              width={64}
-                              height={64}
-                            />
-                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
-                              {game.players.find(p => p.position === 4)?.name}
-                            </div>
-                          </div>
-                        ) : (
-                          game.status === "WAITING" && (
-                            <button 
-                              onClick={() => handleJoinGame(game.id, getTeamForPosition(4), 4)}
-                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
-                                getTeamForPosition(4) === 1 ? 'border-red-500' : 'border-blue-500'
-                              } text-white`}
-                            >
-                              Join
-                            </button>
-                          )
-                        )}
-                      </div>
-
-                      {/* West position */}
-                      <div className="absolute left-5 top-1/2 -translate-y-1/2 w-16 h-16">
-                        {game.players.find(p => p.position === 1) ? (
-                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
-                            getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
-                          } flex items-center justify-center bg-white`}>
-                            <Image 
-                              src={getPlayerAvatar(game.players.find(p => p.position === 1))} 
-                              alt="Player avatar" 
-                              className="w-full h-full object-cover"
-                              width={64}
-                              height={64}
-                            />
-                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
-                              {game.players.find(p => p.position === 1)?.name}
-                            </div>
-                          </div>
-                        ) : (
-                          game.status === "WAITING" && (
-                            <button 
-                              onClick={() => handleJoinGame(game.id, getTeamForPosition(1), 1)}
-                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
-                                getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
-                              } text-white`}
-                            >
-                              Join
-                            </button>
-                          )
-                        )}
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -712,13 +640,6 @@ export default function GameLobby({
           </div>
         </div>
       </div>
-
-      <GameRulesModal
-        isOpen={showRulesModal}
-        onClose={() => setShowRulesModal(false)}
-        onSave={handleSaveRules}
-        userCoins={user.coins || 0}
-      />
     </div>
   );
 }
