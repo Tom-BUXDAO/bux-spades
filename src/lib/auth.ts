@@ -2,6 +2,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { getServerSession } from "next-auth";
 import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from "./prisma";
 import { env } from "@/env.mjs";
 import { compare } from "bcryptjs";
@@ -35,8 +36,14 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+    error: "/auth/error",
   },
   providers: [
+    DiscordProvider({
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
+      authorization: { params: { scope: "identify email" } },
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -82,8 +89,25 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
+        // For Discord login, create a username from the email
+        if (account?.provider === "discord" && !user.username) {
+          const username = user.email?.split("@")[0] || `user_${Date.now()}`;
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { username }
+          });
+          return {
+            ...token,
+            id: user.id,
+            username,
+            coins: user.coins || 5000000,
+            emailVerified: user.emailVerified,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+          };
+        }
         return {
           ...token,
           id: user.id,

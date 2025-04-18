@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import WelcomeModal from "@/components/WelcomeModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
@@ -105,7 +106,18 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
-        <h1 className="text-3xl font-bold text-white text-center">Join Spades Game</h1>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="relative w-24 h-24">
+            <Image
+              src="/BUX.png"
+              alt="BUX Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
+          <h1 className="text-3xl font-bold text-white text-center">BUX Spades</h1>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
