@@ -93,7 +93,8 @@ export default function LoginPage() {
 
   const handleDiscordSignIn = () => {
     // Show welcome modal for new Discord users
-    // Note: This is just for UX, the actual coins are set in the database
+    setShowWelcomeModal(true);
+    // Then initiate Discord sign in
     signIn("discord", { callbackUrl: "/game" });
   };
 

@@ -17,6 +17,7 @@ interface GameLobbyProps {
     name?: string | null;
     isGuest?: boolean;
     image?: string | null;
+    coins?: number;
   };
   socket: typeof Socket | null;
   createGame: (user: { id: string; name?: string | null; image?: string | null }, rules: GameRules) => void;
@@ -379,9 +380,14 @@ export default function GameLobby({
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="text-white font-medium hidden sm:block">
-                    {user.name}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-white font-medium hidden sm:block">
+                      {user.name}
+                    </span>
+                    <span className="text-yellow-400 text-xs hidden sm:block">
+                      {user.coins?.toLocaleString()} coins
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={handleLogout}
