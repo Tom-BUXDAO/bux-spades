@@ -620,6 +620,68 @@ export default function GameLobby({
                           )
                         )}
                       </div>
+
+                      {/* South position */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 4) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(4) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 4))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 4)?.name}
+                            </div>
+                          </div>
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(4), 4)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(4) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
+
+                      {/* West position */}
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 w-16 h-16">
+                        {game.players.find(p => p.position === 1) ? (
+                          <div className={`w-full h-full rounded-full overflow-hidden border-3 ${
+                            getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
+                          } flex items-center justify-center bg-white`}>
+                            <Image 
+                              src={getPlayerAvatar(game.players.find(p => p.position === 1))} 
+                              alt="Player avatar" 
+                              className="w-full h-full object-cover"
+                              width={64}
+                              height={64}
+                            />
+                            <div className="absolute bottom-0 w-full bg-black bg-opacity-60 text-white text-[10px] py-0.5 text-center truncate">
+                              {game.players.find(p => p.position === 1)?.name}
+                            </div>
+                          </div>
+                        ) : (
+                          game.status === "WAITING" && (
+                            <button 
+                              onClick={() => handleJoinGame(game.id, getTeamForPosition(1), 1)}
+                              className={`w-full h-full rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-xs font-medium border-3 ${
+                                getTeamForPosition(1) === 1 ? 'border-red-500' : 'border-blue-500'
+                              } text-white`}
+                            >
+                              Join
+                            </button>
+                          )
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
