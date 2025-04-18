@@ -251,20 +251,10 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 rounded-lg shadow-lg overflow-hidden">
+    <div className="flex flex-col h-full bg-[#1a202c] overflow-hidden border-l border-gray-600">
       {/* Header */}
-      <div className="flex-none h-12 px-3 bg-gray-800 border-b border-gray-700">
-        <div className="flex items-center justify-between h-full">
-          <h2 className="text-lg font-semibold text-white">Game Chat</h2>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-sm text-gray-300">
-                {onlineUsers} online
-              </span>
-            </div>
-          </div>
-        </div>
+      <div className="bg-gray-900 p-2 border-b border-gray-600">
+        <h3 className="text-white font-bold" style={{ fontSize: `${mobileHeaderFontSize}px` }}>Game Chat</h3>
       </div>
 
       {/* Error message */}
@@ -281,16 +271,16 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-900 min-h-0">
+      <div className="flex-1 overflow-y-auto p-2 bg-[#1a202c] min-h-0">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`p-2 rounded-lg ${
+            className={`mb-2 p-2 rounded-lg ${
               msg.isSystemMessage 
                 ? 'bg-gray-800/50 text-gray-300 mx-auto text-center' 
                 : msg.userId === userId 
                   ? 'bg-blue-600 text-white ml-auto' 
-                  : 'bg-gray-800 text-white'
+                  : 'bg-gray-700 text-white'
             }`}
             style={{ maxWidth: '80%' }}
           >
@@ -322,20 +312,32 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       </div>
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="flex-none px-2 py-2 bg-gray-800 border-t border-gray-700">
-        <div className="relative flex-1">
+      <form onSubmit={handleSubmit} className="p-2 bg-gray-900 border-t border-gray-600">
+        <div className="flex">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={screenSize.width < 640 ? "Type..." : "Type a message..."}
-            className="bg-gray-700 text-white rounded-l w-full px-3 py-2 outline-none border-0"
-            style={{ fontSize: `${fontSize}px` }}
+            className="bg-gray-700 text-white rounded-l px-3 py-2 flex-1 outline-none border-0"
           />
+          <button
+            type="submit"
+            disabled={!isConnected}
+            className={`bg-blue-600 text-white rounded-r hover:bg-blue-700 flex items-center justify-center w-10 ${
+              !isConnected && 'opacity-50 cursor-not-allowed'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+              <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
+            </svg>
+          </button>
+        </div>
+        <div className="relative">
           <button
             type="button"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-xl text-yellow-300 hover:text-yellow-200"
+            className="absolute right-2 -top-8 text-xl text-yellow-300 hover:text-yellow-200"
           >
             😊
           </button>
@@ -351,17 +353,6 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
             </div>
           )}
         </div>
-        <button
-          type="submit"
-          disabled={!isConnected}
-          className={`bg-blue-600 text-white rounded-r hover:bg-blue-700 flex items-center justify-center w-10 ${
-            !isConnected && 'opacity-50 cursor-not-allowed'
-          }`}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-            <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
-          </svg>
-        </button>
       </form>
     </div>
   );
