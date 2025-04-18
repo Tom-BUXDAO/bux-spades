@@ -9,6 +9,7 @@ import GameRulesModal, { GameRules } from './GameRulesModal';
 import LobbyChat from './LobbyChat';
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import ProfilePictureUpload from '../ProfilePictureUpload';
 
 // Add avatar constants at the top of the file
 const GUEST_AVATAR = "/guest-avatar.png";
@@ -375,15 +376,13 @@ export default function GameLobby({
             {user.id && !user.isGuest ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full overflow-hidden">
-                    <Image
-                      src={user.image || GUEST_AVATAR}
-                      alt={user.name || "User"}
-                      width={32}
-                      height={32}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  <ProfilePictureUpload
+                    currentImage={user.image || GUEST_AVATAR}
+                    onImageUpdate={() => {
+                      // Force a re-render to show the new image
+                      router.refresh();
+                    }}
+                  />
                   <div className="flex flex-col">
                     <span className="text-white font-medium hidden sm:block">
                       {user.name}
