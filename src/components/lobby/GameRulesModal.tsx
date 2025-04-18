@@ -6,6 +6,7 @@ interface GameRulesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (rules: GameRules) => void;
+  initialRules?: GameRules;
 }
 
 export interface GameRules {
@@ -16,14 +17,16 @@ export interface GameRules {
   maxPoints: number;
 }
 
-export default function GameRulesModal({ isOpen, onClose, onSave }: GameRulesModalProps) {
-  const [rules, setRules] = useState<GameRules>({
-    gameType: 'REGULAR',
-    allowNil: true,
-    allowBlindNil: false,
-    minPoints: -250,
-    maxPoints: 500
-  });
+const defaultRules: GameRules = {
+  gameType: 'REGULAR',
+  allowNil: true,
+  allowBlindNil: false,
+  minPoints: -250,
+  maxPoints: 500
+};
+
+export default function GameRulesModal({ isOpen, onClose, onSave, initialRules }: GameRulesModalProps) {
+  const [rules, setRules] = useState<GameRules>(initialRules || defaultRules);
 
   if (!isOpen) return null;
 
