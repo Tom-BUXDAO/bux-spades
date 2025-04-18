@@ -77,8 +77,24 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      console.log("[Auth SignIn Callback] Triggered");
+      console.log("[Auth SignIn Callback] Account Provider:", account?.provider);
+      if (account?.provider === 'discord') {
+        console.log("[Auth SignIn Callback] Discord User (from callback arg):", JSON.stringify(user));
+        console.log("[Auth SignIn Callback] Discord Profile:", JSON.stringify(profile));
+      } else if (account?.provider === 'credentials') {
+        console.log("[Auth SignIn Callback] Credentials User (from callback arg):", JSON.stringify(user));
+      }
+      return true;
+    },
     async jwt({ token, user, account }) {
+      console.log("[Auth JWT Callback] Triggered");
+      console.log("[Auth JWT Callback] Account Provider:", account?.provider);
+      console.log("[Auth JWT Callback] User object:", JSON.stringify(user));
+
       const sessionUser = user as (PrismaUser & { id: string, username?: string, email?: string, coins?: number, image?: string }) | undefined;
+      console.log("[Auth JWT Callback] Parsed sessionUser:", JSON.stringify(sessionUser));
 
       if (sessionUser) {
         let finalUsername = sessionUser.username;
@@ -97,18 +113,24 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
+        console.log("[Auth JWT Callback] Populating token:", JSON.stringify({ id: sessionUser.id, username: finalUsername, coins: finalCoins }));
         token.id = sessionUser.id;
         token.username = finalUsername;
         token.coins = finalCoins;
       }
+      console.log("[Auth JWT Callback] Returning token:", JSON.stringify(token));
       return token;
     },
     async session({ session, token }) {
+      console.log("[Auth Session Callback] Triggered");
+      console.log("[Auth Session Callback] Received Token:", JSON.stringify(token));
+      console.log("[Auth Session Callback] Initial Session:", JSON.stringify(session));
       if (token.id && session.user) {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.coins = token.coins as number;
       }
+      console.log("[Auth Session Callback] Returning Session:", JSON.stringify(session));
       return session;
     },
   },
