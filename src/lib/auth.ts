@@ -39,20 +39,25 @@ export const authOptions: NextAuthOptions = {
           prompt: "consent",
         },
       },
-      profile(profile) {
+      profile(profile: any, tokens: any): NextAuthUser | Promise<NextAuthUser> {
         console.log("[Discord Provider] Profile data:", JSON.stringify(profile));
+
+        let imageUrl: string | undefined;
         if (profile.avatar === null) {
           const defaultAvatarNumber = parseInt(profile.discriminator) % 5;
-          profile.image_url = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
+          imageUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
         } else {
           const format = profile.avatar.startsWith("a_") ? "gif" : "png";
-          profile.image_url = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
+          imageUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
         }
+
         return {
           id: profile.id,
-          name: profile.username,
+          name: profile.global_name ?? profile.username,
           email: profile.email,
-          image: profile.image_url,
+          image: imageUrl,
+          username: profile.username,
+          coins: 0,
         };
       },
     }),
