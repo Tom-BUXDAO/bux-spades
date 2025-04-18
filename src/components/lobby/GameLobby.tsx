@@ -631,19 +631,12 @@ export default function GameLobby({
           </div>
 
           {/* Chat Section */}
-          <div className={`flex-1 flex flex-col min-w-0 ${showChat ? 'flex' : 'hidden'}`}>
-            <div className="flex-none flex justify-between items-center mb-4">
-              <div>
-                <h2 className="text-xl font-semibold text-white">Chat</h2>
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto min-h-0">
-              <LobbyChat
-                socket={socket}
-                userId={user.id}
-                userName={user.name || "Guest"}
-              />
-            </div>
+          <div className={`w-full lg:w-96 ${showChat ? 'flex' : 'hidden lg:block'}`}>
+            <LobbyChat
+              socket={socket}
+              userId={user.id}
+              userName={user.name || "Guest"}
+            />
           </div>
         </div>
       </div>
