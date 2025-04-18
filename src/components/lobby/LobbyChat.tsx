@@ -298,12 +298,12 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       </div>
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="flex-none p-3 border-t border-gray-700 bg-gray-800">
-        <div className="flex items-center space-x-2">
+      <form onSubmit={handleSubmit} className="flex-none px-2 py-2 border-t border-gray-700 bg-gray-800">
+        <div className="flex items-center space-x-1">
           <button
             type="button"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="flex-none p-2 text-gray-300 hover:text-gray-100"
+            className="flex-none w-8 h-8 flex items-center justify-center text-gray-300 hover:text-gray-100"
           >
             😊
           </button>
@@ -312,12 +312,12 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 p-2 bg-gray-700 text-white border-gray-600 rounded-lg placeholder-gray-400"
+            className="flex-1 px-2 py-1.5 bg-gray-700 text-white border-gray-600 rounded-lg placeholder-gray-400 min-w-0"
           />
           <button
             type="submit"
             disabled={!isConnected}
-            className={`flex-none px-4 py-2 rounded-lg ${
+            className={`flex-none w-16 h-8 rounded-lg text-sm ${
               isConnected
                 ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
