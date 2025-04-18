@@ -321,17 +321,24 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
 
       {/* Input form */}
       <form onSubmit={handleSubmit} className="p-2 bg-gray-900 border-t border-gray-600">
-        <div className="flex items-center">
-          <div className="relative mr-2">
+        <div className="flex">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={screenSize.width < 640 ? "Type..." : "Type a message..."}
+              className="bg-gray-700 text-white rounded-l w-full px-3 py-2 outline-none border-0"
+            />
             <button
               type="button"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="text-xl text-yellow-300 hover:text-yellow-200 w-8 h-8 flex items-center justify-center"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xl text-yellow-300 hover:text-yellow-200"
             >
               😊
             </button>
             {showEmojiPicker && (
-              <div className="absolute bottom-full left-0 mb-2 z-10">
+              <div className="absolute bottom-full right-0 mb-2 z-10">
                 <Picker 
                   data={data} 
                   onEmojiSelect={onEmojiSelect}
@@ -342,17 +349,10 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
               </div>
             )}
           </div>
-          <input
-            type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={screenSize.width < 640 ? "Type..." : "Type a message..."}
-            className="bg-gray-700 text-white rounded-l px-3 py-2 flex-1 outline-none border-0"
-          />
           <button
             type="submit"
             disabled={!isConnected}
-            className={`bg-blue-600 text-white rounded-r hover:bg-blue-700 flex items-center justify-center w-10 ${
+            className={`bg-blue-600 text-white rounded-r hover:bg-blue-700 flex items-center justify-center px-3 ${
               !isConnected && 'opacity-50 cursor-not-allowed'
             }`}
           >
