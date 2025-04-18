@@ -203,13 +203,13 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
-      <div className="flex items-center justify-between p-3 border-b">
-        <h2 className="text-lg font-semibold">Lobby Chat</h2>
+    <div className="flex flex-col h-full bg-gray-800 rounded-lg shadow-lg">
+      <div className="flex items-center justify-between p-3 border-b border-gray-700">
+        <h2 className="text-lg font-semibold text-white">Lobby Chat</h2>
         <div className="flex items-center space-x-2">
           <div className="flex items-center">
             <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-300">
               {onlineUsers} online
             </span>
           </div>
@@ -217,24 +217,28 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
       </div>
 
       {error && (
-        <div className="p-3 bg-red-100 text-red-700">
+        <div className="p-3 bg-red-900/50 text-red-200">
           <p>{error}</p>
           <button
             onClick={handleRetry}
-            className="mt-2 px-3 py-1 bg-red-200 rounded hover:bg-red-300"
+            className="mt-2 px-3 py-1 bg-red-800 rounded hover:bg-red-700"
           >
             Retry Connection
           </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-900">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`p-2 rounded-lg ${getMessageClass(msg)} ${
-              msg.userId === userId ? 'ml-auto' : ''
-            }`}
+            className={`p-2 rounded-lg ${
+              msg.isSystemMessage 
+                ? 'bg-gray-800 text-gray-300' 
+                : msg.userId === userId 
+                  ? 'bg-blue-900/50 text-white' 
+                  : 'bg-gray-800 text-white'
+            } ${msg.userId === userId ? 'ml-auto' : ''}`}
             style={{ maxWidth: '80%' }}
           >
             <div className="flex items-start space-x-2">
@@ -248,7 +252,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
               <div>
                 <div className="flex items-baseline space-x-2">
                   <span className="font-medium text-sm">{msg.userName}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-400">
                     {formatTime(msg.timestamp)}
                   </span>
                 </div>
@@ -260,12 +264,12 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="p-3 border-t">
+      <form onSubmit={handleSubmit} className="p-3 border-t border-gray-700 bg-gray-800">
         <div className="flex items-center space-x-2">
           <button
             type="button"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="p-2 text-gray-500 hover:text-gray-700"
+            className="p-2 text-gray-300 hover:text-gray-100"
           >
             😊
           </button>
@@ -274,15 +278,15 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Type a message..."
-            className="flex-1 p-2 border rounded-lg"
+            className="flex-1 p-2 bg-gray-700 text-white border-gray-600 rounded-lg placeholder-gray-400"
           />
           <button
             type="submit"
             disabled={!isConnected}
             className={`px-4 py-2 rounded-lg ${
               isConnected
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
           >
             Send
@@ -290,7 +294,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
         </div>
         {showEmojiPicker && (
           <div className="absolute bottom-full mb-2">
-            <Picker data={data} onEmojiSelect={onEmojiSelect} />
+            <Picker data={data} onEmojiSelect={onEmojiSelect} theme="dark" />
           </div>
         )}
       </form>
