@@ -119,15 +119,24 @@ export const authOptions: NextAuthOptions = {
         // If this is a new user, add 'new=true' to the callback URL
         if (!existingUser && account.callbackUrl && typeof account.callbackUrl === 'string') {
           try {
+            console.log("[Auth SignIn Callback] New Discord user detected, adding new=true to callback URL");
             const callbackUrl = new URL(account.callbackUrl);
             callbackUrl.searchParams.set('new', 'true');
             account.callbackUrl = callbackUrl.toString();
+            console.log("[Auth SignIn Callback] Updated callback URL:", account.callbackUrl);
           } catch (error) {
             console.error('Error modifying callback URL:', error);
           }
         }
       } else if (account?.provider === 'credentials') {
         console.log("[Auth SignIn Callback] Credentials User (from callback arg):", JSON.stringify(user));
+        
+        // For credentials login, check if this is a new user by looking at their coins
+        if (user && 'coins' in user && user.coins === 5000000) {
+          console.log("[Auth SignIn Callback] New credentials user detected with 5M coins");
+          // We can't modify the callback URL here as it's already been processed
+          // The game page will detect this is a new user by checking the coins
+        }
       }
       return true;
     },

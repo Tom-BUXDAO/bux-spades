@@ -28,10 +28,24 @@ export default function GamePage() {
   useEffect(() => {
     // Check if this is a new Discord user by checking the URL for the 'new' parameter
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('new') === 'true') {
+    const isNewUser = urlParams.get('new') === 'true';
+    
+    // Also check if this is a new user by looking at the session data
+    // If the user has exactly 5,000,000 coins, they are likely a new user
+    const isNewUserByCoins = session?.user?.coins === 5000000;
+    
+    // Show welcome modal for new users
+    if (isNewUser || isNewUserByCoins) {
+      console.log("New user detected, showing welcome modal");
       setShowWelcomeModal(true);
+      
+      // Clean up the URL by removing the 'new' parameter
+      if (isNewUser) {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
     }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     // Check for guest user in localStorage
