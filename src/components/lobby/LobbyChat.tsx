@@ -94,6 +94,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     const onError = (err: any) => {
       console.error('Lobby chat error:', err);
       setError(err.message || 'Connection error');
+      setIsConnected(false);
     };
 
     const onOnlineUsersUpdate = (count: number) => {
@@ -101,29 +102,38 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     };
 
     const onUserJoined = (data: { userId: string; userName: string }) => {
-      const systemMessage: ChatMessage = {
-        id: `system-${Date.now()}-${Math.random()}`,
-        userId: 'system',
-        userName: 'System',
-        message: `${data.userName} joined the lobby`,
-        timestamp: Date.now(),
-        isSystemMessage: true
-      };
-      setMessages(prev => [...prev, systemMessage]);
+      try {
+        const systemMessage: ChatMessage = {
+          id: `system-${Date.now()}-${Math.random()}`,
+          userId: 'system',
+          userName: 'System',
+          message: `${data.userName} joined the lobby`,
+          timestamp: Date.now(),
+          isSystemMessage: true
+        };
+        setMessages(prev => [...prev, systemMessage]);
+      } catch (err) {
+        console.error('Error handling user joined:', err);
+      }
     };
 
     const onUserLeft = (data: { userId: string; userName: string }) => {
-      const systemMessage: ChatMessage = {
-        id: `system-${Date.now()}-${Math.random()}`,
-        userId: 'system',
-        userName: 'System',
-        message: `${data.userName} left the lobby`,
-        timestamp: Date.now(),
-        isSystemMessage: true
-      };
-      setMessages(prev => [...prev, systemMessage]);
+      try {
+        const systemMessage: ChatMessage = {
+          id: `system-${Date.now()}-${Math.random()}`,
+          userId: 'system',
+          userName: 'System',
+          message: `${data.userName} left the lobby`,
+          timestamp: Date.now(),
+          isSystemMessage: true
+        };
+        setMessages(prev => [...prev, systemMessage]);
+      } catch (err) {
+        console.error('Error handling user left:', err);
+      }
     };
     
+    // Set up event listeners
     activeSocket.on('connect', onConnect);
     activeSocket.on('disconnect', onDisconnect);
     activeSocket.on('connect_error', onError);
@@ -132,10 +142,13 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     activeSocket.on('user_joined_lobby', onUserJoined);
     activeSocket.on('user_left_lobby', onUserLeft);
     
-    setIsConnected(activeSocket.connected);
-    
+    // Set initial connection state and join lobby if connected
     if (activeSocket.connected) {
+      setIsConnected(true);
       activeSocket.emit('join_lobby', { userId, userName });
+    } else {
+      setIsConnected(false);
+      activeSocket.connect();
     }
 
     return () => {
@@ -153,34 +166,38 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     if (!activeSocket) return;
     
     const handleMessage = (data: any) => {
-      console.log('Received lobby chat message:', data);
-      
-      let chatMessage: ChatMessage;
-      
-      if (data.message && typeof data.message === 'object') {
-        chatMessage = data.message;
-      } else if (data.userId) {
-        chatMessage = data;
-      } else {
-        console.error('Unrecognized chat message format:', data);
-        return;
-      }
-      
-      if (!chatMessage.id) {
-        chatMessage.id = `${Date.now()}-${chatMessage.userId || 'system'}-${Math.random().toString(36).substr(2, 9)}`;
-      }
-      
-      if (!chatMessage.timestamp) {
-        chatMessage.timestamp = Date.now();
-      }
-      
-      setMessages(prev => {
-        // Prevent duplicate messages
-        if (prev.some(m => m.id === chatMessage.id)) {
-          return prev;
+      try {
+        console.log('Received lobby chat message:', data);
+        
+        let chatMessage: ChatMessage;
+        
+        if (data.message && typeof data.message === 'object') {
+          chatMessage = data.message;
+        } else if (data.userId) {
+          chatMessage = data;
+        } else {
+          console.error('Unrecognized chat message format:', data);
+          return;
         }
-        return [...prev, chatMessage].slice(-100); // Keep last 100 messages
-      });
+        
+        if (!chatMessage.id) {
+          chatMessage.id = `${Date.now()}-${chatMessage.userId || 'system'}-${Math.random().toString(36).substr(2, 9)}`;
+        }
+        
+        if (!chatMessage.timestamp) {
+          chatMessage.timestamp = Date.now();
+        }
+        
+        setMessages(prev => {
+          // Prevent duplicate messages
+          if (prev.some(m => m.id === chatMessage.id)) {
+            return prev;
+          }
+          return [...prev, chatMessage].slice(-100); // Keep last 100 messages
+        });
+      } catch (err) {
+        console.error('Error handling chat message:', err);
+      }
     };
     
     activeSocket.on('lobby_message', handleMessage);
@@ -267,7 +284,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
             key={msg.id}
             className={`p-2 rounded-lg ${
               msg.isSystemMessage 
-                ? 'bg-gray-800 text-gray-300' 
+                ? 'bg-gray-700 text-gray-300' 
                 : msg.userId === userId 
                   ? 'bg-blue-900/50 text-white ml-auto' 
                   : 'bg-gray-800 text-white'
