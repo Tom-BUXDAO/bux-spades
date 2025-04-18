@@ -254,7 +254,15 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
     <div className="flex flex-col h-full bg-[#1a202c] overflow-hidden border-l border-gray-600">
       {/* Header */}
       <div className="bg-gray-900 p-2 border-b border-gray-600">
-        <h3 className="text-white font-bold" style={{ fontSize: `${mobileHeaderFontSize}px` }}>Game Chat</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-white font-bold" style={{ fontSize: `${mobileHeaderFontSize}px` }}>Game Chat</h3>
+          <div className="flex items-center">
+            <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-sm text-gray-300">
+              {onlineUsers} online
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Error message */}
@@ -313,7 +321,27 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
 
       {/* Input form */}
       <form onSubmit={handleSubmit} className="p-2 bg-gray-900 border-t border-gray-600">
-        <div className="flex">
+        <div className="flex items-center">
+          <div className="relative mr-2">
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="text-xl text-yellow-300 hover:text-yellow-200 w-8 h-8 flex items-center justify-center"
+            >
+              😊
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute bottom-full left-0 mb-2 z-10">
+                <Picker 
+                  data={data} 
+                  onEmojiSelect={onEmojiSelect}
+                  theme="dark"
+                  previewPosition="none"
+                  skinTonePosition="none"
+                />
+              </div>
+            )}
+          </div>
           <input
             type="text"
             value={message}
@@ -332,26 +360,6 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
               <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
             </svg>
           </button>
-        </div>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="absolute right-2 -top-8 text-xl text-yellow-300 hover:text-yellow-200"
-          >
-            😊
-          </button>
-          {showEmojiPicker && (
-            <div className="absolute bottom-full right-0 mb-2 z-10">
-              <Picker 
-                data={data} 
-                onEmojiSelect={onEmojiSelect}
-                theme="dark"
-                previewPosition="none"
-                skinTonePosition="none"
-              />
-            </div>
-          )}
         </div>
       </form>
     </div>
