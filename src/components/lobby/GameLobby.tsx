@@ -247,9 +247,15 @@ export default function GameLobby({
   const handleSaveRules = (rules: GameRules) => {
     setGameRules(rules);
     if (user && socket) {
-      // Set up the listener before creating the game
+      // Create the game first
+      createGame(user, rules);
+      
+      // Set up a one-time listener for game creation
       const handleGameCreated = ({ gameId, game }: { gameId: string; game: GameState }) => {
         console.log('Game created, joining as creator in South position');
+        // Remove the listener immediately to prevent duplicate joins
+        socket.off('game_created', handleGameCreated);
+        
         // Join the game as creator in South position
         joinGame(gameId, user.id, {
           name: user.name || 'Player',
@@ -258,18 +264,15 @@ export default function GameLobby({
           image: user.image || undefined,
           browserSessionId
         });
+        
         // Select this game to show the game table
         onGameSelect(game);
-        // Remove the listener after handling
-        socket.off('game_created', handleGameCreated);
       };
 
-      // Add the listener
-      socket.on('game_created', handleGameCreated);
-      
-      // Then create the game
-      createGame(user, rules);
+      // Add the one-time listener
+      socket.once('game_created', handleGameCreated);
     }
+    setShowRulesModal(false);
   };
 
   const handleJoinGame = async (gameId: string, team: 1 | 2, position?: number) => {

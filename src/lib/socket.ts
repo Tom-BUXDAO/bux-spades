@@ -3,11 +3,46 @@
 import { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 import type { GameState, Card, GameRules } from '@/types/game';
+import { PrismaClient, GameStatus } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // Create separate socket instances for regular and test connections
 let regularSocket: typeof Socket | null = null;
 const testSockets: Map<string, typeof Socket> = new Map();
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+
+// Rate limit handling
+const eventQueue = new Map<string, Array<{ event: string; data: any; }>>();
+const rateLimitedEvents = new Set<string>();
+const MAX_QUEUE_SIZE = 10;
+const BASE_RETRY_DELAY = 1000;
+
+function handleRateLimit(socket: typeof Socket, event: string, data: any) {
+  // Add to queue if not full
+  if (!eventQueue.has(event)) {
+    eventQueue.set(event, []);
+  }
+  const queue = eventQueue.get(event)!;
+  if (queue.length < MAX_QUEUE_SIZE) {
+    queue.push({ event, data });
+  }
+  
+  // Mark event as rate limited
+  rateLimitedEvents.add(event);
+  
+  // Set retry with exponential backoff
+  const retryDelay = BASE_RETRY_DELAY * Math.pow(2, queue.length);
+  setTimeout(() => {
+    if (socket.connected && rateLimitedEvents.has(event)) {
+      const nextEvent = queue.shift();
+      if (nextEvent) {
+        rateLimitedEvents.delete(event);
+        safeEmit(socket, nextEvent.event, nextEvent.data);
+      }
+    }
+  }, retryDelay);
+}
 
 export function useSocket(clientId: string = '') {
   const isTestConnection = clientId.startsWith('test_');
@@ -148,17 +183,16 @@ export function useSocket(clientId: string = '') {
       
       const onError = (error: Error) => {
         console.error('Socket error:', error);
-        // If it's a rate limit error, wait longer before reconnecting
+        // If it's a rate limit error, handle with queue system
         if (error.message?.includes('rate limit') || error.message?.includes('too many requests')) {
-          if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current);
+          const event = error.message.match(/rate limiting (\w+)/)?.[1];
+          if (event) {
+            rateLimitedEvents.add(event);
+            console.log(`Rate limited for event: ${event}, will retry with backoff`);
           }
-          reconnectTimeoutRef.current = setTimeout(() => {
-            if (regularSocket && !regularSocket.connected) {
-              regularSocket.connect();
-            }
-          }, 10000); // Wait 10 seconds before retrying after rate limit
+          return;
         }
+        // Other error handling...
       };
       
       regularSocket.on('connect', onConnect);
@@ -205,11 +239,20 @@ function safeEmit(socket: typeof Socket | null, event: string, data: any) {
     console.log(`Socket not connected, queueing ${event} event`);
     socket.once('connect', () => {
       console.log(`Socket reconnected, emitting queued ${event} event`);
-      socket.emit(event, data);
+      if (!rateLimitedEvents.has(event)) {
+        socket.emit(event, data);
+      } else {
+        handleRateLimit(socket, event, data);
+      }
     });
     return;
   }
-  socket.emit(event, data);
+  
+  if (rateLimitedEvents.has(event)) {
+    handleRateLimit(socket, event, data);
+  } else {
+    socket.emit(event, data);
+  }
 }
 
 // Helper function to explicitly join a game room
@@ -304,54 +347,102 @@ export function leaveGame(socket: typeof Socket | null, gameId: string, userId: 
   safeEmit(socket, 'leave_game', { gameId, userId });
 }
 
-export function startGame(socket: typeof Socket | null, gameId: string, userId?: string) {
-  if (!socket) return Promise.reject('No socket connection');
-  
-  console.log(`Attempting to start game: ${gameId} with user: ${userId || 'unknown'}`);
-  
-  return new Promise<void>((resolve, reject) => {
-    // Remove any existing listeners
-    socket.off('game_update');
-    socket.off('error');
-    
-    const handleUpdate = (updatedGame: GameState) => {
-      if (updatedGame.id === gameId) {
-        console.log(`Game ${gameId} updated, status: ${updatedGame.status}`);
-        if (updatedGame.status === 'BIDDING') {
-          cleanup();
-          resolve();
+// Get socket instance
+function getSocket(): typeof Socket | null {
+  return regularSocket;
+}
+
+// Game completion handling
+function handleGameCompletion(socket: typeof Socket, gameId: string) {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      socket.off('game_complete', onGameComplete);
+      socket.off('game_error', onGameError);
+    };
+
+    const onGameComplete = async (data: { 
+      gameId: string;
+      winners: Array<{ userId: string; coins: number; position: number }>;
+      timestamp: number;
+    }) => {
+      if (data.gameId !== gameId) return;
+      
+      try {
+        // Update player stats and coins
+        for (const winner of data.winners) {
+          await prisma.user.update({
+            where: { id: winner.userId },
+            data: { 
+              coins: { increment: winner.coins },
+              // Update game player record with final score
+              gamePlayers: {
+                update: {
+                  where: {
+                    gameId_position: {
+                      gameId: gameId,
+                      position: winner.position
+                    }
+                  },
+                  data: {
+                    score: { increment: winner.coins }
+                  }
+                }
+              }
+            }
+          });
         }
+        
+        // Mark game as completed
+        await prisma.game.update({
+          where: { id: gameId },
+          data: { 
+            status: GameStatus.FINISHED,
+            updatedAt: new Date(data.timestamp)
+          }
+        });
+
+        cleanup();
+        resolve(data);
+      } catch (error) {
+        console.error('Error handling game completion:', error);
+        cleanup();
+        reject(error);
       }
     };
-    
-    const handleError = (error: any) => {
-      console.error("Start game error:", error);
+
+    const onGameError = (error: any) => {
+      console.error('Game error:', error);
       cleanup();
       reject(error);
     };
-    
-    const cleanup = () => {
-      socket.off('game_update', handleUpdate);
-      socket.off('error', handleError);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-    
-    socket.on('game_update', handleUpdate);
-    socket.on('error', handleError);
-    
-    // Get current game state
-    safeEmit(socket, 'get_game', { gameId });
-    
-    // Send start game command
-    console.log(`Sending start_game command for game ${gameId}${userId ? ` with user ${userId}` : ''}`);
-    safeEmit(socket, 'start_game', { gameId, userId });
-    
-    // Set timeout
-    const timeoutId = setTimeout(() => {
+
+    socket.on('game_complete', onGameComplete);
+    socket.on('game_error', onGameError);
+
+    // Set timeout for completion
+    setTimeout(() => {
       cleanup();
-      reject('Timeout waiting for game to start');
-    }, 5000);
+      reject(new Error('Game completion timeout'));
+    }, 30000); // 30 second timeout
   });
+}
+
+// Modify startGame to use completion handling
+export async function startGame(gameId: string) {
+  const socket = getSocket();
+  if (!socket) throw new Error('Socket not connected');
+
+  try {
+    // Start the game
+    socket.emit('start_game', { gameId });
+    
+    // Wait for completion
+    const result = await handleGameCompletion(socket, gameId);
+    return result;
+  } catch (error) {
+    console.error('Error in startGame:', error);
+    throw error;
+  }
 }
 
 export function makeMove(socket: typeof Socket | null, gameId: string, userId: string, move: any) {
