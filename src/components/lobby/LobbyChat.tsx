@@ -203,21 +203,23 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-800 rounded-lg shadow-lg">
-      <div className="flex items-center justify-between p-3 border-b border-gray-700">
-        <h2 className="text-lg font-semibold text-white">Lobby Chat</h2>
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center">
-            <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-300">
-              {onlineUsers} online
-            </span>
+    <div className="flex flex-col h-full bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+      <div className="flex-none p-3 border-b border-gray-700">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">Lobby Chat</h2>
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center">
+              <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-sm text-gray-300">
+                {onlineUsers} online
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="p-3 bg-red-900/50 text-red-200">
+        <div className="flex-none p-3 bg-red-900/50 text-red-200">
           <p>{error}</p>
           <button
             onClick={handleRetry}
@@ -264,7 +266,7 @@ export default function LobbyChat({ socket, userId, userName }: LobbyChatProps) 
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="p-3 border-t border-gray-700 bg-gray-800">
+      <form onSubmit={handleSubmit} className="flex-none p-3 border-t border-gray-700 bg-gray-800">
         <div className="flex items-center space-x-2">
           <button
             type="button"
