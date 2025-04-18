@@ -638,7 +638,11 @@ export default function GameLobby({
               </div>
             </div>
             <div className="flex-1 overflow-y-auto min-h-0">
-              <LobbyChat />
+              <LobbyChat
+                socket={socket}
+                userId={user.id}
+                userName={user.name || "Guest"}
+              />
             </div>
           </div>
         </div>
