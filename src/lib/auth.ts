@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import { env } from "@/env.mjs";
 import { compare } from "bcryptjs";
-import { type User } from "@prisma/client";
+import { type User, Prisma } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -20,10 +20,8 @@ declare module "next-auth" {
 }
 
 declare module "next-auth/adapters" {
-  interface AdapterUser {
+  interface AdapterUser extends User {
     id: string;
-    name: string | null;
-    email: string | null;
     username: string;
     coins: number;
     hashedPassword: string | null;
@@ -42,30 +40,21 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        username: { label: "Username or Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.username || !credentials?.password) {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await prisma.user.findFirst({
           where: {
-            email: credentials.email,
-          },
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            username: true,
-            coins: true,
-            hashedPassword: true,
-            emailVerified: true,
-            createdAt: true,
-            updatedAt: true,
-            image: true,
-          },
+            OR: [
+              { email: credentials.username },
+              { username: credentials.username } as Prisma.UserWhereInput
+            ]
+          }
         });
 
         if (!user || !user.hashedPassword) {
@@ -98,11 +87,11 @@ export const authOptions: NextAuthOptions = {
         return {
           ...token,
           id: user.id,
-          username: user.username,
-          coins: user.coins,
+          username: (user as any).username,
+          coins: (user as any).coins,
           emailVerified: user.emailVerified,
-          createdAt: user.createdAt,
-          updatedAt: user.updatedAt,
+          createdAt: (user as any).createdAt,
+          updatedAt: (user as any).updatedAt,
         };
       }
       return token;

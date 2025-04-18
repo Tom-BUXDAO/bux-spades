@@ -54,17 +54,15 @@ export default function LoginPage() {
         // If registration successful, log them in
         const result = await signIn("credentials", {
           redirect: false,
-          username,
+          username: email, // Use email for first login after registration
           password,
-          callbackUrl: "/game"
         });
         
         if (result?.error) {
           throw new Error('Failed to log in after registration');
-        } else if (result?.url) {
-          // Wait for user to close welcome modal before redirecting
-          return;
         }
+        // Don't redirect yet, wait for welcome modal to close
+        setIsLoading(false);
       } else {
         const result = await signIn("credentials", {
           redirect: false,
