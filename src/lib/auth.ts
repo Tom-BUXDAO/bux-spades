@@ -25,9 +25,10 @@ export const authOptions: AuthOptions = {
         return {
           id: profile.id,
           name: profile.username,
+          username: profile.username,
           email: profile.email,
           image: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null,
-          coins: 1000,
+          coins: 5000000,
         };
       },
     }),
@@ -43,18 +44,23 @@ export const authOptions: AuthOptions = {
           return null;
         }
 
+        // Generate a unique username for the guest
+        const guestUsername = `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
         // Create a guest user in the database
         const user = await prisma.user.create({
           data: {
-            id: `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            id: guestUsername,
             name: credentials.name,
-            coins: 1000,
+            username: guestUsername,
+            coins: 5000000,
           },
         });
 
         return {
           id: user.id,
           name: user.name,
+          username: user.username,
           isGuest: true,
           coins: user.coins,
           email: null,
@@ -80,20 +86,23 @@ export const authOptions: AuthOptions = {
             where: { id: discordProfile.id },
             update: {
               name: discordProfile.username,
+              username: discordProfile.username,
               email: discordProfile.email,
               image: user.image,
             },
             create: {
               id: discordProfile.id,
               name: discordProfile.username,
+              username: discordProfile.username,
               email: discordProfile.email,
               image: user.image,
-              coins: 1000,
+              coins: 5000000,
             },
           });
           
           user.id = discordProfile.id;
           user.coins = dbUser.coins;
+          user.username = dbUser.username;
         }
         return true;
       } catch (error) {
@@ -105,6 +114,7 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.name = user.name;
+        token.username = user.username;
         token.isGuest = user.isGuest;
         token.coins = user.coins;
       }
@@ -114,6 +124,7 @@ export const authOptions: AuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.name = token.name as string;
+        session.user.username = token.username as string;
         session.user.isGuest = token.isGuest as boolean;
         session.user.coins = token.coins as number;
       }
