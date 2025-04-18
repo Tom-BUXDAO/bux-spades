@@ -43,12 +43,14 @@ model Session {
 
 model User {
   id            String    @id @default(cuid())
-  name          String?
+  name          String?   // Display name, can be from Discord or custom
+  username      String?   @unique // Added: Unique username for non-Discord login
   email         String?   @unique
   emailVerified DateTime?
+  hashedPassword String?   // Added: Store hashed password
   image         String?
   coins         Int       @default(1000)
-  accounts      Account[]
+  accounts      Account[] // For OAuth providers like Discord
   sessions      Session[]
   gamePlayers   GamePlayer[]
   createdAt     DateTime  @default(now())

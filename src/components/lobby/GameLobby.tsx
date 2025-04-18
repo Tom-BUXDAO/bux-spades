@@ -8,6 +8,7 @@ import type { Socket } from "socket.io-client";
 import GameRulesModal, { GameRules } from './GameRulesModal';
 import LobbyChat from './LobbyChat';
 import { LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface GameLobbyProps {
   onGameSelect: (game: GameState) => void;
@@ -68,6 +69,7 @@ export default function GameLobby({
   const [showChat, setShowChat] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const router = useRouter();
 
   // Minimum swipe distance for gesture detection (in pixels)
   const minSwipeDistance = 50;
@@ -313,10 +315,12 @@ export default function GameLobby({
     }
   };
 
+  const handleSignIn = () => {
+    router.push('/login');
+  };
+
   const handleLogout = () => {
-    signOut({ 
-      callbackUrl: "/login"
-    });
+    signOut();
   };
 
   // Function to check if a player is controlled by this browser
@@ -363,14 +367,7 @@ export default function GameLobby({
           </div>
 
           <div className="flex items-center space-x-4">
-            {user.isGuest ? (
-              <button
-                onClick={() => signOut()}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Sign In
-              </button>
-            ) : (
+            {user.id && !user.isGuest ? (
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 rounded-full overflow-hidden">
@@ -392,6 +389,30 @@ export default function GameLobby({
                   title="Sign Out"
                 >
                   <LogOut size={20} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden">
+                    <Image
+                      src={GUEST_AVATAR}
+                      alt={user.name || "Guest"}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-white font-medium hidden sm:block">
+                    {user.name || "Guest"}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSignIn}
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                  title="Sign In / Register"
+                >
+                  Sign In / Register
                 </button>
               </div>
             )}
