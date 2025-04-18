@@ -7,6 +7,7 @@ import type { GameState } from "@/types/game";
 import type { Socket } from "socket.io-client";
 import GameRulesModal, { GameRules } from './GameRulesModal';
 import LobbyChat from './LobbyChat';
+import { LogOut } from 'lucide-react';
 
 interface GameLobbyProps {
   onGameSelect: (game: GameState) => void;
@@ -357,28 +358,66 @@ export default function GameLobby({
       {/* Header - fixed height */}
       <div className="flex-none h-16 px-4 bg-gray-800 shadow-md">
         <div className="flex justify-between items-center h-full">
-          <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
+            <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
+          </div>
+
+          {/* Mobile Toggle - Only visible on mobile */}
+          <div className="lg:hidden absolute left-1/2 -translate-x-1/2 flex items-center bg-gray-700 rounded-full p-0.5">
             <button
-              onClick={() => setShowChat(!showChat)}
-              className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => setShowChat(false)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                !showChat 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:text-white'
+              }`}
             >
-              {showChat ? 'Show Games' : 'Show Chat'}
+              Games
             </button>
+            <button
+              onClick={() => setShowChat(true)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                showChat 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:text-white'
+              }`}
+            >
+              Chat
+            </button>
+          </div>
+
+          <div className="flex items-center space-x-4">
             {user.isGuest ? (
               <button
                 onClick={() => signOut()}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Sign In
               </button>
             ) : (
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Sign Out
-              </button>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 rounded-full overflow-hidden">
+                    <Image
+                      src={user.image || GUEST_AVATAR}
+                      alt={user.name || "User"}
+                      width={32}
+                      height={32}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className="text-white font-medium hidden sm:block">
+                    {user.name}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut size={20} />
+                </button>
+              </div>
             )}
           </div>
         </div>
