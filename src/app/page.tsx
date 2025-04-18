@@ -27,7 +27,7 @@ export default function Home() {
           <p>Welcome, {session.user.name}!</p>
           <div className="flex items-center justify-center space-x-2">
             <Image 
-              src="/coin-vector-svgrepo-com.svg" 
+              src="/coin-svgrepo-com.svg" 
               alt="Coins" 
               width={20} 
               height={20} 

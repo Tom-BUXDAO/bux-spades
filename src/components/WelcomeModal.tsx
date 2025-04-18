@@ -38,7 +38,7 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
                 <div className="flex justify-center mb-4">
                   <div className="relative w-16 h-16">
                     <Image
-                      src="/coin-vector-svgrepo-com.svg"
+                      src="/coin-svgrepo-com.svg"
                       alt="Coins"
                       fill
                       className="object-contain text-yellow-400 animate-bounce"

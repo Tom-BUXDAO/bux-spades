@@ -15,7 +15,7 @@ const GUEST_AVATAR = "/guest-avatar.png";
 const BOT_AVATAR = "/guest-avatar.png";
 
 // Add coin icon constant
-const COIN_ICON = "/coin-vector-svgrepo-com.svg";
+const COIN_ICON = "/coin-svgrepo-com.svg";
 
 interface GameLobbyProps {
   onGameSelect: (game: GameState) => void;
