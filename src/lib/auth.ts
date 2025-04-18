@@ -57,8 +57,8 @@ export const authOptions: NextAuthOptions = {
           email: profile.email,
           image: imageUrl,
           username: profile.username,
-          coins: 0,
-        };
+          coins: 5000000,
+        } as NextAuthUser;
       },
     }),
     CredentialsProvider({
