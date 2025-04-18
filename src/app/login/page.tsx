@@ -114,6 +114,7 @@ export default function LoginPage() {
               className="object-contain"
               priority
               sizes="(max-width: 768px) 48px, 48px"
+              unoptimized={true}
             />
           </div>
           <h1 className="text-3xl font-bold text-white">BUX Spades</h1>
