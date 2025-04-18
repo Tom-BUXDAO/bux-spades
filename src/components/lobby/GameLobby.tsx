@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, TouchEvent } from "react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
 import type { GameState } from "@/types/game";
@@ -64,6 +64,36 @@ export default function GameLobby({
     minPoints: -250,
     maxPoints: 500
   });
+  const [showChat, setShowChat] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Minimum swipe distance for gesture detection (in pixels)
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe) {
+      setShowChat(true);
+    }
+    if (isRightSwipe) {
+      setShowChat(false);
+    }
+  };
 
   useEffect(() => {
     // Track if this effect has run to prevent duplicate handlers
@@ -328,6 +358,12 @@ export default function GameLobby({
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">Spades Lobby</h1>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className="lg:hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              {showChat ? 'Show Games' : 'Show Chat'}
+            </button>
             {user.isGuest ? (
               <button
                 onClick={() => signOut()}
@@ -347,9 +383,14 @@ export default function GameLobby({
         </div>
       </div>
 
-      <div className="flex-1 p-4 flex space-x-4 overflow-hidden">
+      <div 
+        className="flex-1 p-4 flex space-x-4 overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {/* Games List Section */}
-        <div className="flex-1 flex flex-col space-y-4 min-w-0">
+        <div className={`flex-1 flex flex-col space-y-4 min-w-0 ${showChat ? 'hidden lg:flex' : 'flex'}`}>
           <div className="flex justify-between items-center">
             <div>
               <h3 className="text-lg font-medium text-white">Available Games</h3>
@@ -580,7 +621,7 @@ export default function GameLobby({
         </div>
 
         {/* Chat Section */}
-        <div className="w-96 hidden lg:block">
+        <div className={`w-full lg:w-96 ${showChat ? 'flex' : 'hidden lg:block'}`}>
           <LobbyChat
             socket={socket}
             userId={user.id}
