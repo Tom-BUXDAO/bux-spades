@@ -1,6 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
-import { GiTwoCoins } from 'react-icons/gi';
+import Image from 'next/image';
 
 interface WelcomeModalProps {
   isOpen: boolean;
@@ -36,7 +36,14 @@ export default function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
             >
               <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
                 <div className="flex justify-center mb-4">
-                  <GiTwoCoins className="h-16 w-16 text-yellow-400 animate-bounce" />
+                  <div className="relative w-16 h-16">
+                    <Image
+                      src="/coin-vector-svgrepo-com.svg"
+                      alt="Coins"
+                      fill
+                      className="object-contain text-yellow-400 animate-bounce"
+                    />
+                  </div>
                 </div>
                 <Dialog.Title
                   as="h3"

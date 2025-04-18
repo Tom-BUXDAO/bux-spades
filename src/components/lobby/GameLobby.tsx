@@ -10,6 +10,13 @@ import LobbyChat from './LobbyChat';
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+// Add avatar constants at the top of the file
+const GUEST_AVATAR = "/guest-avatar.png";
+const BOT_AVATAR = "/guest-avatar.png";
+
+// Add coin icon constant
+const COIN_ICON = "/coin-vector-svgrepo-com.svg";
+
 interface GameLobbyProps {
   onGameSelect: (game: GameState) => void;
   user: {
@@ -30,10 +37,6 @@ interface GameLobbyProps {
   }) => void;
   onGamesUpdate: (callback: (games: GameState[]) => void) => () => void;
 }
-
-// Add avatar constants at the top of the file
-const GUEST_AVATAR = "/guest-avatar.png";
-const BOT_AVATAR = "/guest-avatar.png";
 
 export default function GameLobby({ 
   onGameSelect, 
@@ -384,9 +387,16 @@ export default function GameLobby({
                     <span className="text-white font-medium hidden sm:block">
                       {user.name}
                     </span>
-                    <span className="text-yellow-400 text-xs hidden sm:block">
-                      {user.coins?.toLocaleString()} coins
-                    </span>
+                    <div className="flex items-center space-x-1 text-yellow-400 text-xs hidden sm:block">
+                      <Image 
+                        src={COIN_ICON} 
+                        alt="Coins" 
+                        width={16} 
+                        height={16} 
+                        className="inline-block"
+                      />
+                      <span>{user.coins?.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
                 <button

@@ -25,7 +25,16 @@ export default function Home() {
       ) : session ? (
         <div className="space-y-4 text-center">
           <p>Welcome, {session.user.name}!</p>
-          <p>Coins: {session.user.coins}</p>
+          <div className="flex items-center justify-center space-x-2">
+            <Image 
+              src="/coin-vector-svgrepo-com.svg" 
+              alt="Coins" 
+              width={20} 
+              height={20} 
+              className="inline-block"
+            />
+            <p>{session.user.coins.toLocaleString()}</p>
+          </div>
           <Link
             href="/game"
             className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
