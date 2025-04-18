@@ -2,10 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import sharp from 'sharp';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
   try {
@@ -25,30 +21,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 });
     }
 
-    // Convert File to Buffer
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Convert File to base64
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64String = `data:${file.type};base64,${buffer.toString('base64')}`;
 
-    // Generate unique filename
-    const filename = `${uuidv4()}${path.extname(file.name)}`;
-    const publicDir = path.join(process.cwd(), 'public', 'avatars');
-    const outputPath = path.join(publicDir, filename);
-
-    // Optimize and save image
-    await sharp(buffer)
-      .resize(150, 150, {
-        fit: 'cover',
-        position: 'center'
-      })
-      .toBuffer()
-      .then(async (optimizedBuffer) => {
-        await writeFile(outputPath, optimizedBuffer);
-      });
-
-    // Update user's avatar in database
-    const imageUrl = `/avatars/${filename}`;
+    // Update user's avatar in database with base64 string
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: { image: imageUrl },
+      data: { image: base64String },
     });
 
     return NextResponse.json({ image: updatedUser.image });
