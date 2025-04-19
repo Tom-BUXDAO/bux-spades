@@ -77,33 +77,19 @@ export default function LoginPage() {
         // Don't redirect yet, wait for welcome modal to close
         setIsLoading(false);
       } else {
-        // For login, use our custom API route
+        // For login, use NextAuth's credentials provider directly
         try {
-          const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              username,
-              password,
-            }),
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || 'Authentication failed');
-          }
-
-          // After successful login, use NextAuth's signIn to establish a session
           const result = await signIn("credentials", {
             redirect: false,
             username,
             password,
           });
 
-          if (result?.error) {
+          if (!result) {
+            throw new Error("Authentication failed");
+          }
+
+          if (result.error) {
             throw new Error(result.error);
           }
 
