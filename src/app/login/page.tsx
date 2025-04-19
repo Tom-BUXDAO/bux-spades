@@ -110,7 +110,7 @@ export default function LoginPage() {
         <div className="flex items-center justify-center space-x-4">
           <div className="relative w-12 h-12">
             <Image
-              src="/bux-neon-logo.png"
+              src="/BUX.png"
               alt="BUX Logo"
               fill
               className="object-contain"
