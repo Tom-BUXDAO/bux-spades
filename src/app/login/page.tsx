@@ -115,19 +115,17 @@ function LoginForm() {
         callbackUrl: '/game'
       });
 
-      if (result?.error) {
-        setError(result.error);
+      if (!result?.ok) {
+        setError("Invalid email or password");
         setIsLoading(false);
         return;
       }
 
-      if (result?.ok) {
-        // Show welcome modal for new users
-        if (isRegistering) {
-          setShowWelcomeModal(true);
-        } else {
-          router.push('/game');
-        }
+      // Show welcome modal for new users
+      if (isRegistering) {
+        setShowWelcomeModal(true);
+      } else {
+        router.push('/game');
       }
     } catch (error) {
       console.error("Authentication error:", error);
