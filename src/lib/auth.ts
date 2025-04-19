@@ -21,6 +21,14 @@ declare module "next-auth" {
   }
 }
 
+// Ensure we have a valid base URL
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') return window.location.origin;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL;
+  return 'http://localhost:3000';
+};
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
   session: {
@@ -145,31 +153,31 @@ export const authOptions: NextAuthOptions = {
       console.log("[Auth] Redirect URL:", url);
       console.log("[Auth] Base URL:", baseUrl);
 
+      // If no URL is provided, redirect to home
       if (!url) {
-        return baseUrl;
+        return "/";
       }
 
-      if (typeof url !== "string") {
-        return baseUrl;
-      }
+      // Ensure we have a valid baseUrl
+      const validBaseUrl = baseUrl || getBaseUrl();
 
       try {
         // Handle relative URLs
         if (url.startsWith("/")) {
-          return `${baseUrl}${url}`;
+          return `${validBaseUrl}${url}`;
         }
 
         // Handle absolute URLs from same origin
         const urlObj = new URL(url);
-        if (urlObj.origin === baseUrl) {
+        if (urlObj.origin === validBaseUrl) {
           return url;
         }
 
-        // Default to base URL for any other case
-        return baseUrl;
+        // Default to home page for any other case
+        return "/";
       } catch (error) {
         console.error("[Auth] Redirect error:", error);
-        return baseUrl;
+        return "/";
       }
     }
   },
