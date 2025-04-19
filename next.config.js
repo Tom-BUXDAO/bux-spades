@@ -6,10 +6,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'cdn.discordapp.com'
       }
-    ],
-    dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    ]
   },
   webpack: (config, { isServer }) => {
     // Exclude socket-server directory from the build
@@ -21,7 +18,6 @@ const nextConfig = {
     };
     return config;
   },
-  // Add any other Next.js config options here
 };
 
 module.exports = nextConfig; 

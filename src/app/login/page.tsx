@@ -109,12 +109,9 @@ export default function LoginPage() {
       <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
         <div className="flex items-center justify-center space-x-4">
           <div className="relative w-32 h-32 flex items-center justify-center">
-            <Image
+            <img
               src="/bux.png"
               alt="BUX Logo"
-              width={128}
-              height={128}
-              priority
               className="w-full h-full object-contain"
             />
           </div>
