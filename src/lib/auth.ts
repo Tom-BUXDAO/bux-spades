@@ -192,6 +192,14 @@ export const authOptions: NextAuthOptions = {
       console.log("[Auth Session Callback] Returning Session:", JSON.stringify(session));
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to /game for successful logins
+      if (url.startsWith(baseUrl)) {
+        return "/game";
+      }
+      // Default to baseUrl for external URLs
+      return baseUrl;
+    },
   },
 };
 

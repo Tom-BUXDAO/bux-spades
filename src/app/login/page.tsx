@@ -69,26 +69,26 @@ export default function LoginPage() {
         setIsLoading(false);
       } else {
         // For login, use the credentials provider
-        const result = await signIn("credentials", {
-          redirect: false,
-          username,
-          password,
-        });
+        try {
+          const result = await signIn("credentials", {
+            redirect: false,
+            username,
+            password,
+          });
 
-        if (!result) {
-          throw new Error("Authentication failed");
-        }
+          if (!result) {
+            throw new Error("Authentication failed");
+          }
 
-        if (result.error) {
-          throw new Error(result.error);
-        }
+          if (result.error) {
+            throw new Error(result.error);
+          }
 
-        // Check if we have a valid URL to redirect to
-        if (result.url) {
-          window.location.href = result.url;
-        } else {
-          // If no URL is provided, redirect to the game page
+          // Always redirect to game page on success
           window.location.href = "/game";
+        } catch (signInError) {
+          console.error("Sign in error:", signInError);
+          throw new Error("Invalid username or password");
         }
       }
     } catch (err) {
