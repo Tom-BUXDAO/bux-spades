@@ -22,12 +22,14 @@ export function middleware(request: NextRequest) {
   
   if (!sessionToken) {
     // Redirect to login for all protected routes
-    return NextResponse.redirect(new URL('/login', request.url));
+    const loginUrl = new URL('/login', request.nextUrl.origin);
+    return NextResponse.redirect(loginUrl);
   }
 
   // If user is authenticated and trying to access root, redirect to game
   if (request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/game', request.url));
+    const gameUrl = new URL('/game', request.nextUrl.origin);
+    return NextResponse.redirect(gameUrl);
   }
 
   return NextResponse.next();
