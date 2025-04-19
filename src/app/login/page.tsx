@@ -111,39 +111,13 @@ function LoginForm() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
+        redirect: true,
         callbackUrl: '/game'
       });
 
+      // If we get here, something went wrong
       if (result?.error) {
-        console.error("Authentication error:", result.error);
         setError(result.error);
-        setIsLoading(false);
-        return;
-      }
-
-      // If login successful, wait for session to update
-      if (result?.ok) {
-        try {
-          // Force a session update
-          const sessionResponse = await fetch('/api/auth/session');
-          if (!sessionResponse.ok) {
-            throw new Error('Failed to update session');
-          }
-          
-          // Get the session data
-          const sessionData = await sessionResponse.json();
-          if (!sessionData?.user) {
-            throw new Error('No user data in session');
-          }
-          
-          // Redirect to game page
-          router.push('/game');
-        } catch (error) {
-          console.error("Session update error:", error);
-          setError('Failed to update session. Please try again.');
-          setIsLoading(false);
-        }
       }
     } catch (error) {
       console.error("Authentication error:", error);
