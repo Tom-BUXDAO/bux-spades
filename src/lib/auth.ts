@@ -77,7 +77,12 @@ export const authOptions: NextAuthOptions = {
             }
           });
 
-          if (!user || !user.hashedPassword) {
+          if (!user) {
+            return null;
+          }
+
+          // If user has no password (Discord user), don't allow credentials login
+          if (!user.hashedPassword) {
             return null;
           }
 
