@@ -1,50 +1,52 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verify } from "jsonwebtoken";
+
+// Add paths that should be protected
+const protectedPaths = ["/game", "/profile", "/settings"];
 
 export function middleware(request: NextRequest) {
-  // Skip auth for test routes
-  if (request.nextUrl.pathname.startsWith('/game/test_')) {
-    return NextResponse.next();
-  }
+  const path = request.nextUrl.pathname;
 
-  // Skip auth for test socket connections
-  if (request.nextUrl.pathname.startsWith('/socket.io/') && 
-      request.nextUrl.searchParams.get('clientId')?.startsWith('test_')) {
-    return NextResponse.next();
-  }
-
-  // For all other routes, check if user is authenticated
-  const sessionToken = request.cookies.get(
-    process.env.NODE_ENV === 'production' 
-      ? '__Secure-next-auth.session-token' 
-      : 'next-auth.session-token'
+  // Check if the path should be protected
+  const isProtectedPath = protectedPaths.some((protectedPath) =>
+    path.startsWith(protectedPath)
   );
-  
-  if (!sessionToken) {
-    // Redirect to login for all protected routes
-    const loginUrl = new URL('/login', request.nextUrl.origin);
-    return NextResponse.redirect(loginUrl);
+
+  if (isProtectedPath) {
+    const token = request.cookies.get("auth-token");
+
+    if (!token) {
+      // Redirect to login if no token is present
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    try {
+      // Verify the token
+      verify(token.value, process.env.JWT_SECRET || "your-secret-key");
+      return NextResponse.next();
+    } catch (error) {
+      // Token is invalid or expired
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
-  // If user is authenticated and trying to access root, redirect to game
-  if (request.nextUrl.pathname === '/') {
-    const gameUrl = new URL('/game', request.nextUrl.origin);
-    return NextResponse.redirect(gameUrl);
-  }
-
+  // For non-protected paths, allow access
   return NextResponse.next();
 }
 
+// Configure which paths the middleware should run on
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/auth (auth endpoints)
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - login (login page)
+     * - register (registration page)
      */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|login).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico|login|register).*)",
   ],
-} 
+}; 
