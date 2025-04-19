@@ -22,6 +22,7 @@ export default function GamePage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
+      return;
     }
   }, [status, router]);
 
