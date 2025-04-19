@@ -49,11 +49,22 @@ function LoginForm() {
       // For login, use email and password
       if (!isRegistering) {
         const result = await signIn("credentials", {
-          redirect: true,
+          redirect: false,
           email,
           password,
-          callbackUrl: "/game"
         });
+
+        if (result?.error) {
+          console.error("[Login] Authentication error:", result.error);
+          setError(result.error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (result?.ok) {
+          console.log("[Login] Authentication successful");
+          router.push("/game");
+        }
       } else {
         // For registration, use username, email, and password
         if (!username) {
@@ -63,12 +74,23 @@ function LoginForm() {
         }
 
         const result = await signIn("credentials", {
-          redirect: true,
+          redirect: false,
           username,
           email,
           password,
-          callbackUrl: "/game"
         });
+
+        if (result?.error) {
+          console.error("[Registration] Authentication error:", result.error);
+          setError(result.error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (result?.ok) {
+          console.log("[Registration] Authentication successful");
+          router.push("/game");
+        }
       }
     } catch (error) {
       console.error("[Login] Unexpected error:", error);
@@ -94,7 +116,7 @@ function LoginForm() {
       <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
         <div className="flex items-center justify-center space-x-4">
           <img
-            src="/icon.png"
+            src="/bux-logo.png"
             alt="BUX Logo"
             width="128"
             height="128"
@@ -237,7 +259,7 @@ export default function LoginPage() {
         <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
           <div className="flex items-center justify-center space-x-4">
             <img
-              src="/icon.png"
+              src="/bux-logo.png"
               alt="BUX Logo"
               width="128"
               height="128"
