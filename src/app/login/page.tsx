@@ -42,59 +42,82 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setIsLoading(true);
+    setError("");
 
     try {
-      // For login, use email and password
-      if (!isRegistering) {
-        const result = await signIn("credentials", {
-          redirect: false,
-          email,
-          password,
-        });
+      // For login, we need email and password
+      if (!isRegistering && (!email || !password)) {
+        setError("Please enter both email and password");
+        setIsLoading(false);
+        return;
+      }
 
-        if (result?.error) {
-          console.error("[Login] Authentication error:", result.error);
-          setError(result.error);
+      // For registration, we need username, email, and password
+      if (isRegistering && (!username || !email || !password)) {
+        setError("Please fill in all fields");
+        setIsLoading(false);
+        return;
+      }
+
+      // If registering, call the registration API first
+      if (isRegistering) {
+        try {
+          const registerResponse = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username,
+              email,
+              password,
+            }),
+          });
+
+          const registerData = await registerResponse.json();
+
+          if (!registerResponse.ok) {
+            setError(registerData.error || 'Registration failed');
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Registration error:', error);
+          setError('Registration failed. Please try again.');
           setIsLoading(false);
           return;
-        }
-
-        if (result?.ok) {
-          console.log("[Login] Authentication successful");
-          router.push("/game");
-        }
-      } else {
-        // For registration, use username, email, and password
-        if (!username) {
-          setError("Username is required");
-          setIsLoading(false);
-          return;
-        }
-
-        const result = await signIn("credentials", {
-          redirect: false,
-          username,
-          email,
-          password,
-        });
-
-        if (result?.error) {
-          console.error("[Registration] Authentication error:", result.error);
-          setError(result.error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (result?.ok) {
-          console.log("[Registration] Authentication successful");
-          router.push("/game");
         }
       }
+
+      // Now proceed with login
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        // More specific error messages
+        if (result.error === "Invalid credentials") {
+          setError("Please enter both email and password");
+        } else if (result.error === "User not found") {
+          setError("No account found with this email");
+        } else if (result.error === "Invalid password") {
+          setError("Incorrect password");
+        } else {
+          setError(result.error);
+        }
+        return;
+      }
+
+      if (result?.ok) {
+        router.push("/game");
+      }
     } catch (error) {
-      console.error("[Login] Unexpected error:", error);
+      console.error("Authentication error:", error);
       setError("An unexpected error occurred. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -127,36 +150,34 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label htmlFor="email" className="sr-only">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Email"
+            />
+          </div>
+          
+          <div>
             <label htmlFor="username" className="sr-only">Username</label>
             <input
               id="username"
               name="username"
               type="text"
               autoComplete="username"
-              required
+              required={isRegistering}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              placeholder="Username"
+              placeholder={isRegistering ? "Username" : "Username (optional)"}
             />
           </div>
-          
-          {isRegistering && (
-            <div>
-              <label htmlFor="email" className="sr-only">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                placeholder="Email"
-              />
-            </div>
-          )}
 
           <div className="relative">
             <label htmlFor="password" className="sr-only">Password</label>
