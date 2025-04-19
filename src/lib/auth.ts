@@ -111,16 +111,26 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If the URL is relative, prepend the base URL
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
+      try {
+        // If the URL is relative, prepend the base URL
+        if (url.startsWith("/")) {
+          return `${baseUrl}${url}`;
+        }
+        
+        // If the URL is absolute, validate it
+        if (url) {
+          const parsedUrl = new URL(url);
+          if (parsedUrl.origin === baseUrl) {
+            return url;
+          }
+        }
+        
+        // Default to the base URL if anything goes wrong
+        return baseUrl;
+      } catch (error) {
+        console.error("Error in redirect callback:", error);
+        return baseUrl;
       }
-      // If the URL is absolute and on the same origin, allow it
-      else if (new URL(url).origin === baseUrl) {
-        return url;
-      }
-      // Otherwise, redirect to the base URL
-      return baseUrl;
     },
   },
   debug: process.env.NODE_ENV === "development",

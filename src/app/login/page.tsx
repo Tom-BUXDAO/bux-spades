@@ -116,6 +116,7 @@ function LoginForm() {
       });
 
       if (result?.error) {
+        console.error("Authentication error:", result.error);
         setError(result.error);
         setIsLoading(false);
         return;
@@ -123,13 +124,18 @@ function LoginForm() {
 
       // If login successful, wait for session to update
       if (result?.ok) {
-        // Force a session update
-        const session = await fetch('/api/auth/session');
-        if (session.ok) {
+        try {
+          // Force a session update
+          const sessionResponse = await fetch('/api/auth/session');
+          if (!sessionResponse.ok) {
+            throw new Error('Failed to update session');
+          }
+          
           // Redirect to game page
           router.push('/game');
-        } else {
-          setError('Failed to update session');
+        } catch (error) {
+          console.error("Session update error:", error);
+          setError('Failed to update session. Please try again.');
         }
       }
     } catch (error) {
