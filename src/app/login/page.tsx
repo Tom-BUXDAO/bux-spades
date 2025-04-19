@@ -83,6 +83,7 @@ export default function LoginPage() {
             redirect: false,
             username,
             password,
+            callbackUrl: "/game",
           });
 
           if (!result) {
@@ -93,8 +94,12 @@ export default function LoginPage() {
             throw new Error(result.error);
           }
 
-          // Redirect to game page on success
-          router.push("/game");
+          // Let NextAuth handle the redirect
+          if (result.url) {
+            router.push(result.url);
+          } else {
+            router.push("/game");
+          }
         } catch (loginError) {
           console.error("Login error:", loginError);
           throw new Error("Invalid username or password");

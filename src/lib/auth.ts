@@ -137,13 +137,6 @@ export const authOptions: NextAuthOptions = {
         }
       } else if (account?.provider === 'credentials') {
         console.log("[Auth SignIn Callback] Credentials User (from callback arg):", JSON.stringify(user));
-        
-        // For credentials login, check if this is a new user by looking at their coins
-        if (user && 'coins' in user && user.coins === 5000000) {
-          console.log("[Auth SignIn Callback] New credentials user detected with 5M coins");
-          // We can't modify the callback URL here as it's already been processed
-          // The game page will detect this is a new user by checking the coins
-        }
       }
       return true;
     },
@@ -194,11 +187,7 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Always redirect to /game for successful logins
-      if (url.startsWith(baseUrl)) {
-        return "/game";
-      }
-      // Default to baseUrl for external URLs
-      return baseUrl;
+      return "/game";
     },
   },
 };
