@@ -52,6 +52,8 @@ export function useAuth() {
 
       const userData = await response.json();
       setUser(userData);
+      // Store user data in localStorage for socket authentication
+      localStorage.setItem('user', JSON.stringify(userData));
       router.push('/game');
       return { success: true };
     } catch (error) {
@@ -69,6 +71,8 @@ export function useAuth() {
         method: 'POST',
       });
       setUser(null);
+      // Clear user data from localStorage
+      localStorage.removeItem('user');
       router.push('/login');
     } catch (error) {
       console.error('Logout error:', error);
@@ -92,6 +96,8 @@ export function useAuth() {
 
       const userData = await response.json();
       setUser(userData);
+      // Store user data in localStorage for socket authentication
+      localStorage.setItem('user', JSON.stringify(userData));
       router.push('/game');
       return { success: true };
     } catch (error) {

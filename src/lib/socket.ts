@@ -44,6 +44,8 @@ export function useSocket(clientId: string = '') {
         console.log('Test socket connected for client:', clientId);
         setIsConnected(true);
         reconnectAttempts.current = 0;
+        // Authenticate test socket
+        authenticateUser(testSocket, clientId);
       };
       
       const onDisconnect = (reason: string) => {
@@ -94,6 +96,13 @@ export function useSocket(clientId: string = '') {
         console.log('Regular socket connected with ID:', regularSocket?.id);
         setIsConnected(true);
         reconnectAttempts.current = 0;
+        
+        // Get the user ID from localStorage or session
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user?.id) {
+          console.log('Authenticating socket with user ID:', user.id);
+          authenticateUser(regularSocket, user.id);
+        }
       };
       
       const onDisconnect = (reason: string) => {
