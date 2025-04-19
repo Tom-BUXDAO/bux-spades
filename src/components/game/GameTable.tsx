@@ -229,7 +229,7 @@ export default function GameTable({
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const regularSocket = !socket ? useSocket("") : { playCard: () => {}, makeBid: () => {} };
+  const regularSocket = !socket ? useSocket() : { playCard: () => {}, makeBid: () => {} };
   const [selectedBid, setSelectedBid] = useState<number | null>(null);
   const [showHandSummary, setShowHandSummary] = useState(false);
   const [showWinner, setShowWinner] = useState(false);
