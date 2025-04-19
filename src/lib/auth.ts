@@ -33,7 +33,7 @@ function getBaseUrl() {
   // If we have a Vercel URL, use it
   if (vercelUrl) {
     // Handle both production and preview URLs
-    return vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
+    return `https://${vercelUrl}`;
   }
 
   // If we have a NextAuth URL, use it
@@ -48,7 +48,7 @@ function getBaseUrl() {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: "database",
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -129,6 +129,9 @@ export const authOptions: NextAuthOptions = {
         
         // Allow Vercel preview URLs
         if (url.includes(process.env.VERCEL_URL || "")) return url;
+        
+        // Allow URLs from the same project
+        if (url.includes("bux-spades")) return url;
         
         // Default to base URL
         return baseUrl;
