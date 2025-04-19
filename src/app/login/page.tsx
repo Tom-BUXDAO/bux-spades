@@ -95,6 +95,7 @@ function LoginForm() {
         email,
         password,
         redirect: false,
+        callbackUrl: window.location.origin + '/game',
       });
 
       if (result?.error) {
@@ -105,6 +106,9 @@ function LoginForm() {
           setError("No account found with this email");
         } else if (result.error === "Invalid password") {
           setError("Incorrect password");
+        } else if (result.error.includes("URL constructor")) {
+          setError("Authentication service error. Please try again.");
+          console.error("Auth URL error:", result.error);
         } else {
           setError(result.error);
         }
