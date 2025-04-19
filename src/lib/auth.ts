@@ -99,10 +99,15 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string;
-        session.user.username = token.username as string;
-        session.user.coins = token.coins as number;
+      if (token) {
+        session.user = {
+          id: token.id as string,
+          email: token.email as string,
+          name: token.name as string,
+          username: token.username as string,
+          coins: token.coins as number,
+          image: token.image as string,
+        };
       }
       return session;
     },

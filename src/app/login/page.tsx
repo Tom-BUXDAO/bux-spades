@@ -120,8 +120,13 @@ function LoginForm() {
         return;
       }
 
-      // If login successful, redirect to game page
-      router.push('/game');
+      // If login successful, wait for session to update
+      if (result?.ok) {
+        // Force a session update
+        await update();
+        // Then redirect
+        router.push('/game');
+      }
     } catch (error) {
       console.error("Authentication error:", error);
       setError("An unexpected error occurred. Please try again.");
