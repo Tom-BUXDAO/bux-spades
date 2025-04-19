@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,7 +8,7 @@ import WelcomeModal from "@/components/WelcomeModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState("");
@@ -268,5 +268,29 @@ export default function LoginPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
+          <div className="flex items-center justify-center space-x-4">
+            <img
+              src="/icon.png"
+              alt="BUX Logo"
+              width="128"
+              height="128"
+              className="rounded-lg"
+            />
+            <h1 className="text-3xl font-bold text-white">BUX Spades</h1>
+          </div>
+          <div className="text-center text-gray-400">Loading...</div>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 } 
