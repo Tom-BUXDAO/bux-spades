@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { sign } from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
@@ -42,21 +41,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create a session token
-    const token = sign(
-      {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        coins: user.coins,
-      },
-      process.env.NEXTAUTH_SECRET || "fallback-secret",
-      { expiresIn: "7d" }
-    );
+    // Instead of creating a JWT token, we'll use NextAuth's built-in session
+    // We'll set a cookie that NextAuth will recognize
+    const sessionToken = Buffer.from(JSON.stringify({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      coins: user.coins,
+    })).toString('base64');
 
-    // Set the token in a cookie
-    cookies().set("next-auth.session-token", token, {
+    // Set the session token in a cookie
+    cookies().set("next-auth.session-token", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
