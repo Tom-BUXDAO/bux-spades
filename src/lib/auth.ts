@@ -22,39 +22,15 @@ declare module "next-auth" {
 
 // Ensure we have a valid base URL
 const getBaseUrl = () => {
-  // For server-side
-  if (typeof window === 'undefined') {
-    // Vercel
-    if (process.env.VERCEL_URL) {
-      return `https://${process.env.VERCEL_URL}`;
-    }
-    
-    // Render
-    if (process.env.RENDER_INTERNAL_HOSTNAME) {
-      return `https://${process.env.RENDER_INTERNAL_HOSTNAME}`;
-    }
-    
-    // Railway
-    if (process.env.RAILWAY_STATIC_URL) {
-      return process.env.RAILWAY_STATIC_URL;
-    }
-    
-    // Netlify
-    if (process.env.URL) {
-      return process.env.URL;
-    }
-    
-    // Explicit NEXTAUTH_URL
-    if (process.env.NEXTAUTH_URL) {
-      return process.env.NEXTAUTH_URL;
-    }
-    
-    // Default to localhost
-    return 'http://localhost:3000';
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
   }
-  
-  // For client-side
-  return '';
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return 'http://localhost:3000';
 };
 
 export const authOptions: NextAuthOptions = {
@@ -136,6 +112,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   debug: process.env.NODE_ENV === "development",
+  secret: process.env.NEXTAUTH_SECRET
 };
 
 export const getAuthSession = () => getServerSession(authOptions); 
