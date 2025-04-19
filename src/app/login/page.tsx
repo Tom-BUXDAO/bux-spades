@@ -73,7 +73,6 @@ export default function LoginPage() {
           redirect: false,
           username,
           password,
-          callbackUrl: "/game"
         });
 
         if (!result) {
@@ -84,8 +83,13 @@ export default function LoginPage() {
           throw new Error(result.error);
         }
 
-        // Redirect to the game page
-        window.location.href = "/game";
+        // Check if we have a valid URL to redirect to
+        if (result.url) {
+          window.location.href = result.url;
+        } else {
+          // If no URL is provided, redirect to the game page
+          window.location.href = "/game";
+        }
       }
     } catch (err) {
       console.error(isRegistering ? "Registration error:" : "Login error:", err);

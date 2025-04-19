@@ -4,19 +4,35 @@ import { getServerSession } from "next-auth";
 
 export async function POST(req: Request) {
   try {
+    // Get the session from the request
     const session = await getServerSession(authOptions);
     
     if (!session) {
-      return NextResponse.json({ error: "Authentication failed" }, { status: 401 });
+      // If no session, return a 401 error with a proper JSON response
+      return NextResponse.json(
+        { error: "Authentication failed", message: "Invalid credentials" }, 
+        { status: 401 }
+      );
     }
     
-    return NextResponse.json({ success: true, user: session.user });
+    // If we have a session, return success with the user data
+    return NextResponse.json({ 
+      success: true, 
+      user: session.user,
+      url: "/game" // Provide a redirect URL
+    });
   } catch (error) {
     console.error("Credentials callback error:", error);
-    return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Authentication failed", message: "Server error" }, 
+      { status: 500 }
+    );
   }
 }
 
 export async function GET(req: Request) {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+  return NextResponse.json(
+    { error: "Method not allowed", message: "GET method is not supported" }, 
+    { status: 405 }
+  );
 } 
