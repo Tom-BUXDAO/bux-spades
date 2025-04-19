@@ -155,7 +155,7 @@ export const authOptions: NextAuthOptions = {
 
       // If no URL is provided, redirect to home
       if (!url) {
-        return "/";
+        return "/game";
       }
 
       // Ensure we have a valid baseUrl
@@ -164,20 +164,20 @@ export const authOptions: NextAuthOptions = {
       try {
         // Handle relative URLs
         if (url.startsWith("/")) {
-          return `${validBaseUrl}${url}`;
+          return url;
         }
 
         // Handle absolute URLs from same origin
         const urlObj = new URL(url);
         if (urlObj.origin === validBaseUrl) {
-          return url;
+          return urlObj.pathname;
         }
 
-        // Default to home page for any other case
-        return "/";
+        // Default to game page for any other case
+        return "/game";
       } catch (error) {
         console.error("[Auth] Redirect error:", error);
-        return "/";
+        return "/game";
       }
     }
   },
