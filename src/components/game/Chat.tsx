@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSocket, sendChatMessage } from '@/lib/socket';
-import type { Socket } from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import Image from 'next/image';
@@ -83,10 +83,10 @@ export default function Chat({ socket, gameId, userId, userName, players }: Chat
   const mobileHeaderFontSize = isMobile ? 13 : headerFontSize;
 
   // Only use regular socket if not in test mode
-  const regularSocket = !socket ? useSocket(gameId) : null;
+  const { socket: regularSocket } = !socket ? useSocket() : { socket: null };
 
   // Get the actual socket to use
-  const activeSocket = socket || regularSocket?.socket;
+  const activeSocket = socket || regularSocket;
   
   // Track connection status
   useEffect(() => {
@@ -268,8 +268,8 @@ export default function Chat({ socket, gameId, userId, userName, players }: Chat
   };
 
   const handleRetry = () => {
-    if (regularSocket?.socket) {
-      regularSocket.socket.connect();
+    if (regularSocket) {
+      regularSocket.connect();
     }
     setError(null);
   };
