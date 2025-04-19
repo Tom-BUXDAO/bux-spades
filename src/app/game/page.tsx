@@ -16,7 +16,7 @@ export default function GamePage() {
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
   const [guestUser, setGuestUser] = useState<any>(null);
   const [games, setGames] = useState<GameState[]>([]);
-  const { socket, isConnected } = useSocket("");
+  const { socket, isConnected } = useSocket();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
 
   useEffect(() => {
