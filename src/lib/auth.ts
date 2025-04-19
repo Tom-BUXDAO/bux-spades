@@ -103,10 +103,10 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id;
-        session.user.email = token.email;
-        session.user.username = token.username;
-        session.user.coins = token.coins;
+        session.user.id = token.id as string;
+        session.user.email = token.email as string | null;
+        session.user.username = token.username as string;
+        session.user.coins = token.coins as number;
       }
       return session;
     },
