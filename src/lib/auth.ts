@@ -44,14 +44,14 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
-    error: "/auth/error",
+    error: "/login",
   },
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -60,57 +60,53 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email,
-          },
+            email: credentials.email
+          }
         });
 
         if (!user || !user.hashedPassword) {
-          throw new Error("Invalid email or password");
+          throw new Error("Invalid credentials");
         }
 
-        const isPasswordValid = await compare(credentials.password, user.hashedPassword);
+        const isCorrectPassword = await compare(
+          credentials.password,
+          user.hashedPassword
+        );
 
-        if (!isPasswordValid) {
-          throw new Error("Invalid email or password");
+        if (!isCorrectPassword) {
+          throw new Error("Invalid credentials");
         }
 
         return {
           id: user.id,
           email: user.email,
-          name: user.username,
           username: user.username,
           coins: user.coins,
-          image: user.image,
+          image: user.image
         };
-      },
+      }
     }),
     DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.username = (user as any).username;
-        token.coins = (user as any).coins;
-      }
-      if (account) {
-        token.accessToken = account.access_token;
+        token.email = user.email;
+        token.username = user.username;
+        token.coins = user.coins;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user = {
-          id: token.id as string,
-          email: token.email as string,
-          name: token.name as string,
-          username: token.username as string,
-          coins: token.coins as number,
-          image: token.image as string,
-        };
+        session.user.id = token.id;
+        session.user.email = token.email;
+        session.user.username = token.username;
+        session.user.coins = token.coins;
       }
       return session;
     },
@@ -123,6 +119,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   debug: process.env.NODE_ENV === "development",
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export const getAuthSession = () => getServerSession(authOptions); 

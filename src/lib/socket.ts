@@ -28,7 +28,7 @@ export function useSocket(clientId: string = '') {
         console.log('Creating new test socket for client:', clientId);
         
         testSocket = io(SOCKET_URL, {
-          transports: ['websocket', 'polling'],
+          transports: ['websocket'],
           reconnectionAttempts: maxReconnectAttempts,
           reconnectionDelay: 1000,
           reconnectionDelayMax: 5000,
@@ -82,7 +82,7 @@ export function useSocket(clientId: string = '') {
         console.log('Creating new regular socket connection');
         
         regularSocket = io(SOCKET_URL, {
-          transports: ['websocket', 'polling'],
+          transports: ['websocket'],
           reconnectionAttempts: maxReconnectAttempts,
           reconnectionDelay: 1000,
           reconnectionDelayMax: 5000,
