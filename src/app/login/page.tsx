@@ -108,7 +108,21 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
         <div className="flex items-center justify-center space-x-4">
-          <img src="/bux-logo.png" alt="BUX Logo" style={{ width: '128px', height: '128px' }} />
+          <Image
+            src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/bux-logo.png`}
+            alt="BUX Logo"
+            width={128}
+            height={128}
+            priority
+            onError={(e) => {
+              console.error('Error loading logo:', e);
+              const img = e.target as HTMLImageElement;
+              console.log('Attempted src:', img.src);
+            }}
+          />
+          <div className="text-xs text-gray-500">
+            {process.env.NEXT_PUBLIC_BASE_URL ? 'URL Set' : 'No URL'}
+          </div>
           <h1 className="text-3xl font-bold text-white">BUX Spades</h1>
         </div>
 
