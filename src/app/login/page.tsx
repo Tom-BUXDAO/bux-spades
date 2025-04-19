@@ -47,11 +47,22 @@ function LoginForm() {
 
     try {
       const result = await signIn("credentials", {
-        redirect: true,
+        redirect: false,
         email,
         password,
-        callbackUrl: "/game"
       });
+
+      if (result?.error) {
+        console.error("[Login] Authentication error:", result.error);
+        setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      if (result?.ok) {
+        console.log("[Login] Authentication successful");
+        router.push("/game");
+      }
     } catch (error) {
       console.error("[Login] Unexpected error:", error);
       setError("An unexpected error occurred. Please try again.");
