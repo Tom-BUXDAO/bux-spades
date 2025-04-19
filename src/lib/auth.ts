@@ -49,39 +49,34 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials?.password) {
-            throw new Error("Invalid credentials");
-          }
-
-          const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email,
-            },
-          });
-
-          if (!user || !user.hashedPassword) {
-            throw new Error("User not found");
-          }
-
-          const isPasswordValid = await compare(credentials.password, user.hashedPassword);
-
-          if (!isPasswordValid) {
-            throw new Error("Invalid password");
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.username,
-            username: user.username,
-            coins: user.coins,
-            image: user.image,
-          };
-        } catch (error) {
-          console.error("Auth error:", error);
-          throw error;
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Invalid credentials");
         }
+
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email,
+          },
+        });
+
+        if (!user || !user.hashedPassword) {
+          throw new Error("Invalid email or password");
+        }
+
+        const isPasswordValid = await compare(credentials.password, user.hashedPassword);
+
+        if (!isPasswordValid) {
+          throw new Error("Invalid email or password");
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.username,
+          username: user.username,
+          coins: user.coins,
+          image: user.image,
+        };
       },
     }),
   ],
@@ -112,7 +107,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   debug: process.env.NODE_ENV === "development",
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export const getAuthSession = () => getServerSession(authOptions); 
