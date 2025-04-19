@@ -95,6 +95,7 @@ function LoginForm() {
         email,
         password,
         redirect: false,
+        callbackUrl: window.location.origin + "/game"
       });
 
       if (result?.error) {
