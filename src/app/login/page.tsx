@@ -90,33 +90,98 @@ function LoginForm() {
         }
       }
 
-      // Now proceed with login
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-        callbackUrl: window.location.origin + '/game',
-      });
+      // Try NextAuth login first
+      try {
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
 
-      if (result?.error) {
-        // More specific error messages
-        if (result.error === "Invalid credentials") {
-          setError("Please enter both email and password");
-        } else if (result.error === "User not found") {
-          setError("No account found with this email");
-        } else if (result.error === "Invalid password") {
-          setError("Incorrect password");
-        } else if (result.error.includes("URL constructor")) {
-          setError("Authentication service error. Please try again.");
-          console.error("Auth URL error:", result.error);
-        } else {
-          setError(result.error);
+        if (result?.error) {
+          // More specific error messages
+          if (result.error === "Invalid credentials") {
+            setError("Please enter both email and password");
+          } else if (result.error === "User not found") {
+            setError("No account found with this email");
+          } else if (result.error === "Invalid password") {
+            setError("Incorrect password");
+          } else if (result.error.includes("URL constructor")) {
+            // Try direct login API as fallback
+            console.error("Auth URL error:", result.error);
+            setError("Authentication service error. Trying alternative method...");
+            
+            try {
+              const directLoginResponse = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  email,
+                  password,
+                }),
+              });
+              
+              const directLoginData = await directLoginResponse.json();
+              
+              if (!directLoginResponse.ok) {
+                setError(directLoginData.error || "Authentication failed");
+              } else {
+                // Store token in localStorage
+                localStorage.setItem('auth_token', directLoginData.token);
+                localStorage.setItem('user_data', JSON.stringify(directLoginData.user));
+                
+                // Redirect to game
+                router.push("/game");
+              }
+            } catch (directError) {
+              console.error("Direct login error:", directError);
+              setError("Authentication failed. Please try again later.");
+            }
+          } else {
+            setError(result.error);
+          }
+          return;
         }
-        return;
-      }
 
-      if (result?.ok) {
-        router.push("/game");
+        if (result?.ok) {
+          router.push("/game");
+        }
+      } catch (error) {
+        console.error("Sign in error:", error);
+        
+        // Try direct login API as fallback
+        try {
+          setError("Authentication service error. Trying alternative method...");
+          
+          const directLoginResponse = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email,
+              password,
+            }),
+          });
+          
+          const directLoginData = await directLoginResponse.json();
+          
+          if (!directLoginResponse.ok) {
+            setError(directLoginData.error || "Authentication failed");
+          } else {
+            // Store token in localStorage
+            localStorage.setItem('auth_token', directLoginData.token);
+            localStorage.setItem('user_data', JSON.stringify(directLoginData.user));
+            
+            // Redirect to game
+            router.push("/game");
+          }
+        } catch (directError) {
+          console.error("Direct login error:", directError);
+          setError("Authentication failed. Please try again later.");
+        }
       }
     } catch (error) {
       console.error("Authentication error:", error);
