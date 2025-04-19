@@ -58,20 +58,17 @@ export default function GamePage() {
 
   // Clean up any lingering game connections when component mounts
   useEffect(() => {
-    if (socket && (session?.user?.id || guestUser?.id)) {
-      const userId = session?.user?.id || guestUser?.id;
-      if (userId) {
-        console.log("Cleaning up previous connections for user:", userId);
-        socket.emit("close_previous_connections", { userId });
-      }
-    }
-  }, [socket, session?.user?.id, guestUser?.id]);
-
-  useEffect(() => {
     if (!socket) return;
     
+    // Clean up any lingering game connections when component mounts
+    const userId = session?.user?.id || guestUser?.id;
+    if (userId) {
+      console.log("Cleaning up previous connections for user:", userId);
+      socket.emit("close_previous_connections", { userId });
+    }
+
     // Listen for game updates
-    const cleanup = socketApi.getGames(socket, (updatedGames) => {
+    const handleGamesUpdate = (updatedGames: GameState[]) => {
       setGames(updatedGames);
       
       if (currentGame) {
@@ -98,12 +95,19 @@ export default function GamePage() {
           setCurrentGame(null);
         }
       }
-      
-      console.log("Available games:", updatedGames.length);
-    });
+    };
 
-    return cleanup;
-  }, [socket, currentGame]);
+    // Set up socket event listeners
+    socket.on('games_update', handleGamesUpdate);
+    
+    // Request initial games list
+    socket.emit('get_games');
+
+    // Clean up event listeners
+    return () => {
+      socket.off('games_update', handleGamesUpdate);
+    };
+  }, [socket, currentGame, session?.user?.id, guestUser?.id]);
 
   if (status === "loading") {
     return <div>Loading...</div>;

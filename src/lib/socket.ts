@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 import type { GameState, Card, GameRules } from '@/types/game';
+import { useSession } from 'next-auth/react';
 
 // Create separate socket instances for regular and test connections
 let regularSocket: typeof Socket | null = null;
@@ -10,6 +11,7 @@ const testSockets: Map<string, typeof Socket> = new Map();
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
 export function useSocket(clientId: string = '') {
+  const { data: session } = useSession();
   const isTestConnection = clientId.startsWith('test_');
   const socketRef = useRef<typeof Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -98,15 +100,15 @@ export function useSocket(clientId: string = '') {
         reconnectAttempts.current = 0;
         
         // Get the user ID from localStorage or session
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        if (user?.id) {
-          console.log('Authenticating socket with user ID:', user.id);
-          authenticateUser(regularSocket, user.id);
+        const userId = localStorage.getItem('userId') || session?.user?.id;
+        if (userId) {
+          console.log('Authenticating socket with user ID:', userId);
+          authenticateUser(regularSocket, userId);
         }
       };
       
       const onDisconnect = (reason: string) => {
-        console.log('Regular socket disconnected:', reason);
+        console.log('Regular socket disconnected, reason:', reason);
         setIsConnected(false);
         
         if (
@@ -120,19 +122,23 @@ export function useSocket(clientId: string = '') {
         }
       };
       
-      regularSocket.on('connect', onConnect);
-      regularSocket.on('disconnect', onDisconnect);
+      if (regularSocket) {
+        regularSocket.on('connect', onConnect);
+        regularSocket.on('disconnect', onDisconnect);
+      }
       
       // Set initial connection state
-      setIsConnected(regularSocket.connected);
+      setIsConnected(regularSocket?.connected ?? false);
       
       return () => {
-        regularSocket?.off('connect', onConnect);
-        regularSocket?.off('disconnect', onDisconnect);
-        // Don't disconnect regular socket on unmount
+        if (regularSocket) {
+          regularSocket.off('connect', onConnect);
+          regularSocket.off('disconnect', onDisconnect);
+        }
+        // Don't disconnect the regular socket on unmount
       };
     }
-  }, [clientId, isTestConnection]);
+  }, [isTestConnection, clientId, session?.user?.id]);
   
   return { 
     socket: socketRef.current,
