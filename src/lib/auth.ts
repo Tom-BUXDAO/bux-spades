@@ -21,19 +21,26 @@ declare module "next-auth" {
 }
 
 function getBaseUrl() {
+  // In the browser, return empty string for relative URLs
   if (typeof window !== "undefined") {
-    // Browser should use relative path
     return "";
   }
-  if (process.env.VERCEL_URL) {
-    // Reference for vercel.com
-    return `https://${process.env.VERCEL_URL}`;
+
+  // Get the base URL from environment variables
+  const vercelUrl = process.env.VERCEL_URL;
+  const nextAuthUrl = process.env.NEXTAUTH_URL;
+
+  // If we have a Vercel URL, use it
+  if (vercelUrl) {
+    return `https://${vercelUrl}`;
   }
-  if (process.env.NEXTAUTH_URL) {
-    // Reference for render.com
-    return process.env.NEXTAUTH_URL;
+
+  // If we have a NextAuth URL, use it
+  if (nextAuthUrl) {
+    return nextAuthUrl;
   }
-  // Default to localhost if no environment variables are set
+
+  // Default to localhost in development
   return "http://localhost:3000";
 }
 
@@ -112,19 +119,26 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       try {
+        // If no URL is provided, return the base URL
+        if (!url) {
+          return baseUrl;
+        }
+
         // If the URL is relative, prepend the base URL
         if (url.startsWith("/")) {
           return `${baseUrl}${url}`;
         }
-        
+
         // If the URL is absolute, validate it
-        if (url) {
+        try {
           const parsedUrl = new URL(url);
           if (parsedUrl.origin === baseUrl) {
             return url;
           }
+        } catch (error) {
+          console.error("Invalid URL:", url);
         }
-        
+
         // Default to the base URL if anything goes wrong
         return baseUrl;
       } catch (error) {

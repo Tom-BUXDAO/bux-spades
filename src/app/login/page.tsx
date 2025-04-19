@@ -131,11 +131,18 @@ function LoginForm() {
             throw new Error('Failed to update session');
           }
           
+          // Get the session data
+          const sessionData = await sessionResponse.json();
+          if (!sessionData?.user) {
+            throw new Error('No user data in session');
+          }
+          
           // Redirect to game page
           router.push('/game');
         } catch (error) {
           console.error("Session update error:", error);
           setError('Failed to update session. Please try again.');
+          setIsLoading(false);
         }
       }
     } catch (error) {
