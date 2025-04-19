@@ -32,7 +32,8 @@ function getBaseUrl() {
 
   // If we have a Vercel URL, use it
   if (vercelUrl) {
-    return `https://${vercelUrl}`;
+    // Handle both production and preview URLs
+    return vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
   }
 
   // If we have a NextAuth URL, use it
@@ -47,7 +48,8 @@ function getBaseUrl() {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: "jwt",
+    strategy: "database",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/login",
@@ -119,27 +121,16 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       try {
-        // If no URL is provided, return the base URL
-        if (!url) {
-          return baseUrl;
-        }
-
-        // If the URL is relative, prepend the base URL
-        if (url.startsWith("/")) {
-          return `${baseUrl}${url}`;
-        }
-
-        // If the URL is absolute, validate it
-        try {
-          const parsedUrl = new URL(url);
-          if (parsedUrl.origin === baseUrl) {
-            return url;
-          }
-        } catch (error) {
-          console.error("Invalid URL:", url);
-        }
-
-        // Default to the base URL if anything goes wrong
+        // Allow relative URLs
+        if (url.startsWith("/")) return `${baseUrl}${url}`;
+        
+        // Allow URLs from the same origin
+        if (new URL(url).origin === baseUrl) return url;
+        
+        // Allow Vercel preview URLs
+        if (url.includes(process.env.VERCEL_URL || "")) return url;
+        
+        // Default to base URL
         return baseUrl;
       } catch (error) {
         console.error("Error in redirect callback:", error);
