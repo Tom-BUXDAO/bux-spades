@@ -45,11 +45,12 @@ export default function LoginPage() {
           }),
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
+          const data = await response.json().catch(() => ({ error: 'Registration failed' }));
           throw new Error(data.error || 'Registration failed');
         }
+
+        const data = await response.json();
 
         // Show welcome modal after successful registration
         setShowWelcomeModal(true);
@@ -74,13 +75,19 @@ export default function LoginPage() {
           callbackUrl: "/game"
         });
 
-        if (!result || result.error) {
-          setError("Invalid username or password.");
-          setIsLoading(false);
-          return;
+        if (!result) {
+          throw new Error("Authentication failed");
         }
 
-        window.location.href = result.url || "/game";
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        if (result.url) {
+          window.location.href = result.url;
+        } else {
+          window.location.href = "/game";
+        }
       }
     } catch (err) {
       console.error(isRegistering ? "Registration error:" : "Login error:", err);

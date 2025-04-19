@@ -68,37 +68,42 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
+        try {
+          if (!credentials?.username || !credentials?.password) {
+            throw new Error("Missing credentials");
+          }
+
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { email: credentials.username },
+                { username: credentials.username },
+              ],
+            },
+          });
+
+          if (!user || !user.hashedPassword) {
+            throw new Error("Invalid credentials");
+          }
+
+          const isPasswordValid = await compare(credentials.password, user.hashedPassword);
+
+          if (!isPasswordValid) {
+            throw new Error("Invalid credentials");
+          }
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            username: user.username,
+            coins: user.coins,
+            image: user.image,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
           return null;
         }
-
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              { email: credentials.username },
-              { username: credentials.username },
-            ],
-          },
-        });
-
-        if (!user || !user.hashedPassword) {
-          return null;
-        }
-
-        const isPasswordValid = await compare(credentials.password, user.hashedPassword);
-
-        if (!isPasswordValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          username: user.username,
-          coins: user.coins,
-          image: user.image,
-        };
       },
     }),
   ],
