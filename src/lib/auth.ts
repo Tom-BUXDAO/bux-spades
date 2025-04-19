@@ -175,12 +175,27 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Safely handle the redirect URL
-      if (url.startsWith(baseUrl)) {
-        return url;
-      } else if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
+      if (!url) {
+        return baseUrl;
       }
-      return baseUrl;
+      
+      try {
+        // If the URL is relative, prepend the base URL
+        if (url.startsWith("/")) {
+          return `${baseUrl}${url}`;
+        }
+        
+        // If the URL is absolute and from the same origin, use it
+        if (url.startsWith(baseUrl)) {
+          return url;
+        }
+        
+        // Default to base URL for any other case
+        return baseUrl;
+      } catch (error) {
+        console.error("[Auth Redirect Callback] Error handling redirect:", error);
+        return baseUrl;
+      }
     },
   },
 };

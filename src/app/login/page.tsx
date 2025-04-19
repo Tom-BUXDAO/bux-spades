@@ -82,6 +82,7 @@ function LoginForm() {
           redirect: false,
           username: email.trim(), // Use email for first login after registration
           password: password.trim(),
+          callbackUrl: "/game",
         });
         
         if (result?.error) {
@@ -110,6 +111,8 @@ function LoginForm() {
         // Let NextAuth handle the redirect
         if (result.url) {
           router.push(result.url);
+        } else {
+          router.push("/game");
         }
       }
     } catch (err) {
@@ -121,7 +124,8 @@ function LoginForm() {
 
   const handleDiscordSignIn = () => {
     signIn("discord", { 
-      callbackUrl: "/game"
+      callbackUrl: "/game",
+      redirect: true
     });
   };
 
