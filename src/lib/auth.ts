@@ -5,8 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/env.mjs";
-import { compare, hash } from "bcryptjs";
-import { User } from "@prisma/client";
+import { compare } from "bcryptjs";
 
 declare module "next-auth" {
   interface Session {

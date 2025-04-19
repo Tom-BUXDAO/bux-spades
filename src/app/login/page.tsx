@@ -94,8 +94,8 @@ function LoginForm() {
       const result = await signIn("credentials", {
         email,
         password,
-        redirect: false,
-        callbackUrl: window.location.origin + "/game"
+        redirect: true,
+        callbackUrl: "/game"
       });
 
       if (result?.error) {
