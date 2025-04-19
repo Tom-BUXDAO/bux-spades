@@ -90,34 +90,21 @@ function LoginForm() {
         }
       }
 
-      // Try direct login API instead of NextAuth signIn
-      const loginResponse = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      // Use NextAuth signIn for authentication
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      const loginData = await loginResponse.json();
-
-      if (!loginResponse.ok) {
-        setError(loginData.error || 'Login failed');
+      if (result?.error) {
+        setError(result.error);
         setIsLoading(false);
         return;
       }
 
-      // If login successful, manually set the session and redirect
-      if (loginData.user) {
-        // Store user data in localStorage for persistence
-        localStorage.setItem('user', JSON.stringify(loginData.user));
-        
-        // Redirect to game page
-        router.push('/game');
-      }
+      // If login successful, redirect to game page
+      router.push('/game');
     } catch (error) {
       console.error("Authentication error:", error);
       setError("An unexpected error occurred. Please try again.");
