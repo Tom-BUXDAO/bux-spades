@@ -10,141 +10,77 @@ let regularSocket: typeof Socket | null = null;
 const testSockets: Map<string, typeof Socket> = new Map();
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
-export function useSocket(clientId: string = '') {
+export const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+  transports: ['websocket'],
+  withCredentials: true,
+  autoConnect: false,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
+});
+
+export const testSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+  transports: ['websocket'],
+  withCredentials: true,
+  autoConnect: false,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
+});
+
+export const useSocket = () => {
   const { data: session } = useSession();
-  const isTestConnection = clientId.startsWith('test_');
-  const socketRef = useRef<typeof Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
-  
+  const [isTestConnected, setIsTestConnected] = useState(false);
+
   useEffect(() => {
-    // For test connections, create a new socket for each client
-    if (isTestConnection) {
-      // Get cached socket or create new one for this test client
-      let testSocket = testSockets.get(clientId);
-      
-      if (!testSocket) {
-        console.log('Creating new test socket for client:', clientId);
-        
-        testSocket = io(SOCKET_URL, {
-          transports: ['websocket'],
-          reconnectionAttempts: maxReconnectAttempts,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          timeout: 20000,
-          query: { isTestClient: 'true', clientId },
-        });
-        
-        testSockets.set(clientId, testSocket);
-      }
-      
-      socketRef.current = testSocket;
-      
-      // Handle test socket reconnection
-      const onConnect = () => {
-        console.log('Test socket connected for client:', clientId);
-        setIsConnected(true);
-        reconnectAttempts.current = 0;
-        // Authenticate test socket
-        authenticateUser(testSocket, clientId);
-      };
-      
-      const onDisconnect = (reason: string) => {
-        console.log('Test socket disconnected for client:', clientId, 'reason:', reason);
-        setIsConnected(false);
-        
-        if (
-          reason === 'io server disconnect' || 
-          reason === 'transport close' || 
-          reconnectAttempts.current >= maxReconnectAttempts
-        ) {
-          console.log(`Test socket attempting reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
-          reconnectAttempts.current++;
-          setTimeout(() => testSocket?.connect(), 1000);
-        }
-      };
-      
-      testSocket.on('connect', onConnect);
-      testSocket.on('disconnect', onDisconnect);
-      
-      // Set initial connection state
-      setIsConnected(testSocket.connected);
-      
-      return () => {
-        testSocket.off('connect', onConnect);
-        testSocket.off('disconnect', onDisconnect);
-        // Don't disconnect test sockets on unmount
-      };
-    } else {
-      // For regular connections, use a singleton socket
-      if (!regularSocket) {
-        console.log('Creating new regular socket connection');
-        
-        regularSocket = io(SOCKET_URL, {
-          transports: ['websocket'],
-          reconnectionAttempts: maxReconnectAttempts,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          timeout: 20000,
-          autoConnect: true,
-        });
-      }
-      
-      socketRef.current = regularSocket;
-      
-      // Handle regular socket reconnection
-      const onConnect = () => {
-        console.log('Regular socket connected with ID:', regularSocket?.id);
-        setIsConnected(true);
-        reconnectAttempts.current = 0;
-        
-        // Get the user ID from localStorage or session
-        const userId = localStorage.getItem('userId') || session?.user?.id;
-        if (userId) {
-          console.log('Authenticating socket with user ID:', userId);
-          authenticateUser(regularSocket, userId);
-        }
-      };
-      
-      const onDisconnect = (reason: string) => {
-        console.log('Regular socket disconnected, reason:', reason);
-        setIsConnected(false);
-        
-        if (
-          reason === 'io server disconnect' || 
-          reason === 'transport close' || 
-          reconnectAttempts.current >= maxReconnectAttempts
-        ) {
-          console.log(`Regular socket attempting reconnect (${reconnectAttempts.current + 1}/${maxReconnectAttempts})`);
-          reconnectAttempts.current++;
-          setTimeout(() => regularSocket?.connect(), 1000);
-        }
-      };
-      
-      if (regularSocket) {
-        regularSocket.on('connect', onConnect);
-        regularSocket.on('disconnect', onDisconnect);
-      }
-      
-      // Set initial connection state
-      setIsConnected(regularSocket?.connected ?? false);
-      
-      return () => {
-        if (regularSocket) {
-          regularSocket.off('connect', onConnect);
-          regularSocket.off('disconnect', onDisconnect);
-        }
-        // Don't disconnect the regular socket on unmount
-      };
+    if (!session?.user?.id) return;
+
+    const handleConnect = () => {
+      console.log('Socket connected');
+      setIsConnected(true);
+      socket.emit('authenticate', { userId: session.user.id });
+    };
+
+    const handleDisconnect = () => {
+      console.log('Socket disconnected');
+      setIsConnected(false);
+    };
+
+    const handleTestConnect = () => {
+      console.log('Test socket connected');
+      setIsTestConnected(true);
+      testSocket.emit('authenticate', { userId: session.user.id });
+    };
+
+    const handleTestDisconnect = () => {
+      console.log('Test socket disconnected');
+      setIsTestConnected(false);
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    testSocket.on('connect', handleTestConnect);
+    testSocket.on('disconnect', handleTestDisconnect);
+
+    if (!socket.connected) {
+      socket.connect();
     }
-  }, [isTestConnection, clientId, session?.user?.id]);
-  
-  return { 
-    socket: socketRef.current,
-    isConnected
-  };
-}
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      testSocket.off('connect', handleTestConnect);
+      testSocket.off('disconnect', handleTestDisconnect);
+    };
+  }, [session?.user?.id]);
+
+  return { socket, testSocket, isConnected, isTestConnected };
+};
 
 // Helper function to explicitly join a game room
 export function joinGameRoom(socket: typeof Socket | null, gameId: string) {
