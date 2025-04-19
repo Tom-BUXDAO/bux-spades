@@ -112,6 +112,7 @@ function LoginForm() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/game'
       });
 
       if (result?.error) {
@@ -122,8 +123,14 @@ function LoginForm() {
 
       // If login successful, wait for session to update
       if (result?.ok) {
-        // Redirect to game page - session will be updated automatically
-        router.push('/game');
+        // Force a session update
+        const session = await fetch('/api/auth/session');
+        if (session.ok) {
+          // Redirect to game page
+          router.push('/game');
+        } else {
+          setError('Failed to update session');
+        }
       }
     } catch (error) {
       console.error("Authentication error:", error);
