@@ -111,13 +111,23 @@ function LoginForm() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: true,
+        redirect: false,
         callbackUrl: '/game'
       });
 
-      // If we get here, something went wrong
       if (result?.error) {
         setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      if (result?.ok) {
+        // Show welcome modal for new users
+        if (isRegistering) {
+          setShowWelcomeModal(true);
+        } else {
+          router.push('/game');
+        }
       }
     } catch (error) {
       console.error("Authentication error:", error);
