@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeModal from "@/components/WelcomeModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,11 +18,25 @@ export default function LoginPage() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    // Check for error in URL parameters
+    const errorParam = searchParams?.get("error");
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+  }, [searchParams]);
 
   // If user is already logged in, redirect to game page
-  if (session) {
-    router.push("/game");
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push("/game");
+    }
+  }, [status, router]);
+
+  if (status === "loading" || status === "authenticated") {
     return null;
   }
 
@@ -40,6 +54,7 @@ export default function LoginPage() {
     
     setIsLoading(true);
     setError(null);
+
     try {
       if (isRegistering) {
         const response = await fetch('/api/auth/register', {
@@ -48,9 +63,9 @@ export default function LoginPage() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            username,
-            password,
-            email,
+            username: username.trim(),
+            password: password.trim(),
+            email: email.trim(),
           }),
         });
 
@@ -59,64 +74,54 @@ export default function LoginPage() {
           throw new Error(data.error || 'Registration failed');
         }
 
-        const data = await response.json();
-
         // Show welcome modal after successful registration
         setShowWelcomeModal(true);
 
         // If registration successful, log them in
         const result = await signIn("credentials", {
           redirect: false,
-          username: email, // Use email for first login after registration
-          password,
+          username: email.trim(), // Use email for first login after registration
+          password: password.trim(),
         });
         
         if (result?.error) {
-          throw new Error('Failed to log in after registration');
+          throw new Error(result.error);
         }
+
         // Don't redirect yet, wait for welcome modal to close
         setIsLoading(false);
       } else {
-        // For login, use NextAuth's credentials provider directly
-        try {
-          const result = await signIn("credentials", {
-            redirect: false,
-            username,
-            password,
-            callbackUrl: "/game",
-          });
+        // For login, use NextAuth's credentials provider
+        const result = await signIn("credentials", {
+          redirect: false,
+          username: username.trim(),
+          password: password.trim(),
+          callbackUrl: "/game",
+        });
 
-          if (!result) {
-            throw new Error("Authentication failed");
-          }
+        if (!result) {
+          throw new Error("Authentication failed");
+        }
 
-          if (result.error) {
-            throw new Error(result.error);
-          }
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
-          // Let NextAuth handle the redirect
-          if (result.url) {
-            router.push(result.url);
-          } else {
-            router.push("/game");
-          }
-        } catch (loginError) {
-          console.error("Login error:", loginError);
-          throw new Error("Invalid username or password");
+        // Let NextAuth handle the redirect
+        if (result.url) {
+          router.push(result.url);
         }
       }
     } catch (err) {
       console.error(isRegistering ? "Registration error:" : "Login error:", err);
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
       setIsLoading(false);
     }
   };
 
   const handleDiscordSignIn = () => {
-    // Initiate Discord sign in without showing welcome modal first
     signIn("discord", { 
-      callbackUrl: "/game",
-      redirect: true
+      callbackUrl: "/game"
     });
   };
 
@@ -209,6 +214,7 @@ export default function LoginPage() {
           >
             {isLoading ? "Processing..." : (isRegistering ? "Create Account" : "Login")}
           </button>
+
           <p className="text-sm text-gray-400 text-center">
             {!isRegistering ? "Don't have an account? " : "Already have an account? "}
             <button 
@@ -250,17 +256,17 @@ export default function LoginPage() {
           >
             <path
               fill="currentColor"
-              d="M378.186 365.028s-15.794-18.865-28.956-35.099c57.473-16.232 79.41-51.77 79.41-51.77-17.989 11.846-35.099 20.182-50.454 25.885-21.938 9.213-42.997 14.917-63.617 18.866-42.118 7.898-80.726 5.703-113.631-.438-25.008-4.827-46.506-11.407-64.494-18.867-10.091-3.947-21.059-8.774-32.027-14.917-1.316-.877-2.633-1.316-3.948-2.193-.877-.438-1.316-.878-1.755-.878-7.898-4.388-12.285-7.458-12.285-7.458s21.06 34.659 76.779 51.331c-13.163 16.673-29.395 35.977-29.395 35.977C36.854 362.395 0 299.218 0 299.218 0 159.263 63.177 45.633 63.177 45.633 126.354-1.311 186.022.005 186.022.005l4.388 5.264C111.439 27.645 75.461 62.305 75.461 62.305s9.653-5.265 25.886-12.285c46.945-20.621 84.236-25.885 99.592-27.64 2.633-.439 4.827-.878 7.458-.878 26.763-3.51 57.036-4.387 88.624-.878 41.68 4.826 86.43 17.111 132.058 41.68 0 0-34.66-32.906-109.244-55.281l6.143-7.019s60.105-1.317 122.844 45.628c0 0 63.178 113.631 63.178 253.585 0-.438-36.854 62.739-133.813 65.81l-.001.001zm-43.874-203.133c-25.006 0-44.75 21.498-44.75 48.262 0 26.763 20.182 48.26 44.75 48.26 25.008 0 44.752-21.497 44.752-48.26 0-26.764-20.182-48.262-44.752-48.262zm-160.135 0c-25.008 0-44.751 21.498-44.751 48.262 0 26.763 20.182 48.26 44.751 48.26 25.007 0 44.75-21.497 44.75-48.26.439-26.763-19.742-48.262-44.75-48.262z"
+              d="M433.671 0H78.329C35.066 0 0 35.066 0 78.329v208.809c0 43.263 35.066 78.329 78.329 78.329h296.681l-13.851-48.292 33.459 31.093 31.627 29.261L512 448V78.329C512 35.066 476.934 0 433.671 0zM339.051 292.604s-9.397-11.217-17.225-21.082c34.19-9.658 47.262-31.009 47.262-31.009-10.697 7.046-20.876 12.001-30.013 15.411-13.067 5.484-25.589 9.137-37.851 11.217-25.068 4.703-48.043 3.401-67.62-.261-14.89-2.879-27.696-6.806-38.393-11.217-6.024-2.357-12.569-5.223-19.114-8.876-0.782-0.522-1.565-0.782-2.347-1.304-.522-0.261-0.782-0.522-1.043-0.782-4.703-2.618-7.307-4.442-7.307-4.442s12.569 20.876 45.767 30.794c-7.828 9.919-17.486 21.604-17.486 21.604-57.702-1.826-79.619-39.697-79.619-39.697 0-84.061 37.611-152.203 37.611-152.203 37.611-28.217 73.334-27.435 73.334-27.435l2.618 3.14c-47.001 13.589-68.663 34.19-68.663 34.19s5.745-3.14 15.411-7.567c27.957-12.308 50.129-15.672 59.267-16.454 1.565-.261 2.879-.522 4.442-.522 15.933-2.096 33.981-2.618 52.746-.261 24.807 2.879 51.433 10.175 78.576 25.068 0 0-20.615-19.636-65.012-33.198l3.662-4.181s35.723-.782 73.334 27.435c0 0 37.611 68.142 37.611 152.203 0-.261-21.865 37.611-79.619 39.436z"
             />
           </svg>
-          Sign in with Discord
+          Continue with Discord
         </button>
-      </div>
 
-      <WelcomeModal 
-        isOpen={showWelcomeModal} 
-        onClose={handleWelcomeModalClose}
-      />
+        <WelcomeModal 
+          isOpen={showWelcomeModal}
+          onClose={handleWelcomeModalClose}
+        />
+      </div>
     </div>
   );
 } 
