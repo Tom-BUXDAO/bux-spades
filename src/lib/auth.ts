@@ -88,12 +88,21 @@ export const authOptions: NextAuthOptions = {
           // Check if this is a registration attempt
           if (credentials.username) {
             // Check if user already exists
-            const existingUser = await prisma.user.findUnique({
-              where: { email: credentials.email }
+            const existingUser = await prisma.user.findFirst({
+              where: {
+                OR: [
+                  { email: credentials.email },
+                  { username: credentials.username }
+                ]
+              }
             });
 
             if (existingUser) {
-              throw new Error("User with this email already exists");
+              if (existingUser.email === credentials.email) {
+                throw new Error("User with this email already exists");
+              } else {
+                throw new Error("Username is already taken");
+              }
             }
 
             // Create new user

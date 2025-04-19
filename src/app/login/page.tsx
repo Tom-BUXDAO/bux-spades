@@ -67,6 +67,12 @@ function LoginForm() {
         }
       } else {
         // For registration, use username, email, and password
+        if (!username) {
+          setError("Username is required");
+          setIsLoading(false);
+          return;
+        }
+
         const result = await signIn("credentials", {
           redirect: false,
           username,
