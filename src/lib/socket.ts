@@ -12,24 +12,22 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001'
 
 export const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
   transports: ['websocket'],
-  withCredentials: true,
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  timeout: 20000,
+  timeout: 20000
 });
 
 export const testSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
   transports: ['websocket'],
-  withCredentials: true,
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  timeout: 20000,
+  timeout: 20000
 });
 
 export const useSocket = () => {
