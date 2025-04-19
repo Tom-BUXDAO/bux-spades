@@ -192,37 +192,6 @@ export const authOptions: NextAuthOptions = {
         session.user.coins = token.coins as number;
       }
       return session;
-    },
-    async redirect({ url, baseUrl }) {
-      console.log("[Auth] Redirect URL:", url);
-      console.log("[Auth] Base URL:", baseUrl);
-
-      // If no URL is provided, redirect to home
-      if (!url) {
-        return "/game";
-      }
-
-      // Ensure we have a valid baseUrl
-      const validBaseUrl = baseUrl || getBaseUrl();
-
-      try {
-        // Handle relative URLs
-        if (url.startsWith("/")) {
-          return url;
-        }
-
-        // Handle absolute URLs from same origin
-        const urlObj = new URL(url);
-        if (urlObj.origin === validBaseUrl) {
-          return urlObj.pathname;
-        }
-
-        // Default to game page for any other case
-        return "/game";
-      } catch (error) {
-        console.error("[Auth] Redirect error:", error);
-        return "/game";
-      }
     }
   },
   secret: process.env.NEXTAUTH_SECRET

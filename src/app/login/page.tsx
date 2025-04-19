@@ -49,22 +49,11 @@ function LoginForm() {
       // For login, use email and password
       if (!isRegistering) {
         const result = await signIn("credentials", {
-          redirect: false,
+          redirect: true,
           email,
           password,
+          callbackUrl: "/game"
         });
-
-        if (result?.error) {
-          console.error("[Login] Authentication error:", result.error);
-          setError(result.error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (result?.ok) {
-          console.log("[Login] Authentication successful");
-          router.push("/game");
-        }
       } else {
         // For registration, use username, email, and password
         if (!username) {
@@ -74,23 +63,12 @@ function LoginForm() {
         }
 
         const result = await signIn("credentials", {
-          redirect: false,
+          redirect: true,
           username,
           email,
           password,
+          callbackUrl: "/game"
         });
-
-        if (result?.error) {
-          console.error("[Registration] Authentication error:", result.error);
-          setError(result.error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (result?.ok) {
-          console.log("[Registration] Authentication successful");
-          router.push("/game");
-        }
       }
     } catch (error) {
       console.error("[Login] Unexpected error:", error);
