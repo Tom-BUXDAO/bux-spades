@@ -12,7 +12,7 @@ interface GameBoardProps {
 export default function GameBoard({ gameId }: GameBoardProps) {
   const { data: session } = useSession();
   const [game, setGame] = useState<GameState | null>(null);
-  const { socket } = useSocket("");
+  const { socket } = useSocket();
 
   useEffect(() => {
     if (!socket) return;
