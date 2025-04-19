@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verify } from "jsonwebtoken";
+import { getToken } from "next-auth/jwt";
 
 // Add paths that should be protected
 const protectedPaths = ["/game", "/profile", "/settings"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Check if the path should be protected
@@ -14,21 +14,14 @@ export function middleware(request: NextRequest) {
   );
 
   if (isProtectedPath) {
-    const token = request.cookies.get("auth-token");
+    const token = await getToken({ req: request });
 
     if (!token) {
       // Redirect to login if no token is present
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    try {
-      // Verify the token
-      verify(token.value, process.env.JWT_SECRET || "your-secret-key");
-      return NextResponse.next();
-    } catch (error) {
-      // Token is invalid or expired
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+    return NextResponse.next();
   }
 
   // For non-protected paths, allow access
