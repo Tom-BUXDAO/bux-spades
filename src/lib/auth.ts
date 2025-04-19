@@ -7,6 +7,7 @@ import { prisma } from "./prisma";
 import { env } from "@/env.mjs";
 import { compare } from "bcryptjs";
 import { type User as PrismaUser } from "@prisma/client";
+import { User } from "@prisma/client";
 
 declare module "next-auth" {
   interface Session {
@@ -27,7 +28,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
-    error: "/auth/error",
+    error: "/login"
   },
   debug: process.env.NODE_ENV === "development",
   providers: [
@@ -63,53 +64,44 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     CredentialsProvider({
-      id: "credentials",
       name: "credentials",
       credentials: {
-        username: { label: "Username or Email", type: "text" },
-        password: { label: "Password", type: "password" },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) {
-          console.error("[Credentials Provider] Missing credentials");
-          throw new Error("Please enter both username and password");
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Please enter both email and password");
         }
 
         try {
-          const user = await prisma.user.findFirst({
-            where: {
-              OR: [
-                { email: credentials.username.toLowerCase() },
-                { username: credentials.username.toLowerCase() },
-              ],
-            },
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email }
           });
 
           if (!user || !user.hashedPassword) {
-            console.error("[Credentials Provider] User not found or no password set");
-            throw new Error("Invalid username or password");
+            throw new Error("Invalid email or password");
           }
 
           const isPasswordValid = await compare(credentials.password, user.hashedPassword);
 
           if (!isPasswordValid) {
-            console.error("[Credentials Provider] Invalid password");
-            throw new Error("Invalid username or password");
+            throw new Error("Invalid email or password");
           }
 
           return {
             id: user.id,
-            name: user.name,
             email: user.email,
+            name: user.name,
             username: user.username,
             coins: user.coins,
-            image: user.image,
-          };
+            image: user.image
+          } as User;
         } catch (error) {
-          console.error("[Credentials Provider] Auth error:", error);
+          console.error("[Auth] Authorization error:", error);
           throw error;
         }
-      },
+      }
     }),
   ],
   callbacks: {
@@ -133,40 +125,16 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
-        const sessionUser = user as (PrismaUser & { 
-          id: string;
-          username?: string;
-          email?: string;
-          coins?: number;
-          image?: string;
-        });
-
-        let finalUsername = sessionUser.username;
-        let finalCoins = sessionUser.coins ?? 0;
-
-        if (account?.provider === "discord" && !sessionUser.username) {
-          const generatedUsername = sessionUser.email?.split("@")[0] || `user_${Date.now()}`;
-          finalUsername = generatedUsername;
-          try {
-            await prisma.user.update({
-              where: { id: sessionUser.id },
-              data: { username: generatedUsername },
-            });
-          } catch (error) {
-            console.error("[Auth JWT Callback] Failed to update username for Discord user:", error);
-          }
-        }
-
-        token.id = sessionUser.id;
-        token.username = finalUsername;
-        token.coins = finalCoins;
+        token.id = user.id;
+        token.username = (user as User).username;
+        token.coins = (user as User).coins;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token && session.user) {
+      if (session.user) {
         session.user.id = token.id as string;
         session.user.username = token.username as string;
         session.user.coins = token.coins as number;
@@ -174,30 +142,38 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Safely handle the redirect URL
+      console.log("[Auth] Redirect URL:", url);
+      console.log("[Auth] Base URL:", baseUrl);
+
       if (!url) {
         return baseUrl;
       }
-      
+
+      if (typeof url !== "string") {
+        return baseUrl;
+      }
+
       try {
-        // If the URL is relative, prepend the base URL
+        // Handle relative URLs
         if (url.startsWith("/")) {
           return `${baseUrl}${url}`;
         }
-        
-        // If the URL is absolute and from the same origin, use it
-        if (url.startsWith(baseUrl)) {
+
+        // Handle absolute URLs from same origin
+        const urlObj = new URL(url);
+        if (urlObj.origin === baseUrl) {
           return url;
         }
-        
+
         // Default to base URL for any other case
         return baseUrl;
       } catch (error) {
-        console.error("[Auth Redirect Callback] Error handling redirect:", error);
+        console.error("[Auth] Redirect error:", error);
         return baseUrl;
       }
-    },
+    }
   },
+  secret: process.env.NEXTAUTH_SECRET
 };
 
 export const getAuthSession = () => getServerSession(authOptions); 

@@ -42,82 +42,33 @@ function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      setError("Please enter both username and password.");
-      return;
-    }
-    
-    if (isRegistering && !email.trim()) {
-      setError("Please enter your email address.");
-      return;
-    }
-    
+    setError("");
     setIsLoading(true);
-    setError(null);
 
     try {
-      if (isRegistering) {
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: username.trim(),
-            password: password.trim(),
-            email: email.trim(),
-          }),
-        });
+      const result = await signIn("credentials", {
+        redirect: false,
+        email,
+        password,
+      });
 
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({ error: 'Registration failed' }));
-          throw new Error(data.error || 'Registration failed');
-        }
-
-        // Show welcome modal after successful registration
-        setShowWelcomeModal(true);
-
-        // If registration successful, log them in
-        const result = await signIn("credentials", {
-          redirect: false,
-          username: email.trim(), // Use email for first login after registration
-          password: password.trim(),
-          callbackUrl: "/game",
-        });
-        
-        if (result?.error) {
-          throw new Error(result.error);
-        }
-
-        // Don't redirect yet, wait for welcome modal to close
+      if (result?.error) {
+        console.error("[Login] Authentication error:", result.error);
+        setError(result.error);
         setIsLoading(false);
-      } else {
-        // For login, use NextAuth's credentials provider
-        const result = await signIn("credentials", {
-          redirect: false,
-          username: username.trim(),
-          password: password.trim(),
-          callbackUrl: "/game",
-        });
-
-        if (!result) {
-          throw new Error("Authentication failed");
-        }
-
-        if (result.error) {
-          throw new Error(result.error);
-        }
-
-        // Let NextAuth handle the redirect
-        if (result.url) {
-          router.push(result.url);
-        } else {
-          router.push("/game");
-        }
+        return;
       }
-    } catch (err) {
-      console.error(isRegistering ? "Registration error:" : "Login error:", err);
-      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+
+      if (result?.ok) {
+        console.log("[Login] Authentication successful");
+        // Get the callback URL from the query parameters or default to home
+        const callbackUrl = searchParams.get("callbackUrl") || "/";
+        console.log("[Login] Redirecting to:", callbackUrl);
+        router.push(callbackUrl);
+      }
+    } catch (error) {
+      console.error("[Login] Unexpected error:", error);
+      setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };
