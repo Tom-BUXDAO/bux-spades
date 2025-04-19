@@ -16,12 +16,17 @@ declare module "next-auth" {
       email: string | null;
       username: string;
       coins: number;
+      image?: string | null;
     };
   }
 }
 
 // Ensure we have a valid base URL
 const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
   if (process.env.NEXTAUTH_URL) {
     return process.env.NEXTAUTH_URL;
   }
@@ -40,6 +45,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: "/login",
+    error: "/auth/error",
   },
   providers: [
     CredentialsProvider({
@@ -79,35 +85,30 @@ export const authOptions: NextAuthOptions = {
         };
       },
     }),
+    DiscordProvider({
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        return {
-          ...token,
-          id: user.id,
-          name: user.name,
-          username: (user as any).username,
-          coins: (user as any).coins,
-        };
+        token.id = user.id;
+        token.username = (user as any).username;
+        token.coins = (user as any).coins;
       }
       return token;
     },
     async session({ session, token }) {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          name: token.name,
-          username: token.username as string,
-          coins: token.coins as number,
-        },
-      };
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.username = token.username as string;
+        session.user.coins = token.coins as number;
+      }
+      return session;
     },
   },
   debug: process.env.NODE_ENV === "development",
-  secret: process.env.NEXTAUTH_SECRET,
 };
 
 export const getAuthSession = () => getServerSession(authOptions); 
