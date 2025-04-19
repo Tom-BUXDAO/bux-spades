@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeModal from "@/components/WelcomeModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +17,14 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  // If user is already logged in, redirect to game page
+  if (session) {
+    router.push("/game");
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,8 +96,19 @@ export default function LoginPage() {
             throw new Error(data.error || 'Authentication failed');
           }
 
+          // After successful login, use NextAuth's signIn to establish a session
+          const result = await signIn("credentials", {
+            redirect: false,
+            username,
+            password,
+          });
+
+          if (result?.error) {
+            throw new Error(result.error);
+          }
+
           // Redirect to game page on success
-          window.location.href = "/game";
+          router.push("/game");
         } catch (loginError) {
           console.error("Login error:", loginError);
           throw new Error("Invalid username or password");
@@ -111,7 +131,7 @@ export default function LoginPage() {
 
   const handleWelcomeModalClose = () => {
     setShowWelcomeModal(false);
-    window.location.href = "/game";
+    router.push("/game");
   };
 
   return (

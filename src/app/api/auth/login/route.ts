@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -41,26 +43,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Instead of creating a JWT token, we'll use NextAuth's built-in session
-    // We'll set a cookie that NextAuth will recognize
-    const sessionToken = Buffer.from(JSON.stringify({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      username: user.username,
-      coins: user.coins,
-    })).toString('base64');
-
-    // Set the session token in a cookie
-    cookies().set("next-auth.session-token", sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
-
     // Return success with user data
+    // The client will use this to establish a session with NextAuth
     return NextResponse.json({
       success: true,
       user: {
