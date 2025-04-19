@@ -122,9 +122,7 @@ function LoginForm() {
 
       // If login successful, wait for session to update
       if (result?.ok) {
-        // Force a session update
-        await update();
-        // Then redirect
+        // Redirect to game page - session will be updated automatically
         router.push('/game');
       }
     } catch (error) {
