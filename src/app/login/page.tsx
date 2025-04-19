@@ -72,12 +72,20 @@ export default function LoginPage() {
           username,
           password,
           callbackUrl: "/game"
+        }).catch(err => {
+          console.error("SignIn error:", err);
+          return { error: "Authentication failed. Please try again." } as const;
         });
 
-        if (result?.error) {
-          setError("Invalid username or password.");
+        if (!result) {
+          setError("Authentication failed. Please try again.");
           setIsLoading(false);
-        } else if (result?.url) {
+        } else if (result.error) {
+          setError(result.error === "CredentialsSignin" 
+            ? "Invalid username or password." 
+            : "Authentication failed. Please try again.");
+          setIsLoading(false);
+        } else if (result.url) {
           window.location.href = result.url;
         } else {
           setError("An unexpected error occurred during login.");
