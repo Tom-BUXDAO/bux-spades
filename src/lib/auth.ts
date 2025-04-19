@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from "./prisma";
 import { env } from "@/env.mjs";
-import { compare } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { type User as PrismaUser } from "@prisma/client";
 import { User } from "@prisma/client";
 
@@ -75,6 +75,7 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
+        username: { label: "Username", type: "text", optional: true },
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
@@ -84,28 +85,61 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email }
-          });
+          // Check if this is a registration attempt
+          if (credentials.username) {
+            // Check if user already exists
+            const existingUser = await prisma.user.findUnique({
+              where: { email: credentials.email }
+            });
 
-          if (!user || !user.hashedPassword) {
-            throw new Error("Invalid email or password");
+            if (existingUser) {
+              throw new Error("User with this email already exists");
+            }
+
+            // Create new user
+            const hashedPassword = await hash(credentials.password, 12);
+            const newUser = await prisma.user.create({
+              data: {
+                email: credentials.email,
+                username: credentials.username,
+                hashedPassword,
+                coins: 1000 // Starting coins
+              }
+            });
+
+            return {
+              id: newUser.id,
+              email: newUser.email,
+              name: newUser.name,
+              username: newUser.username,
+              coins: newUser.coins,
+              image: newUser.image
+            } as User;
+          } else {
+            // Regular login
+            const user = await prisma.user.findUnique({
+              where: { email: credentials.email }
+            });
+
+            if (!user || !user.hashedPassword) {
+              throw new Error("Invalid email or password");
+            }
+
+            const isPasswordValid = await compare(credentials.password, user.hashedPassword);
+
+            if (!isPasswordValid) {
+              throw new Error("Invalid email or password");
+            }
+
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              username: user.username,
+              coins: user.coins,
+              image: user.image
+            } as User;
           }
-
-          const isPasswordValid = await compare(credentials.password, user.hashedPassword);
-
-          if (!isPasswordValid) {
-            throw new Error("Invalid email or password");
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            username: user.username,
-            coins: user.coins,
-            image: user.image
-          } as User;
         } catch (error) {
           console.error("[Auth] Authorization error:", error);
           throw error;
