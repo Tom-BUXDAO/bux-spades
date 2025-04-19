@@ -4,6 +4,7 @@ const nextConfig = {
     domains: [
       'cdn.discordapp.com'
     ],
+    unoptimized: true,
   },
   webpack: (config, { isServer }) => {
     // Exclude socket-server directory from the build
