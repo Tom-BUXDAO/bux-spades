@@ -21,9 +21,9 @@ declare module "next-auth" {
 }
 
 function getBaseUrl() {
-  // In the browser, return empty string for relative URLs
+  // In the browser, return the current origin
   if (typeof window !== "undefined") {
-    return "";
+    return window.location.origin;
   }
 
   // Get the base URL from environment variables
@@ -32,7 +32,6 @@ function getBaseUrl() {
 
   // If we have a Vercel URL, use it
   if (vercelUrl) {
-    // Handle both production and preview URLs
     return `https://${vercelUrl}`;
   }
 
