@@ -68,6 +68,7 @@ export default function LoginPage() {
         // Don't redirect yet, wait for welcome modal to close
         setIsLoading(false);
       } else {
+        // For login, use the credentials provider
         const result = await signIn("credentials", {
           redirect: false,
           username,
@@ -83,11 +84,8 @@ export default function LoginPage() {
           throw new Error(result.error);
         }
 
-        if (result.url) {
-          window.location.href = result.url;
-        } else {
-          window.location.href = "/game";
-        }
+        // Redirect to the game page
+        window.location.href = "/game";
       }
     } catch (err) {
       console.error(isRegistering ? "Registration error:" : "Login error:", err);

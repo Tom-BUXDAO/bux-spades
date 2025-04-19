@@ -29,6 +29,7 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/auth/error",
   },
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     DiscordProvider({
       clientId: env.DISCORD_CLIENT_ID,
@@ -62,6 +63,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
     CredentialsProvider({
+      id: "credentials",
       name: "credentials",
       credentials: {
         username: { label: "Username or Email", type: "text" },
