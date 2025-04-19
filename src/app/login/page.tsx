@@ -33,6 +33,7 @@ function LoginForm() {
   useEffect(() => {
     if (status === "authenticated") {
       router.push("/game");
+      return;
     }
   }, [status, router]);
 
@@ -54,10 +55,6 @@ function LoginForm() {
         </div>
       </div>
     );
-  }
-
-  if (status === "authenticated") {
-    return null;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
