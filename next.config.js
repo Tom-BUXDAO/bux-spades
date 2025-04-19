@@ -1,12 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'cdn.discordapp.com'
-      }
-    ]
+    unoptimized: true,
+    domains: ['bux-spades-buxdaos-projects.vercel.app'],
   },
   webpack: (config, { isServer }) => {
     // Exclude socket-server directory from the build

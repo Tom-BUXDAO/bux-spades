@@ -109,11 +109,12 @@ export default function LoginPage() {
       <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
         <div className="flex items-center justify-center space-x-4">
           <Image
-            src={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/bux-logo.png`}
+            src="/bux-logo.png"
             alt="BUX Logo"
             width={128}
             height={128}
             priority
+            unoptimized
             onError={(e) => {
               console.error('Error loading logo:', e);
               const img = e.target as HTMLImageElement;
