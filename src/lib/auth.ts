@@ -33,7 +33,7 @@ function getBaseUrl() {
     // Reference for render.com
     return process.env.NEXTAUTH_URL;
   }
-  // Assume localhost
+  // Default to localhost if no environment variables are set
   return "http://localhost:3000";
 }
 
