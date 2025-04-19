@@ -4,65 +4,30 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
-    const { username, email, password } = await req.json();
+    const { email, password, username } = await req.json();
 
-    // For username/password registration, all fields are required
-    if (!username?.trim() || !email?.trim() || !password?.trim()) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
+    if (!email || !password || !username) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Missing required fields' }),
         { status: 400 }
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
-
-    // Validate username format (alphanumeric, underscores, 3-20 chars)
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    if (!usernameRegex.test(username)) {
-      return NextResponse.json(
-        { error: 'Username must be 3-20 characters and can only contain letters, numbers, and underscores' },
-        { status: 400 }
-      );
-    }
-
-    // Validate password strength (min 8 chars, at least one number and one letter)
-    if (password.length < 8 || !/\d/.test(password) || !/[a-zA-Z]/.test(password)) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters and contain at least one letter and one number' },
-        { status: 400 }
-      );
-    }
-
-    // Check if username or email already exists
+    // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
-          { username },
-          { email }
+          { email },
+          { username }
         ]
       }
     });
 
     if (existingUser) {
-      if (existingUser.username === username) {
-        return NextResponse.json(
-          { error: 'Username already taken' },
-          { status: 400 }
-        );
-      }
-      if (existingUser.email === email) {
-        return NextResponse.json(
-          { error: 'Email already registered' },
-          { status: 400 }
-        );
-      }
+      return new NextResponse(
+        JSON.stringify({ error: 'User already exists' }),
+        { status: 400 }
+      );
     }
 
     // Hash password
@@ -71,21 +36,24 @@ export async function POST(req: Request) {
     // Create user
     const user = await prisma.user.create({
       data: {
-        username,
         email,
+        username,
         hashedPassword,
-        name: username, // Set display name to username initially
+        coins: 1000, // Starting coins
       },
     });
 
-    // Don't send the hashedPassword back
+    // Remove hashedPassword from response
     const { hashedPassword: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json(userWithoutPassword, { status: 201 });
+    return new NextResponse(
+      JSON.stringify(userWithoutPassword),
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json(
-      { error: 'Error creating user. Please try again later.' },
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500 }
     );
   }
