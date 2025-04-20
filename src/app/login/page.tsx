@@ -23,7 +23,7 @@ function LoginForm() {
   useEffect(() => {
     // Check for error in URL parameters
     const errorParam = searchParams?.get("error");
-    if (errorParam) {
+    if (errorParam && errorParam !== "discord") { // Ignore "discord" error
       // Only set specific error messages
       switch(errorParam) {
         case "CredentialsSignin":
