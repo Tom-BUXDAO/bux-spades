@@ -57,10 +57,6 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    secret: process.env.NEXTAUTH_SECRET,
-  },
   pages: {
     signIn: "/login",
     error: "/login",
@@ -73,41 +69,36 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials?.password) {
-            return null;
-          }
-
-          const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email
-            }
-          });
-
-          if (!user || !user.hashedPassword) {
-            return null;
-          }
-
-          const isCorrectPassword = await compare(
-            credentials.password,
-            user.hashedPassword
-          );
-
-          if (!isCorrectPassword) {
-            return null;
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            username: user.username || "",
-            coins: user.coins,
-            image: user.image
-          };
-        } catch (error) {
-          console.error("Auth error:", error);
+        if (!credentials?.email || !credentials?.password) {
           return null;
         }
+
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email
+          }
+        });
+
+        if (!user || !user.hashedPassword) {
+          return null;
+        }
+
+        const isCorrectPassword = await compare(
+          credentials.password,
+          user.hashedPassword
+        );
+
+        if (!isCorrectPassword) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          username: user.username || "",
+          coins: user.coins,
+          image: user.image
+        };
       }
     }),
     DiscordProvider({
@@ -135,37 +126,10 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If url is undefined or null, return baseUrl
-      if (!url) {
-        return baseUrl;
-      }
-
-      // Handle relative URLs
       if (url.startsWith("/")) {
         return `${baseUrl}${url}`;
       }
-
-      // Handle absolute URLs
-      try {
-        const urlObj = new URL(url);
-        const baseUrlObj = new URL(baseUrl);
-
-        // Allow URLs from the same origin
-        if (urlObj.origin === baseUrlObj.origin) {
-          return url;
-        }
-
-        // Allow Vercel URLs
-        if (url.includes("vercel.app")) {
-          return url;
-        }
-
-        // Default to base URL
-        return baseUrl;
-      } catch (error) {
-        // If URL parsing fails, return baseUrl
-        return baseUrl;
-      }
+      return baseUrl;
     },
   },
   debug: true,
