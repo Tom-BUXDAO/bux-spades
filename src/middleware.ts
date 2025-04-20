@@ -9,13 +9,11 @@ const protectedPaths = ["/game", "/profile", "/settings"];
 const authPaths = ["/login", "/"];
 // Auth-related paths that should be excluded from middleware checks
 const excludedPaths = [
-  "/api/auth/signin",
-  "/api/auth/callback",
-  "/api/auth/session",
-  "/api/auth/csrf",
-  "/api/auth/providers",
-  "/api/auth/_log",
-  "/api/auth/check-auth"
+  "/api/auth",
+  "/_next",
+  "/static",
+  "/images",
+  "/favicon.ico",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -54,8 +52,10 @@ export async function middleware(request: NextRequest) {
   const isAuthenticated = !!token || !!customToken;
   
   if (isProtectedPath && !isAuthenticated) {
-    // Redirect to login if trying to access protected path without token
-    return NextResponse.redirect(new URL('/login', request.url));
+    // Store the original URL to redirect back after login
+    const url = new URL('/login', request.url);
+    url.searchParams.set('callbackUrl', request.url);
+    return NextResponse.redirect(url);
   }
   
   if (isAuthPath && isAuthenticated) {
