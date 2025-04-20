@@ -112,6 +112,7 @@ function LoginForm() {
         email,
         password,
         redirect: false,
+        callbackUrl: '/game'
       });
 
       if (!result?.ok) {
