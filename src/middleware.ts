@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { jwtVerify } from "jose";
 
 // Paths that require authentication
 const protectedPaths = ["/game", "/profile", "/settings"];
@@ -23,11 +24,14 @@ export async function middleware(request: NextRequest) {
   
   if (authToken) {
     try {
-      // For now, just check if the token exists
-      // We'll verify the token in the API routes instead
-      customToken = { exists: true };
+      const secret = new TextEncoder().encode(
+        process.env.NEXTAUTH_SECRET || "fallback-secret"
+      );
+      
+      const { payload } = await jwtVerify(authToken, secret);
+      customToken = payload;
     } catch (error) {
-      console.error("Error checking custom token:", error);
+      console.error("Error verifying custom token:", error);
     }
   }
   
