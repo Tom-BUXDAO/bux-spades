@@ -137,17 +137,44 @@ export const authOptions: NextAuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log("Redirect URL:", url);
       console.log("Base URL:", baseUrl);
-      // Allow relative URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      
-      // Allow URLs from the same origin
-      if (new URL(url).origin === baseUrl) return url;
-      
-      // Allow Vercel URLs
-      if (url.includes("vercel.app")) return url;
-      
-      // Default to base URL
-      return baseUrl;
+
+      // If url is undefined or null, return baseUrl
+      if (!url) {
+        console.log("URL is undefined or null, returning baseUrl:", baseUrl);
+        return baseUrl;
+      }
+
+      try {
+        // Handle relative URLs
+        if (url.startsWith("/")) {
+          const fullUrl = `${baseUrl}${url}`;
+          console.log("Constructed full URL for relative path:", fullUrl);
+          return fullUrl;
+        }
+
+        // Handle absolute URLs
+        const urlObj = new URL(url);
+        console.log("Parsed URL object:", urlObj.toString());
+
+        // Allow URLs from the same origin
+        if (urlObj.origin === new URL(baseUrl).origin) {
+          console.log("URL is from same origin, allowing:", url);
+          return url;
+        }
+
+        // Allow Vercel URLs
+        if (url.includes("vercel.app")) {
+          console.log("URL is from Vercel, allowing:", url);
+          return url;
+        }
+
+        // Default to base URL
+        console.log("Defaulting to baseUrl:", baseUrl);
+        return baseUrl;
+      } catch (error) {
+        console.error("Error in redirect callback:", error);
+        return baseUrl;
+      }
     },
   },
   debug: process.env.NODE_ENV === "development",
