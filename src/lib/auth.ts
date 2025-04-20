@@ -1,4 +1,4 @@
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import { getServerSession } from "next-auth";
 import { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -11,7 +11,7 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      name: string | null;
+      name: | null;
       email: string | null;
       username: string;
       coins: number;
@@ -20,29 +20,15 @@ declare module "next-auth" {
   }
 }
 
+// Simple function to get the base URL
 function getBaseUrl() {
-  // For testing purposes, use a hardcoded URL
+  // For development
   if (process.env.NODE_ENV === "development") {
     return "http://localhost:3000";
   }
-
-  // Check for VERCEL_URL environment variable
-  if (process.env.VERCEL_URL) {
-    // If VERCEL_URL starts with http, it's already a full URL
-    if (process.env.VERCEL_URL.startsWith('http')) {
-      return process.env.VERCEL_URL;
-    }
-    // Otherwise, it's just the hostname
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  // Check for NEXTAUTH_URL environment variable
-  if (process.env.NEXTAUTH_URL) {
-    return process.env.NEXTAUTH_URL;
-  }
-
-  // Fallback to localhost
-  return "http://localhost:3000";
+  
+  // For production
+  return "https://bux-spades-buxdaos-projects.vercel.app";
 }
 
 export const authOptions: NextAuthOptions = {
@@ -120,23 +106,8 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If url is undefined or null, return the baseUrl
-      if (!url) {
-        return baseUrl;
-      }
-
-      // If the url is relative, prefix it with the base URL
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
-      }
-      
-      // If the url is already absolute, return it
-      if (url.startsWith("http")) {
-        return url;
-      }
-      
-      // Default to the base URL
-      return baseUrl;
+      // Always redirect to /game after login
+      return `${baseUrl}/game`;
     },
   },
   debug: true,
