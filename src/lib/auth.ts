@@ -21,12 +21,8 @@ declare module "next-auth" {
 }
 
 function getBaseUrl() {
-  // Temporarily hardcode a base URL for testing
-  return "https://bux-spades-buxdaos-projects.vercel.app";
-
   // In the browser, return the current origin
   if (typeof window !== "undefined") {
-    console.log("Browser environment, using window.location.origin:", window.location.origin);
     return window.location.origin;
   }
 
@@ -36,18 +32,15 @@ function getBaseUrl() {
 
   // If we have a NextAuth URL, use it
   if (nextAuthUrl) {
-    console.log("Using NEXTAUTH_URL:", nextAuthUrl);
     return nextAuthUrl;
   }
 
   // If we have a Vercel URL, use it
   if (vercelUrl) {
-    console.log("Using VERCEL_URL:", vercelUrl);
     return `https://${vercelUrl}`;
   }
 
   // Default to localhost in development
-  console.log("Defaulting to localhost");
   return "http://localhost:3000";
 }
 
@@ -74,9 +67,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log("Authorize function called with credentials:", credentials);
           if (!credentials?.email || !credentials?.password) {
-            console.log("Missing email or password");
             return null;
           }
 
@@ -86,16 +77,7 @@ export const authOptions: NextAuthOptions = {
             }
           });
 
-          console.log("User found:", user);
-
-          if (!user) {
-            console.log("No user found with the provided email");
-            return null;
-          }
-
-          // If user has no password (Discord user), don't allow credentials login
-          if (!user.hashedPassword) {
-            console.log("User has no password, likely a Discord user");
+          if (!user || !user.hashedPassword) {
             return null;
           }
 
@@ -104,10 +86,7 @@ export const authOptions: NextAuthOptions = {
             user.hashedPassword
           );
 
-          console.log("Password match:", isCorrectPassword);
-
           if (!isCorrectPassword) {
-            console.log("Incorrect password");
             return null;
           }
 
@@ -149,25 +128,17 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      try {
-        // Allow relative URLs
-        if (url.startsWith("/")) return `${baseUrl}${url}`;
-        
-        // Allow URLs from the same origin
-        if (new URL(url).origin === baseUrl) return url;
-        
-        // Allow Vercel preview URLs
-        if (url.includes(process.env.VERCEL_URL || "")) return url;
-        
-        // Allow URLs from the same project
-        if (url.includes("bux-spades")) return url;
-        
-        // Default to base URL
-        return baseUrl;
-      } catch (error) {
-        console.error("Error in redirect callback:", error);
-        return baseUrl;
-      }
+      // Allow relative URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      
+      // Allow URLs from the same origin
+      if (new URL(url).origin === baseUrl) return url;
+      
+      // Allow Vercel URLs
+      if (url.includes("vercel.app")) return url;
+      
+      // Default to base URL
+      return baseUrl;
     },
   },
   debug: process.env.NODE_ENV === "development",

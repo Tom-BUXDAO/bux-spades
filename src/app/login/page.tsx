@@ -112,11 +112,10 @@ function LoginForm() {
         email,
         password,
         redirect: false,
-        callbackUrl: '/game'
       });
 
       if (!result?.ok) {
-        setError("Invalid email or password");
+        setError(result?.error || "Invalid email or password");
         setIsLoading(false);
         return;
       }
