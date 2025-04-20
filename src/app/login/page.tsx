@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 import WelcomeModal from "@/components/WelcomeModal";
@@ -18,7 +17,6 @@ function LoginForm() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -29,33 +27,21 @@ function LoginForm() {
     }
   }, [searchParams]);
 
-  // If user is already logged in, redirect to game page
+  // Check if user is already logged in by checking for auth-token cookie
   useEffect(() => {
-    if (status === "authenticated") {
-      router.push("/game");
-      return;
-    }
-  }, [status, router]);
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
-          <div className="flex items-center justify-center space-x-4">
-            <img
-              src="/bux-logo.png"
-              alt="BUX Logo"
-              width="128"
-              height="128"
-              className="rounded-lg"
-            />
-            <h1 className="text-3xl font-bold text-white">BUX Spades</h1>
-          </div>
-          <div className="text-center text-white">Loading...</div>
-        </div>
-      </div>
-    );
-  }
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check-auth');
+        if (response.ok) {
+          router.push('/game');
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+      }
+    };
+    
+    checkAuth();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +92,7 @@ function LoginForm() {
         
         if (response.ok) {
           // Login successful, redirect to game page
-          router.push('/game');
+          window.location.href = '/game';
         } else {
           // Login failed
           const data = await response.json();
@@ -121,29 +107,35 @@ function LoginForm() {
     }
   };
 
-  // Helper function to get CSRF token
-  const getCsrfToken = async () => {
-    try {
-      const response = await fetch('/api/auth/csrf');
-      const data = await response.json();
-      return data.csrfToken;
-    } catch (error) {
-      console.error('Error getting CSRF token:', error);
-      return null;
-    }
-  };
-
   const handleDiscordSignIn = () => {
-    signIn("discord", { 
-      callbackUrl: "/game",
-      redirect: true
-    });
+    // Redirect to Discord OAuth
+    window.location.href = '/api/auth/signin/discord';
   };
 
   const handleWelcomeModalClose = () => {
     setShowWelcomeModal(false);
-    router.push("/game");
+    window.location.href = "/game";
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md space-y-6">
+          <div className="flex items-center justify-center space-x-4">
+            <img
+              src="/bux-logo.png"
+              alt="BUX Logo"
+              width="128"
+              height="128"
+              className="rounded-lg"
+            />
+            <h1 className="text-3xl font-bold text-white">BUX Spades</h1>
+          </div>
+          <div className="text-center text-white">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
