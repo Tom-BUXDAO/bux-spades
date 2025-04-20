@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { authOptions } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
 import { compare } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { sign } from 'jsonwebtoken';

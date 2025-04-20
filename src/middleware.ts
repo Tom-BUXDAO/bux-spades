@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { verify } from "jsonwebtoken";
 
 // Paths that require authentication
 const protectedPaths = ["/game", "/profile", "/settings"];
@@ -9,18 +10,35 @@ const authPaths = ["/login", "/"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = await getToken({ req: request });
   
   // Check if the path requires authentication
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
   const isAuthPath = authPaths.some(path => pathname === path);
   
-  if (isProtectedPath && !token) {
+  // First try NextAuth token
+  const token = await getToken({ req: request });
+  
+  // Then try our custom auth token
+  const authToken = request.cookies.get("auth-token")?.value;
+  let customToken = null;
+  
+  if (authToken) {
+    try {
+      customToken = verify(authToken, process.env.NEXTAUTH_SECRET || "fallback-secret");
+    } catch (error) {
+      console.error("Error verifying custom token:", error);
+    }
+  }
+  
+  // User is authenticated if either token is valid
+  const isAuthenticated = !!token || !!customToken;
+  
+  if (isProtectedPath && !isAuthenticated) {
     // Redirect to login if trying to access protected path without token
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
-  if (isAuthPath && token) {
+  if (isAuthPath && isAuthenticated) {
     // Redirect to game if trying to access auth paths with valid token
     return NextResponse.redirect(new URL('/game', request.url));
   }
