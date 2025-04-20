@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import GameLobby from "@/components/lobby/GameLobby";
 import GameTable from "@/components/game/GameTable";
 import type { GameState } from "@/types/game";
@@ -11,42 +10,57 @@ import * as socketApi from "@/lib/socket";
 import WelcomeModal from "@/components/WelcomeModal";
 
 export default function GamePage() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const [currentGame, setCurrentGame] = useState<GameState | null>(null);
   const [guestUser, setGuestUser] = useState<any>(null);
   const [games, setGames] = useState<GameState[]>([]);
   const { socket, isConnected } = useSocket();
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-      return;
-    }
-  }, [status, router]);
-
-  useEffect(() => {
-    // Check if this is a new Discord user by checking the URL for the 'new' parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const isNewUser = urlParams.get('new') === 'true';
+    // Check if user is authenticated
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/check-auth');
+        const data = await response.json();
+        
+        if (!data.authenticated) {
+          // User is not authenticated, redirect to login
+          window.location.href = '/login';
+          return;
+        }
+        
+        // User is authenticated, get user data
+        const userResponse = await fetch('/api/auth/user');
+        const userData = await userResponse.json();
+        
+        if (userResponse.ok) {
+          setUser(userData.user);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        window.location.href = '/login';
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Also check if this is a new user by looking at the session data
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    // Check if this is a new user by looking at the user data
     // If the user has exactly 5,000,000 coins, they are likely a new user
-    const isNewUserByCoins = session?.user?.coins === 5000000;
+    const isNewUserByCoins = user?.coins === 5000000;
     
     // Show welcome modal for new users
-    if (isNewUser || isNewUserByCoins) {
+    if (isNewUserByCoins) {
       console.log("New user detected, showing welcome modal");
       setShowWelcomeModal(true);
-      
-      // Clean up the URL by removing the 'new' parameter
-      if (isNewUser) {
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-      }
     }
-  }, [session]);
+  }, [user]);
 
   useEffect(() => {
     // Check for guest user in localStorage
@@ -61,7 +75,7 @@ export default function GamePage() {
     if (!socket) return;
     
     // Clean up any lingering game connections when component mounts
-    const userId = session?.user?.id || guestUser?.id;
+    const userId = user?.id || guestUser?.id;
     if (userId) {
       console.log("Cleaning up previous connections for user:", userId);
       socket.emit("close_previous_connections", { userId });
@@ -107,14 +121,14 @@ export default function GamePage() {
     return () => {
       socket.off('games_update', handleGamesUpdate);
     };
-  }, [socket, currentGame, session?.user?.id, guestUser?.id]);
+  }, [socket, currentGame, user?.id, guestUser?.id]);
 
-  if (status === "loading") {
+  if (isLoading) {
     return <div>Loading...</div>;
   }
 
   // Allow access if user is either authenticated via NextAuth or has guest data
-  if (status === "unauthenticated" && !guestUser) {
+  if (!user && !guestUser) {
     redirect("/");
   }
 
@@ -127,9 +141,6 @@ export default function GamePage() {
     // Reset the current game to return to the lobby
     setCurrentGame(null);
   };
-
-  // Use either NextAuth session or guest user data
-  const user = session?.user || guestUser;
 
   // Create wrapper functions to match old API
   const createGame = (user: any, rules?: any) => {
@@ -184,12 +195,12 @@ export default function GamePage() {
             onGamesUpdate={setGames}
             onLeaveTable={handleLeaveTable}
             startGame={startGame}
-            user={user}
+            user={user || guestUser}
           />
         ) : (
           <GameLobby 
             onGameSelect={handleGameSelect} 
-            user={user}
+            user={user || guestUser}
             socket={socket}
             createGame={createGame}
             joinGame={joinGame}
