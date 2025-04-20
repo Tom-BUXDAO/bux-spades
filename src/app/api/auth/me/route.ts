@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+// Explicitly set the runtime to edge
+export const runtime = 'edge';
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
