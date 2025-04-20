@@ -108,7 +108,10 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async redirect({ url, baseUrl }) {
+    async redirect({ url }) {
+      // Hardcode the base URL for Vercel deployment
+      const baseUrl = "https://bux-spades-buxdaos-projects.vercel.app";
+      
       // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       // Allows callback URLs on the same origin
