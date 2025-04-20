@@ -21,33 +21,27 @@ declare module "next-auth" {
 }
 
 function getBaseUrl() {
-  // In the browser, return the current origin
-  if (typeof window !== "undefined") {
-    console.log("Browser environment, using window.location.origin:", window.location.origin);
-    return window.location.origin;
+  // For testing purposes, use a hardcoded URL
+  if (process.env.NODE_ENV === "development") {
+    return "http://localhost:3000";
   }
 
-  // Get the base URL from environment variables
-  const vercelUrl = process.env.VERCEL_URL;
-  const nextAuthUrl = process.env.NEXTAUTH_URL;
-
-  console.log("VERCEL_URL:", vercelUrl);
-  console.log("NEXTAUTH_URL:", nextAuthUrl);
-
-  // If we have a NextAuth URL, use it
-  if (nextAuthUrl) {
-    console.log("Using NEXTAUTH_URL:", nextAuthUrl);
-    return nextAuthUrl;
+  // Check for VERCEL_URL environment variable
+  if (process.env.VERCEL_URL) {
+    // If VERCEL_URL starts with http, it's already a full URL
+    if (process.env.VERCEL_URL.startsWith('http')) {
+      return process.env.VERCEL_URL;
+    }
+    // Otherwise, it's just the hostname
+    return `https://${process.env.VERCEL_URL}`;
   }
 
-  // If we have a Vercel URL, use it
-  if (vercelUrl) {
-    console.log("Using VERCEL_URL:", vercelUrl);
-    return `https://${vercelUrl}`;
+  // Check for NEXTAUTH_URL environment variable
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL;
   }
 
-  // Default to localhost in development
-  console.log("Defaulting to localhost");
+  // Fallback to localhost
   return "http://localhost:3000";
 }
 
@@ -126,14 +120,21 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      // If url is undefined or null, return the baseUrl
+      if (!url) {
+        return baseUrl;
+      }
+
       // If the url is relative, prefix it with the base URL
       if (url.startsWith("/")) {
         return `${baseUrl}${url}`;
       }
+      
       // If the url is already absolute, return it
       if (url.startsWith("http")) {
         return url;
       }
+      
       // Default to the base URL
       return baseUrl;
     },

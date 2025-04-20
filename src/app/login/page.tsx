@@ -60,76 +60,57 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError(null);
 
     try {
-      // For login, we need email and password
-      if (!isRegistering && (!email || !password)) {
-        setError("Please enter both email and password");
-        setIsLoading(false);
-        return;
-      }
-
-      // For registration, we need username, email, and password
-      if (isRegistering && (!username || !email || !password)) {
-        setError("Please fill in all fields");
-        setIsLoading(false);
-        return;
-      }
-
-      // If registering, call the registration API first
       if (isRegistering) {
-        try {
-          const registerResponse = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              username,
-              email,
-              password,
-            }),
-          });
+        // Handle registration
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username,
+            email,
+            password,
+          }),
+        });
 
-          const registerData = await registerResponse.json();
+        const data = await response.json();
 
-          if (!registerResponse.ok) {
-            setError(registerData.error || 'Registration failed');
-            setIsLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error('Registration error:', error);
-          setError('Registration failed. Please try again.');
+        if (!response.ok) {
+          setError(data.error || 'Registration failed');
           setIsLoading(false);
           return;
         }
-      }
 
-      // Use NextAuth signIn for authentication
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-        callbackUrl: '/game'
-      });
-
-      if (!result?.ok) {
-        setError(result?.error || "Invalid email or password");
-        setIsLoading(false);
-        return;
-      }
-
-      // Show welcome modal for new users
-      if (isRegistering) {
+        // Show welcome modal for new users
         setShowWelcomeModal(true);
       } else {
-        router.push('/game');
+        // Handle login
+        const result = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+          callbackUrl: '/game'
+        });
+
+        if (result?.error) {
+          setError(result.error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (result?.ok) {
+          // Wait for the session to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+          router.push('/game');
+        }
       }
     } catch (error) {
-      console.error("Authentication error:", error);
-      setError("An unexpected error occurred. Please try again.");
+      console.error('Authentication error:', error);
+      setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
