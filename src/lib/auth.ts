@@ -89,9 +89,25 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: 'identify email guilds',
-          prompt: 'consent',
+          scope: 'identify email',
         },
+      },
+      profile(profile) {
+        if (profile.avatar === null) {
+          const defaultAvatarNumber = parseInt(profile.discriminator) % 5;
+          profile.image_url = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
+        } else {
+          const format = profile.avatar.startsWith("a_") ? "gif" : "png";
+          profile.image_url = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
+        }
+        return {
+          id: profile.id,
+          name: profile.username,
+          email: profile.email,
+          image: profile.image_url,
+          username: profile.username,
+          coins: 1000, // Default coins for new users
+        };
       },
     }),
   ],

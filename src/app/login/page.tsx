@@ -103,8 +103,8 @@ function LoginForm() {
   };
 
   const handleDiscordSignIn = () => {
-    // Redirect to Discord OAuth
-    window.location.href = '/api/auth/signin/discord';
+    setIsLoading(true);
+    signIn("discord", { callbackUrl: "/game" });
   };
 
   const handleWelcomeModalClose = () => {
