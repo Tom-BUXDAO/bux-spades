@@ -106,7 +106,17 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to /game after login
+      // If the url is relative, prefix it with the base URL
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+      
+      // If the url is already absolute, return it
+      if (url.startsWith("http")) {
+        return url;
+      }
+      
+      // Default to the game page
       return `${baseUrl}/game`;
     },
   },

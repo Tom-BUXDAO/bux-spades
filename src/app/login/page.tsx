@@ -88,16 +88,23 @@ function LoginForm() {
         // Show welcome modal for new users
         setShowWelcomeModal(true);
       } else {
-        // Handle login with a direct approach
+        // Handle login with a simpler approach
         const result = await signIn('credentials', {
           email,
           password,
-          redirect: true,
+          redirect: false,
         });
-        
-        // If we get here, it means redirect didn't happen (which is unexpected)
-        console.error('Login did not redirect as expected');
-        setError('Login failed. Please try again.');
+
+        if (result?.error) {
+          setError(result.error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (result?.ok) {
+          // Redirect to game page
+          router.push('/game');
+        }
       }
     } catch (error) {
       console.error('Authentication error:', error);
