@@ -129,7 +129,8 @@ export default function GamePage() {
 
   // Allow access if user is either authenticated via NextAuth or has guest data
   if (!user && !guestUser) {
-    redirect("/");
+    window.location.href = "/";
+    return null;
   }
 
   const handleGameSelect = (game: GameState) => {
