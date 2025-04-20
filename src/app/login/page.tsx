@@ -6,6 +6,7 @@ import Image from "next/image";
 import WelcomeModal from "@/components/WelcomeModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,26 +28,21 @@ function LoginForm() {
     }
   }, [searchParams]);
 
-  // Check if user is already logged in by checking for auth-token cookie
+  // Check if user is already logged in
   useEffect(() => {
     let mounted = true;
     
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/check-auth');
-        if (!response.ok) {
-          // Not authenticated or error, just stay on login page
-          return;
-        }
-        
+        const response = await fetch('/api/auth/session');
         const data = await response.json();
-        if (mounted && data.authenticated) {
+        
+        if (mounted && data.user) {
           // User is authenticated, redirect to game page
           router.push('/game');
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        // Stay on login page on error
       }
     };
     
@@ -63,16 +59,14 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
       // Login successful, redirect to game page
