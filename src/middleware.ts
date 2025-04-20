@@ -1,30 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { verify } from "jsonwebtoken";
 
-// Add paths that should be protected
+// Paths that require authentication
 const protectedPaths = ["/game", "/profile", "/settings"];
 
-export async function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-
-  // Check if the path should be protected
-  const isProtectedPath = protectedPaths.some((protectedPath) =>
-    path.startsWith(protectedPath)
-  );
-
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Check if the path requires authentication
+  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
+  
   if (isProtectedPath) {
-    const token = await getToken({ req: request });
-
+    // Get the token from cookies
+    const token = request.cookies.get('auth-token')?.value;
+    
     if (!token) {
-      // Redirect to login if no token is present
-      return NextResponse.redirect(new URL("/login", request.url));
+      // Redirect to login if no token
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-
-    return NextResponse.next();
+    
+    try {
+      // Verify the token
+      verify(token, process.env.NEXTAUTH_SECRET || 'fallback-secret');
+      
+      // Token is valid, allow access
+      return NextResponse.next();
+    } catch (error) {
+      // Token is invalid, redirect to login
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
-
-  // For non-protected paths, allow access
+  
+  // Not a protected path, allow access
   return NextResponse.next();
 }
 
@@ -37,9 +45,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - login (login page)
-     * - register (registration page)
+     * - public folder
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|login|register).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
   ],
 }; 

@@ -4,10 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { sign } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
+    const { email, password } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -16,9 +15,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find user by email
+    // Find user
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email }
     });
 
     if (!user || !user.hashedPassword) {
@@ -38,41 +37,41 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create a JWT token
+    // Create a session token
     const token = sign(
-      { 
+      {
         id: user.id,
         email: user.email,
         username: user.username,
         coins: user.coins
       },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
+      process.env.NEXTAUTH_SECRET || 'fallback-secret',
+      { expiresIn: '30d' }
     );
 
-    // Set the token in a cookie
+    // Set the token as a cookie
     cookies().set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 30 * 24 * 60 * 60 // 30 days
     });
 
-    // Return user data (excluding sensitive information)
+    // Return user data (without sensitive information)
     return NextResponse.json({
       user: {
         id: user.id,
         email: user.email,
         username: user.username,
         coins: user.coins,
-        image: user.image,
-      },
+        image: user.image
+      }
     });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

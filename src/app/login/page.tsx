@@ -88,11 +88,10 @@ function LoginForm() {
         // Show welcome modal for new users
         setShowWelcomeModal(true);
       } else {
-        // Handle login with a direct approach
+        // Use our custom login API route
         console.log("Attempting login with:", email);
         
-        // Use a direct fetch approach instead of signIn
-        const response = await fetch('/api/auth/callback/credentials', {
+        const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -100,7 +99,6 @@ function LoginForm() {
           body: JSON.stringify({
             email,
             password,
-            csrfToken: await getCsrfToken(),
           }),
         });
         
