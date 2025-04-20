@@ -24,7 +24,21 @@ function LoginForm() {
     // Check for error in URL parameters
     const errorParam = searchParams?.get("error");
     if (errorParam) {
-      setError(decodeURIComponent(errorParam));
+      // Only set specific error messages
+      switch(errorParam) {
+        case "CredentialsSignin":
+          setError("Invalid email or password");
+          break;
+        case "OAuthAccountNotLinked":
+          setError("Email already used with different provider");
+          break;
+        case "OAuthSignin":
+          setError("Could not sign in with Discord");
+          break;
+        default:
+          // Don't show raw error parameter
+          setError("An error occurred during sign in");
+      }
     }
   }, [searchParams]);
 
