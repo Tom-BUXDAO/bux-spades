@@ -1,16 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -20,15 +14,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -42,41 +35,41 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?   // Display name, can be from Discord or custom
-  username      String    @unique // Required: Unique username for non-Discord login
-  email         String?   @unique
-  emailVerified DateTime?
-  hashedPassword String?  // Optional for Discord users
-  image         String?
-  coins         Int       @default(5000000) // Starting bonus of 5M coins
-  accounts      Account[] // For OAuth providers like Discord
-  sessions      Session[]
-  gamePlayers   GamePlayer[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id             String       @id @default(cuid())
+  name           String?
+  email          String?      @unique
+  emailVerified  DateTime?
+  image          String?
+  coins          Int          @default(1000)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  hashedPassword String?
+  username       String?      @unique
+  accounts       Account[]
+  gamePlayers    GamePlayer[]
+  sessions       Session[]
 }
 
 model Game {
-  id        String   @id @default(cuid())
-  status    GameStatus @default(WAITING)
+  id        String       @id @default(cuid())
+  status    GameStatus   @default(WAITING)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
   players   GamePlayer[]
   rounds    GameRound[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model GamePlayer {
   id        String   @id @default(cuid())
   gameId    String
   userId    String
-  position  Int      // 0-3 for the four positions
+  position  Int
   score     Int      @default(0)
   bid       Int?
-  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, position])
 }
@@ -87,9 +80,9 @@ model GameRound {
   roundNumber Int
   tricksTaken Int      @default(0)
   score       Int      @default(0)
-  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   @@unique([gameId, roundNumber])
 }

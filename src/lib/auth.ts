@@ -30,14 +30,14 @@ function getBaseUrl() {
   const vercelUrl = process.env.VERCEL_URL;
   const nextAuthUrl = process.env.NEXTAUTH_URL;
 
-  // If we have a Vercel URL, use it
-  if (vercelUrl) {
-    return `https://${vercelUrl}`;
-  }
-
   // If we have a NextAuth URL, use it
   if (nextAuthUrl) {
     return nextAuthUrl;
+  }
+
+  // If we have a Vercel URL, use it
+  if (vercelUrl) {
+    return `https://${vercelUrl}`;
   }
 
   // Default to localhost in development
