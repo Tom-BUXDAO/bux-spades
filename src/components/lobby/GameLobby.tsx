@@ -325,10 +325,17 @@ export default function GameLobby({
   };
 
   const handleLogout = async () => {
-    // Clear the custom auth token
-    document.cookie = "auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    // Sign out from NextAuth
-    await signOut({ redirect: true, callbackUrl: "/login" });
+    try {
+      // Call our logout API endpoint
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      
+      // Sign out from NextAuth
+      await signOut({ redirect: true, callbackUrl: "/login" });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   // Function to check if a player is controlled by this browser
