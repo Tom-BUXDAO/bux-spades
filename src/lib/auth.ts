@@ -22,29 +22,19 @@ declare module "next-auth" {
 
 // Simple function to get the base URL
 function getBaseUrl() {
-  if (typeof window !== 'undefined') {
-    // Browser should use relative path
-    return '';
-  }
-
+  // For production on Vercel
   if (process.env.VERCEL_URL) {
-    // Reference for vercel.com
     return `https://${process.env.VERCEL_URL}`;
   }
-
-  if (process.env.NEXTAUTH_URL) {
-    // Reference for render.com
-    return process.env.NEXTAUTH_URL;
-  }
-
-  // Assume localhost
-  return `http://localhost:${process.env.PORT ?? 3000}`;
+  
+  // For local development
+  return process.env.NEXTAUTH_URL || 'http://localhost:3000';
 }
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: "database",
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -116,17 +106,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If the url is relative, prefix it with the base URL
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
-      }
-      
-      // If the url is already absolute, return it
-      if (url.startsWith("http")) {
-        return url;
-      }
-      
-      // Default to the game page
+      // Always redirect to the game page after login
       return `${baseUrl}/game`;
     },
   },
