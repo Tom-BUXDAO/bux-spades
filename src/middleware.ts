@@ -7,10 +7,25 @@ import { jwtVerify } from "jose";
 const protectedPaths = ["/game", "/profile", "/settings"];
 // Paths that should redirect to game if already authenticated
 const authPaths = ["/login", "/"];
+// Auth-related paths that should be excluded from middleware checks
+const excludedPaths = [
+  "/api/auth/signin",
+  "/api/auth/callback",
+  "/api/auth/session",
+  "/api/auth/csrf",
+  "/api/auth/providers",
+  "/api/auth/_log",
+  "/api/auth/check-auth"
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
+  // Skip middleware for excluded paths
+  if (excludedPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
   // Check if the path requires authentication
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
   const isAuthPath = authPaths.some(path => pathname === path);
@@ -48,13 +63,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/game', request.url));
   }
   
-  // Not a protected path or has valid token, allow access
   return NextResponse.next();
 }
 
 // Configure which paths the middleware should run on
 export const config = {
   matcher: [
-    '/((?!api/auth/callback|api/auth/signin|api/auth/signout|_next/static|_next/image|favicon.ico).*)'
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.png$).*)',
   ]
 }; 
