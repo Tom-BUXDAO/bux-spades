@@ -23,6 +23,7 @@ declare module "next-auth" {
 function getBaseUrl() {
   // In the browser, return the current origin
   if (typeof window !== "undefined") {
+    console.log("Browser environment, using window.location.origin:", window.location.origin);
     return window.location.origin;
   }
 
@@ -30,17 +31,23 @@ function getBaseUrl() {
   const vercelUrl = process.env.VERCEL_URL;
   const nextAuthUrl = process.env.NEXTAUTH_URL;
 
+  console.log("VERCEL_URL:", vercelUrl);
+  console.log("NEXTAUTH_URL:", nextAuthUrl);
+
   // If we have a NextAuth URL, use it
   if (nextAuthUrl) {
+    console.log("Using NEXTAUTH_URL:", nextAuthUrl);
     return nextAuthUrl;
   }
 
   // If we have a Vercel URL, use it
   if (vercelUrl) {
+    console.log("Using VERCEL_URL:", vercelUrl);
     return `https://${vercelUrl}`;
   }
 
   // Default to localhost in development
+  console.log("Defaulting to localhost");
   return "http://localhost:3000";
 }
 
@@ -128,6 +135,8 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      console.log("Redirect URL:", url);
+      console.log("Base URL:", baseUrl);
       // Allow relative URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
       
