@@ -91,26 +91,28 @@ function LoginForm() {
         // Handle login with a direct approach
         console.log("Attempting login with:", email);
         
-        const result = await signIn('credentials', {
-          email,
-          password,
-          redirect: false,
-          callbackUrl: '/game'
+        // Use a direct fetch approach instead of signIn
+        const response = await fetch('/api/auth/callback/credentials', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            csrfToken: await getCsrfToken(),
+          }),
         });
         
-        console.log("Login result:", result);
+        console.log("Login response status:", response.status);
         
-        if (result?.error) {
-          setError(result.error);
-          setIsLoading(false);
-          return;
-        }
-        
-        if (result?.ok) {
-          // Manually redirect to game page
+        if (response.ok) {
+          // Login successful, redirect to game page
           router.push('/game');
         } else {
-          setError('Login failed. Please check your credentials and try again.');
+          // Login failed
+          const data = await response.json();
+          setError(data.error || 'Login failed. Please check your credentials.');
         }
       }
     } catch (error) {
@@ -118,6 +120,18 @@ function LoginForm() {
       setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to get CSRF token
+  const getCsrfToken = async () => {
+    try {
+      const response = await fetch('/api/auth/csrf');
+      const data = await response.json();
+      return data.csrfToken;
+    } catch (error) {
+      console.error('Error getting CSRF token:', error);
+      return null;
     }
   };
 

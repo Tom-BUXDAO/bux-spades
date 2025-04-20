@@ -20,9 +20,6 @@ declare module "next-auth" {
   }
 }
 
-// Hardcoded base URL for Vercel deployment
-const baseUrl = "https://bux-spades-buxdaos-projects.vercel.app";
-
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
@@ -110,10 +107,6 @@ export const authOptions: NextAuthOptions = {
         session.user.coins = token.coins as number;
       }
       return session;
-    },
-    async redirect({ url }) {
-      // Always redirect to the game page after login
-      return `${baseUrl}/game`;
     },
   },
   debug: true,
