@@ -19,8 +19,9 @@ export async function POST(req: Request) {
     // Get the host from headers
     const headersList = headers();
     const host = headersList.get("host");
-    const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-    const baseUrl = `${protocol}://${host}`;
+    
+    // Use the hardcoded base URL for Vercel deployment
+    const baseUrl = "https://bux-spades-buxdaos-projects.vercel.app";
     
     // If we have a session, return success with the user data
     return NextResponse.json({ 

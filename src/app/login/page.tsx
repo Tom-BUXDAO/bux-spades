@@ -72,7 +72,8 @@ function LoginForm() {
       }
 
       if (result?.ok) {
-        router.push('/game');
+        // Use window.location.href for a full page reload to ensure session is properly set
+        window.location.href = '/game';
       }
     } catch (error) {
       console.error('Login error:', error);
