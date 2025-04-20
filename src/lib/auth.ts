@@ -92,13 +92,19 @@ export const authOptions: NextAuthOptions = {
           scope: 'identify email',
         },
       },
-      async profile(profile) {
+      async profile(profile: any) {
+        // Ensure we have a username
+        if (!profile.username) {
+          throw new Error("Discord profile missing username");
+        }
+
+        let imageUrl: string;
         if (profile.avatar === null) {
           const defaultAvatarNumber = parseInt(profile.discriminator) % 5;
-          profile.image_url = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
+          imageUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
         } else {
           const format = profile.avatar.startsWith("a_") ? "gif" : "png";
-          profile.image_url = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
+          imageUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
         }
 
         // Create or update user in database
@@ -106,13 +112,13 @@ export const authOptions: NextAuthOptions = {
           where: { email: profile.email },
           update: {
             name: profile.username,
-            image: profile.image_url,
+            image: imageUrl,
             username: profile.username,
           },
           create: {
             email: profile.email,
             name: profile.username,
-            image: profile.image_url,
+            image: imageUrl,
             username: profile.username,
             coins: 1000,
           },
@@ -120,8 +126,8 @@ export const authOptions: NextAuthOptions = {
 
         return {
           id: user.id,
-          name: user.name,
-          email: user.email,
+          name: user.username, // Use username as name
+          email: user.email || profile.email,
           image: user.image,
           username: user.username,
           coins: user.coins,
