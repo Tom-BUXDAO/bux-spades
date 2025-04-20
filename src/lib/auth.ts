@@ -21,6 +21,9 @@ declare module "next-auth" {
 }
 
 function getBaseUrl() {
+  // Temporarily hardcode a base URL for testing
+  return "https://bux-spades-buxdaos-projects.vercel.app";
+
   // In the browser, return the current origin
   if (typeof window !== "undefined") {
     console.log("Browser environment, using window.location.origin:", window.location.origin);
