@@ -6,23 +6,32 @@ export async function POST() {
     // Create response
     const response = NextResponse.json({ success: true });
     
-    // Clear the custom auth token
-    response.cookies.set("auth-token", "", {
+    // Clear all possible auth tokens
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "lax" as const,
       path: "/",
       expires: new Date(0)
-    });
+    };
     
-    // Clear the NextAuth session cookie
-    response.cookies.set("next-auth.session-token", "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      expires: new Date(0)
-    });
+    // Clear our custom auth token
+    response.cookies.set("auth-token", "", cookieOptions);
+    
+    // Clear NextAuth session token
+    response.cookies.set("next-auth.session-token", "", cookieOptions);
+    
+    // Clear Discord OAuth tokens
+    response.cookies.set("next-auth.callback-url", "", cookieOptions);
+    response.cookies.set("next-auth.csrf-token", "", cookieOptions);
+    
+    // Clear any other potential auth cookies
+    const cookieStore = cookies();
+    for (const cookie of cookieStore.getAll()) {
+      if (cookie.name.startsWith("next-auth.")) {
+        response.cookies.set(cookie.name, "", cookieOptions);
+      }
+    }
     
     return response;
   } catch (error) {
