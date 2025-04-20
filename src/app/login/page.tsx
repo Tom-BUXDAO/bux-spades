@@ -29,82 +29,57 @@ function LoginForm() {
 
   // Check if user is already logged in by checking for auth-token cookie
   useEffect(() => {
+    let mounted = true;
+    
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/auth/check-auth');
-        const data = await response.json();
+        if (!response.ok) {
+          // Not authenticated or error, just stay on login page
+          return;
+        }
         
-        if (data.authenticated) {
+        const data = await response.json();
+        if (mounted && data.authenticated) {
           // User is authenticated, redirect to game page
-          window.location.href = '/game';
+          router.push('/game');
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        // Stay on login page on error
       }
     };
     
     checkAuth();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError('');
     setIsLoading(true);
-    setError(null);
 
     try {
-      if (isRegistering) {
-        // Handle registration
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username,
-            email,
-            password,
-          }),
-        });
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-          setError(data.error || 'Registration failed');
-          setIsLoading(false);
-          return;
-        }
-
-        // Show welcome modal for new users
-        setShowWelcomeModal(true);
-      } else {
-        // Use our custom login API route
-        console.log("Attempting login with:", email);
-        
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-        });
-        
-        console.log("Login response status:", response.status);
-        
-        if (response.ok) {
-          // Login successful, redirect to game page
-          window.location.href = '/game';
-        } else {
-          // Login failed
-          const data = await response.json();
-          setError(data.error || 'Login failed. Please check your credentials.');
-        }
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
       }
+
+      // Login successful, redirect to game page
+      router.push('/game');
     } catch (error) {
-      console.error('Authentication error:', error);
-      setError('An unexpected error occurred');
+      console.error('Login error:', error);
+      setError(error instanceof Error ? error.message : 'Login failed');
     } finally {
       setIsLoading(false);
     }
