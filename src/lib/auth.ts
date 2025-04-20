@@ -74,7 +74,10 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
+          console.log("Authorize function called with credentials:", credentials);
+
           if (!credentials?.email || !credentials?.password) {
+            console.log("Missing email or password");
             return null;
           }
 
@@ -84,7 +87,10 @@ export const authOptions: NextAuthOptions = {
             }
           });
 
+          console.log("User found:", user);
+
           if (!user || !user.hashedPassword) {
+            console.log("No user found or no password set");
             return null;
           }
 
@@ -93,17 +99,23 @@ export const authOptions: NextAuthOptions = {
             user.hashedPassword
           );
 
+          console.log("Password match:", isCorrectPassword);
+
           if (!isCorrectPassword) {
+            console.log("Incorrect password");
             return null;
           }
 
-          return {
+          const userData = {
             id: user.id,
             email: user.email,
             username: user.username || "",
             coins: user.coins,
             image: user.image
           };
+
+          console.log("Returning user data:", userData);
+          return userData;
         } catch (error) {
           console.error("Auth error:", error);
           return null;
@@ -117,6 +129,9 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      console.log("JWT callback - token:", token);
+      console.log("JWT callback - user:", user);
+      
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -126,6 +141,9 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
+      console.log("Session callback - session:", session);
+      console.log("Session callback - token:", token);
+      
       if (token) {
         session.user.id = token.id as string;
         session.user.email = token.email as string | null;
@@ -135,8 +153,8 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      console.log("Redirect URL:", url);
-      console.log("Base URL:", baseUrl);
+      console.log("Redirect callback - url:", url);
+      console.log("Redirect callback - baseUrl:", baseUrl);
 
       // If url is undefined or null, return baseUrl
       if (!url) {
@@ -177,7 +195,7 @@ export const authOptions: NextAuthOptions = {
       }
     },
   },
-  debug: process.env.NODE_ENV === "development",
+  debug: true,
   secret: process.env.NEXTAUTH_SECRET,
 };
 
