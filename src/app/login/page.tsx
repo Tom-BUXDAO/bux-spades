@@ -59,15 +59,23 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Use the built-in redirect functionality
-      await signIn('credentials', {
+      // Use the built-in redirect functionality with a direct URL
+      const result = await signIn('credentials', {
         email,
         password,
-        redirect: true,
-        callbackUrl: '/game'
+        redirect: false
       });
-      
-      // The redirect will happen automatically, so we don't need to do anything here
+
+      if (result?.error) {
+        setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      if (result?.ok) {
+        // Force a hard redirect to the game page
+        window.location.href = 'https://bux-spades-buxdaos-projects.vercel.app/game';
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
