@@ -4,20 +4,25 @@ import { getToken } from "next-auth/jwt";
 
 // Paths that require authentication
 const protectedPaths = ["/game", "/profile", "/settings"];
+// Paths that should redirect to game if already authenticated
+const authPaths = ["/login", "/"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const token = await getToken({ req: request });
   
   // Check if the path requires authentication
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
+  const isAuthPath = authPaths.some(path => pathname === path);
   
-  if (isProtectedPath) {
-    const token = await getToken({ req: request });
-    
-    if (!token) {
-      // Redirect to login if no token
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+  if (isProtectedPath && !token) {
+    // Redirect to login if trying to access protected path without token
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+  
+  if (isAuthPath && token) {
+    // Redirect to game if trying to access auth paths with valid token
+    return NextResponse.redirect(new URL('/game', request.url));
   }
   
   // Not a protected path or has valid token, allow access
@@ -26,15 +31,5 @@ export async function middleware(request: NextRequest) {
 
 // Configure which paths the middleware should run on
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|public).*)",
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
 }; 
