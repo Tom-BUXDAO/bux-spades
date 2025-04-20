@@ -59,27 +59,44 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Use the built-in redirect functionality with a direct URL
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false
+      // Use a direct approach with fetch to authenticate
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          csrfToken: await getCsrfToken()
+        }),
       });
 
-      if (result?.error) {
-        setError(result.error);
+      if (response.ok) {
+        // Authentication successful, redirect to game page
+        window.location.href = '/game';
+      } else {
+        // Authentication failed
+        const data = await response.json();
+        setError(data.message || 'Login failed');
         setIsLoading(false);
-        return;
-      }
-
-      if (result?.ok) {
-        // Force a hard redirect to the game page
-        window.location.href = 'https://bux-spades-buxdaos-projects.vercel.app/game';
       }
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
       setIsLoading(false);
+    }
+  };
+
+  // Helper function to get CSRF token
+  const getCsrfToken = async () => {
+    try {
+      const response = await fetch('/api/auth/csrf');
+      const data = await response.json();
+      return data.csrfToken;
+    } catch (error) {
+      console.error('Error getting CSRF token:', error);
+      return '';
     }
   };
 
