@@ -49,36 +49,50 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email and password are required");
-        }
-
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            console.error("Missing credentials");
+            return null;
           }
-        });
 
-        if (!user || !user.hashedPassword) {
-          throw new Error("Invalid email or password");
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
+            }
+          });
+
+          if (!user) {
+            console.error("User not found");
+            return null;
+          }
+
+          if (!user.hashedPassword) {
+            console.error("User has no password");
+            return null;
+          }
+
+          const isCorrectPassword = await compare(
+            credentials.password,
+            user.hashedPassword
+          );
+
+          if (!isCorrectPassword) {
+            console.error("Incorrect password");
+            return null;
+          }
+
+          console.log("Authentication successful for user:", user.email);
+          return {
+            id: user.id,
+            email: user.email,
+            username: user.username || "",
+            coins: user.coins,
+            image: user.image
+          };
+        } catch (error) {
+          console.error("Authentication error:", error);
+          return null;
         }
-
-        const isCorrectPassword = await compare(
-          credentials.password,
-          user.hashedPassword
-        );
-
-        if (!isCorrectPassword) {
-          throw new Error("Invalid email or password");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          username: user.username || "",
-          coins: user.coins,
-          image: user.image
-        };
       }
     }),
     DiscordProvider({

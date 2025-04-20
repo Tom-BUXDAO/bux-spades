@@ -89,16 +89,29 @@ function LoginForm() {
         setShowWelcomeModal(true);
       } else {
         // Handle login with a direct approach
+        console.log("Attempting login with:", email);
+        
         const result = await signIn('credentials', {
           email,
           password,
-          redirect: true,
+          redirect: false,
           callbackUrl: '/game'
         });
         
-        // If we get here, it means redirect didn't happen (which is unexpected)
-        console.error('Login did not redirect as expected');
-        setError('Login failed. Please try again.');
+        console.log("Login result:", result);
+        
+        if (result?.error) {
+          setError(result.error);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (result?.ok) {
+          // Manually redirect to game page
+          router.push('/game');
+        } else {
+          setError('Login failed. Please check your credentials and try again.');
+        }
       }
     } catch (error) {
       console.error('Authentication error:', error);
