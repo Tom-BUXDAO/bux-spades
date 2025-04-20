@@ -32,8 +32,11 @@ function LoginForm() {
     const checkAuth = async () => {
       try {
         const response = await fetch('/api/auth/check-auth');
-        if (response.ok) {
-          router.push('/game');
+        const data = await response.json();
+        
+        if (data.authenticated) {
+          // User is authenticated, redirect to game page
+          window.location.href = '/game';
         }
       } catch (error) {
         console.error('Auth check error:', error);
@@ -41,7 +44,7 @@ function LoginForm() {
     };
     
     checkAuth();
-  }, [router]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

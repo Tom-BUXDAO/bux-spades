@@ -11,10 +11,23 @@ export function middleware(request: NextRequest) {
   // Check if the path requires authentication
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
   
+  // Get the token from cookies
+  const token = request.cookies.get('auth-token')?.value;
+  
+  // If user is trying to access login page and is already authenticated, redirect to game
+  if (pathname === '/login' && token) {
+    try {
+      // Verify the token
+      verify(token, process.env.NEXTAUTH_SECRET || 'fallback-secret');
+      
+      // Token is valid, redirect to game
+      return NextResponse.redirect(new URL('/game', request.url));
+    } catch (error) {
+      // Token is invalid, continue to login page
+    }
+  }
+  
   if (isProtectedPath) {
-    // Get the token from cookies
-    const token = request.cookies.get('auth-token')?.value;
-    
     if (!token) {
       // Redirect to login if no token
       return NextResponse.redirect(new URL('/login', request.url));
