@@ -59,22 +59,15 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
+      // Use the built-in redirect functionality
+      await signIn('credentials', {
         email,
         password,
-        redirect: false
+        redirect: true,
+        callbackUrl: '/game'
       });
-
-      if (result?.error) {
-        setError(result.error);
-        setIsLoading(false);
-        return;
-      }
-
-      if (result?.ok) {
-        // Use window.location.href for a full page reload to ensure session is properly set
-        window.location.href = '/game';
-      }
+      
+      // The redirect will happen automatically, so we don't need to do anything here
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');

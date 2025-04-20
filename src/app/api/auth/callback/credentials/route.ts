@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { headers } from "next/headers";
 
 export async function POST(req: Request) {
   try {
@@ -16,18 +15,10 @@ export async function POST(req: Request) {
       );
     }
     
-    // Get the host from headers
-    const headersList = headers();
-    const host = headersList.get("host");
-    
-    // Use the hardcoded base URL for Vercel deployment
-    const baseUrl = "https://bux-spades-buxdaos-projects.vercel.app";
-    
     // If we have a session, return success with the user data
     return NextResponse.json({ 
       success: true, 
-      user: session.user,
-      url: `${baseUrl}/game` // Provide a full redirect URL
+      user: session.user
     });
   } catch (error) {
     console.error("Credentials callback error:", error);
