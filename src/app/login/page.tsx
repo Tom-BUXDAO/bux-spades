@@ -93,6 +93,7 @@ function LoginForm() {
           email,
           password,
           redirect: false,
+          callbackUrl: '/game'
         });
 
         if (result?.error) {
@@ -102,8 +103,12 @@ function LoginForm() {
         }
 
         if (result?.ok) {
-          // Redirect to game page
-          router.push('/game');
+          // Wait for session to update
+          const session = await fetch('/api/auth/session');
+          if (session.ok) {
+            // Redirect to game page
+            router.push('/game');
+          }
         }
       }
     } catch (error) {

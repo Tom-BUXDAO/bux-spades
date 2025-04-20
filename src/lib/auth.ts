@@ -22,19 +22,29 @@ declare module "next-auth" {
 
 // Simple function to get the base URL
 function getBaseUrl() {
-  // For development
-  if (process.env.NODE_ENV === "development") {
-    return "http://localhost:3000";
+  if (typeof window !== 'undefined') {
+    // Browser should use relative path
+    return '';
   }
-  
-  // For production
-  return "https://bux-spades-buxdaos-projects.vercel.app";
+
+  if (process.env.VERCEL_URL) {
+    // Reference for vercel.com
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  if (process.env.NEXTAUTH_URL) {
+    // Reference for render.com
+    return process.env.NEXTAUTH_URL;
+  }
+
+  // Assume localhost
+  return `http://localhost:${process.env.PORT ?? 3000}`;
 }
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: "jwt",
+    strategy: "database",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
@@ -50,7 +60,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error("Email and password are required");
         }
 
         const user = await prisma.user.findUnique({
@@ -60,7 +70,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.hashedPassword) {
-          return null;
+          throw new Error("Invalid email or password");
         }
 
         const isCorrectPassword = await compare(
@@ -69,7 +79,7 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isCorrectPassword) {
-          return null;
+          throw new Error("Invalid email or password");
         }
 
         return {
