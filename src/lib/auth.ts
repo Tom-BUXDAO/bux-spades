@@ -1,22 +1,32 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { getServerSession } from "next-auth";
-import { type NextAuthOptions } from "next-auth";
+import { type NextAuthOptions, type DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/env.mjs";
 import { compare } from "bcryptjs";
 
+// Extend the built-in session type
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      name: | null;
-      email: string | null;
+      name: string;
+      email: string;
       username: string;
       coins: number;
       image?: string | null;
-    };
+    } & DefaultSession["user"]
+  }
+
+  interface User {
+    id: string;
+    name: string;
+    email: string;
+    username: string;
+    coins: number;
+    image?: string | null;
   }
 }
 
@@ -50,7 +60,7 @@ export const authOptions: NextAuthOptions = {
             }
           });
 
-          if (!user) {
+          if (!user || !user.email) {
             console.error("User not found");
             return null;
           }
@@ -73,8 +83,9 @@ export const authOptions: NextAuthOptions = {
           console.log("Authentication successful for user:", user.email);
           return {
             id: user.id,
+            name: user.username || user.name || user.email.split('@')[0],
             email: user.email,
-            username: user.username || "",
+            username: user.username || user.email.split('@')[0],
             coins: user.coins,
             image: user.image
           };
@@ -98,13 +109,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Discord profile missing username");
         }
 
-        let imageUrl: string;
-        if (profile.avatar === null) {
-          const defaultAvatarNumber = parseInt(profile.discriminator) % 5;
-          imageUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
-        } else {
+        let imageUrl: string | null = null;
+        if (profile.avatar) {
           const format = profile.avatar.startsWith("a_") ? "gif" : "png";
           imageUrl = `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.${format}`;
+        } else {
+          const defaultAvatarNumber = parseInt(profile.discriminator) % 5;
+          imageUrl = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNumber}.png`;
         }
 
         // Create or update user in database
@@ -124,13 +135,14 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
+        // Ensure all required fields are non-null
         return {
           id: user.id,
-          name: user.username, // Use username as name
+          name: user.username || profile.username,
           email: user.email || profile.email,
+          username: user.username || profile.username,
           image: user.image,
-          username: user.username,
-          coins: user.coins,
+          coins: user.coins || 1000,
         };
       },
     }),
@@ -148,7 +160,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.email = token.email as string | null;
+        session.user.email = token.email as string;
         session.user.username = token.username as string;
         session.user.coins = token.coins as number;
       }
