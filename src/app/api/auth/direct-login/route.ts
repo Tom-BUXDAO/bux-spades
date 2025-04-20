@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { sign } from "jsonwebtoken";
+import { SignJWT } from "jose";
 
 export async function POST(req: Request) {
   try {
@@ -43,17 +43,20 @@ export async function POST(req: Request) {
       );
     }
     
-    // Create a simple JWT token
-    const token = sign(
-      { 
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        coins: user.coins
-      },
-      process.env.NEXTAUTH_SECRET || "fallback-secret",
-      { expiresIn: "30d" }
+    // Create a JWT token using jose
+    const secret = new TextEncoder().encode(
+      process.env.NEXTAUTH_SECRET || "fallback-secret"
     );
+    
+    const token = await new SignJWT({ 
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      coins: user.coins
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("30d")
+      .sign(secret);
     
     // Set the token as a cookie
     const response = NextResponse.json({
