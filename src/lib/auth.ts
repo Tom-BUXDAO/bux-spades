@@ -76,6 +76,7 @@ export const authOptions: NextAuthOptions = {
         try {
           console.log("Authorize function called with credentials:", credentials);
           if (!credentials?.email || !credentials?.password) {
+            console.log("Missing email or password");
             return null;
           }
 
@@ -88,11 +89,13 @@ export const authOptions: NextAuthOptions = {
           console.log("User found:", user);
 
           if (!user) {
+            console.log("No user found with the provided email");
             return null;
           }
 
           // If user has no password (Discord user), don't allow credentials login
           if (!user.hashedPassword) {
+            console.log("User has no password, likely a Discord user");
             return null;
           }
 
@@ -101,7 +104,10 @@ export const authOptions: NextAuthOptions = {
             user.hashedPassword
           );
 
+          console.log("Password match:", isCorrectPassword);
+
           if (!isCorrectPassword) {
+            console.log("Incorrect password");
             return null;
           }
 
