@@ -11,7 +11,7 @@ export const env = createEnv({
     DISCORD_CLIENT_SECRET: z.string().min(1),
   },
   client: {
-    NEXT_PUBLIC_APP_URL: z.string().url().optional().default("https://bux-spades-buxdaos-projects.vercel.app"),
+    NEXT_PUBLIC_APP_URL: z.string().url().optional().default("https://bux-spades.vercel.app"),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
