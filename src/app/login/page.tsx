@@ -94,9 +94,28 @@ function LoginForm() {
     }
   };
 
-  const handleDiscordSignIn = () => {
-    setIsLoading(true);
-    signIn("discord", { callbackUrl: "/game" });
+  const handleDiscordSignIn = async () => {
+    try {
+      setIsLoading(true);
+      const result = await signIn("discord", {
+        redirect: false,
+        callbackUrl: `${window.location.origin}/game`
+      });
+      
+      if (result?.error) {
+        setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (result?.url) {
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Discord sign-in error:', error);
+      setError('Failed to sign in with Discord');
+      setIsLoading(false);
+    }
   };
 
   const handleWelcomeModalClose = () => {
