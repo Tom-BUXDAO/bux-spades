@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import io, { Socket } from 'socket.io-client';
+import { Manager } from 'socket.io-client';
 import type { GameState, Card, GameRules } from '@/types/game';
 import { useSession } from 'next-auth/react';
 
 // Create separate socket instances for regular and test connections
-let regularSocket: typeof Socket | null = null;
-const testSockets: Map<string, typeof Socket> = new Map();
+let regularSocket: typeof Manager.prototype.socket | null = null;
+const testSockets: Map<string, typeof Manager.prototype.socket> = new Map();
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
 // Socket configuration
@@ -22,126 +22,78 @@ const socketConfig = {
   withCredentials: true
 };
 
-export const socket = io(SOCKET_URL, socketConfig);
-export const testSocket = io(SOCKET_URL, socketConfig);
+export const socket = new Manager(SOCKET_URL, socketConfig);
+export const testSocket = new Manager(SOCKET_URL, socketConfig);
 
 export const useSocket = () => {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
+  const [socket, setSocket] = useState<ReturnType<typeof Manager.prototype.socket> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [isTestConnected, setIsTestConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    // Only proceed if we have a session and it's not loading
-    if (status === 'loading') {
-      console.log('Session is loading, waiting...');
-      return;
-    }
-
     if (!session?.user?.id) {
-      console.log('No user session, not connecting socket');
-      if (socket.connected) {
-        socket.disconnect();
-      }
+      console.log('No user session, skipping socket connection');
       return;
     }
 
-    const handleConnect = () => {
-      console.log('Socket connected, authenticating...');
+    const manager = new Manager(SOCKET_URL, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 10000,
+      autoConnect: true
+    });
+
+    const newSocket = manager.socket('/');
+
+    newSocket.on('connect', () => {
+      console.log('Socket connected');
       setIsConnected(true);
       setError(null);
       
-      // Authenticate immediately after connection
-      socket.emit('authenticate', { userId: session.user.id });
-    };
+      // Authenticate the socket connection
+      newSocket.emit('authenticate', { userId: session.user.id });
+    });
 
-    const handleDisconnect = () => {
-      console.log('Socket disconnected');
+    newSocket.on('connect_error', (err: Error) => {
+      console.error('Socket connection error:', err);
+      setError(`Connection error: ${err.message}`);
       setIsConnected(false);
-      
-      // Attempt to reconnect after a delay
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      
-      reconnectTimeoutRef.current = setTimeout(() => {
-        if (!socket.connected && session?.user?.id) {
-          console.log('Attempting to reconnect...');
-          socket.connect();
-        }
-      }, 5000);
-    };
+    });
 
-    const handleError = (error: { message: string }) => {
-      console.error('Socket error:', error);
-      setError(error.message);
-      
-      // If authentication failed, disconnect and try again
-      if (error.message.includes('Authentication failed')) {
-        socket.disconnect();
-        setTimeout(() => {
-          if (session?.user?.id) {
-            socket.connect();
-          }
-        }, 1000);
-      }
-    };
+    newSocket.on('disconnect', (reason: string) => {
+      console.log('Socket disconnected:', reason);
+      setIsConnected(false);
+    });
 
-    const handleTestConnect = () => {
-      console.log('Test socket connected');
-      setIsTestConnected(true);
-      testSocket.emit('authenticate', { userId: session.user.id });
-    };
+    newSocket.on('error', (err: Error) => {
+      console.error('Socket error:', err);
+      setError(`Socket error: ${err.message}`);
+    });
 
-    const handleTestDisconnect = () => {
-      console.log('Test socket disconnected');
-      setIsTestConnected(false);
-    };
+    setSocket(newSocket);
 
-    // Set up event listeners
-    socket.on('connect', handleConnect);
-    socket.on('disconnect', handleDisconnect);
-    socket.on('error', handleError);
-    testSocket.on('connect', handleTestConnect);
-    testSocket.on('disconnect', handleTestDisconnect);
-
-    // Connect if not already connected
-    if (!socket.connected) {
-      console.log('Connecting socket...');
-      socket.connect();
-    }
-
-    // Cleanup function
     return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      
-      socket.off('connect', handleConnect);
-      socket.off('disconnect', handleDisconnect);
-      socket.off('error', handleError);
-      testSocket.off('connect', handleTestConnect);
-      testSocket.off('disconnect', handleTestDisconnect);
-      
-      if (socket.connected) {
-        socket.disconnect();
+      if (newSocket) {
+        newSocket.disconnect();
       }
     };
-  }, [session?.user?.id, status]);
+  }, [session]);
 
-  return { socket, testSocket, isConnected, isTestConnected, error };
+  return { socket, isConnected, error };
 };
 
 // Helper function to explicitly join a game room
-export function joinGameRoom(socket: typeof Socket | null, gameId: string) {
+export function joinGameRoom(socket: typeof Manager.prototype.socket | null, gameId: string) {
   if (!socket || !gameId) return;
   console.log(`Explicitly joining game room: ${gameId}`);
   socket.emit('join_room', { gameId });
 }
 
 // API Functions using socket
-export function getGames(socket: typeof Socket | null, callback: (games: GameState[]) => void) {
+export function getGames(socket: typeof Manager.prototype.socket | null, callback: (games: GameState[]) => void) {
   if (!socket) return () => {};
   
   // Create a wrapped callback with extra logging
@@ -187,12 +139,12 @@ export function getGames(socket: typeof Socket | null, callback: (games: GameSta
   };
 }
 
-export function authenticateUser(socket: typeof Socket | null, userId: string) {
+export function authenticateUser(socket: typeof Manager.prototype.socket | null, userId: string) {
   if (!socket) return;
   socket.emit('authenticate', { userId });
 }
 
-export function createGame(socket: typeof Socket | null, user: { id: string; name?: string | null }, gameRules?: GameRules) {
+export function createGame(socket: typeof Manager.prototype.socket | null, user: { id: string; name?: string | null }, gameRules?: GameRules) {
   if (!socket) return;
   socket.emit('create_game', { user, gameRules });
 }
@@ -205,7 +157,7 @@ interface JoinOptions {
   image?: string;
 }
 
-export function joinGame(socket: typeof Socket | null, gameId: string, userId: string, options?: JoinOptions) {
+export function joinGame(socket: typeof Manager.prototype.socket | null, gameId: string, userId: string, options?: JoinOptions) {
   if (!socket) return;
   console.log(`SOCKET JOIN: Game=${gameId}, Player=${userId}, Position=${options?.position}, Team=${options?.team}`);
   socket.emit('join_game', { 
@@ -222,12 +174,12 @@ export function joinGame(socket: typeof Socket | null, gameId: string, userId: s
   });
 }
 
-export function leaveGame(socket: typeof Socket | null, gameId: string, userId: string) {
+export function leaveGame(socket: typeof Manager.prototype.socket | null, gameId: string, userId: string) {
   if (!socket) return;
   socket.emit('leave_game', { gameId, userId });
 }
 
-export function startGame(socket: typeof Socket | null, gameId: string, userId?: string) {
+export function startGame(socket: typeof Manager.prototype.socket | null, gameId: string, userId?: string) {
   if (!socket) return Promise.reject('No socket connection');
   
   console.log(`Attempting to start game: ${gameId} with user: ${userId || 'unknown'}`);
@@ -289,22 +241,22 @@ export function startGame(socket: typeof Socket | null, gameId: string, userId?:
   });
 }
 
-export function makeMove(socket: typeof Socket | null, gameId: string, userId: string, move: any) {
+export function makeMove(socket: typeof Manager.prototype.socket | null, gameId: string, userId: string, move: any) {
   if (!socket) return;
   socket.emit('make_move', { gameId, userId, move });
 }
 
-export function makeBid(socket: typeof Socket | null, gameId: string, userId: string, bid: number) {
+export function makeBid(socket: typeof Manager.prototype.socket | null, gameId: string, userId: string, bid: number) {
   if (!socket) return;
   socket.emit('make_bid', { gameId, userId, bid });
 }
 
-export function playCard(socket: typeof Socket | null, gameId: string, userId: string, card: Card) {
+export function playCard(socket: typeof Manager.prototype.socket | null, gameId: string, userId: string, card: Card) {
   if (!socket) return;
   socket.emit('play_card', { gameId, userId, card });
 }
 
-export function sendChatMessage(socket: typeof Socket | null, gameId: string, message: any) {
+export function sendChatMessage(socket: typeof Manager.prototype.socket | null, gameId: string, message: any) {
   if (!socket) {
     console.error('Cannot send chat message: socket is null');
     return;
@@ -336,7 +288,7 @@ interface TrickWinnerData {
   gameId?: string;
 }
 
-export function debugTrickWinner(socket: typeof Socket | null, gameId: string, onTrickWinnerDetermined?: (data: TrickWinnerData) => void) {
+export function debugTrickWinner(socket: typeof Manager.prototype.socket | null, gameId: string, onTrickWinnerDetermined?: (data: TrickWinnerData) => void) {
   if (!socket) {
     console.error('Cannot setup debug: socket is null');
     return;
@@ -365,7 +317,7 @@ export function debugTrickWinner(socket: typeof Socket | null, gameId: string, o
 }
 
 export function setupTrickCompletionDelay(
-  socket: typeof Socket | null, 
+  socket: typeof Manager.prototype.socket | null, 
   gameId: string, 
   onTrickComplete: (data: { trickCards: Card[], winningIndex: number }) => void
 ) {
