@@ -56,14 +56,16 @@ export async function middleware(request: NextRequest) {
   
   if (isProtectedPath && !isAuthenticated) {
     // Store the original URL to redirect back after login
-    const url = new URL('/login', request.url);
+    const baseUrl = process.env.NEXTAUTH_URL || request.headers.get('host') || 'http://localhost:3000';
+    const url = new URL('/login', baseUrl);
     url.searchParams.set('callbackUrl', request.url);
     return NextResponse.redirect(url);
   }
   
   if (isAuthPath && isAuthenticated) {
     // Redirect to game if trying to access auth paths with valid token
-    return NextResponse.redirect(new URL('/game', request.url));
+    const baseUrl = process.env.NEXTAUTH_URL || request.headers.get('host') || 'http://localhost:3000';
+    return NextResponse.redirect(new URL('/game', baseUrl));
   }
   
   return NextResponse.next();
