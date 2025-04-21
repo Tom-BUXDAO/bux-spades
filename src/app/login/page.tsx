@@ -56,10 +56,12 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
+      // Use a direct approach without relying on NextAuth.js URL construction
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
+        callbackUrl: '/game'
       });
 
       if (result?.error) {
@@ -68,9 +70,8 @@ function LoginForm() {
         return;
       }
 
-      if (result?.url) {
-        router.push(result.url);
-      }
+      // Navigate directly to the game page
+      router.push('/game');
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -83,10 +84,14 @@ function LoginForm() {
       setIsLoading(true);
       setError(null);
       
+      // Use a direct approach without relying on NextAuth.js URL construction
       await signIn("discord", {
-        redirect: true,
+        redirect: false,
         callbackUrl: '/game'
       });
+      
+      // Navigate directly to the game page
+      router.push('/game');
     } catch (error) {
       console.error('Discord sign-in error:', error);
       setError(error instanceof Error ? error.message : 'Failed to sign in with Discord');
@@ -96,7 +101,7 @@ function LoginForm() {
 
   const handleWelcomeModalClose = () => {
     setShowWelcomeModal(false);
-    window.location.href = "/game";
+    router.push('/game');
   };
 
   if (isLoading) {

@@ -30,6 +30,9 @@ declare module "next-auth" {
   }
 }
 
+// Define a default URL to use when NEXTAUTH_URL is not available
+const DEFAULT_URL = "https://bux-spades-buxdaos-projects.vercel.app";
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
@@ -144,8 +147,8 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // Ensure baseUrl is always defined
-      const safeBaseUrl = baseUrl || env.NEXTAUTH_URL || "https://bux-spades-buxdaos-projects.vercel.app";
+      // Always use a valid base URL
+      const safeBaseUrl = baseUrl || env.NEXTAUTH_URL || DEFAULT_URL;
       
       // If the URL is relative, prefix it with the base URL
       if (url.startsWith('/')) {
