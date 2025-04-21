@@ -97,9 +97,14 @@ function LoginForm() {
   const handleDiscordSignIn = async () => {
     try {
       setIsLoading(true);
+      const baseUrl = window.location.origin;
+      if (!baseUrl) {
+        throw new Error('Unable to determine base URL');
+      }
+      
       const result = await signIn("discord", {
         redirect: false,
-        callbackUrl: `${window.location.origin}/game`
+        callbackUrl: `${baseUrl}/game`
       });
       
       if (result?.error) {
@@ -110,6 +115,9 @@ function LoginForm() {
       
       if (result?.url) {
         window.location.href = result.url;
+      } else {
+        setError('No redirect URL received from Discord');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('Discord sign-in error:', error);
