@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Manager } from 'socket.io-client';
-import type { Socket as SocketIOClient } from 'socket.io-client/build/esm/socket';
+import type { Socket } from 'socket.io-client';
 import type { GameState, Card, GameRules } from '@/types/game';
 import { useSession } from 'next-auth/react';
 
@@ -24,7 +24,7 @@ const socketConfig = {
 
 export const useSocket = () => {
   const { data: session } = useSession();
-  const [socket, setSocket] = useState<SocketIOClient | null>(null);
+  const [socket, setSocket] = useState<ReturnType<typeof Manager.prototype.socket> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
