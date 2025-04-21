@@ -20,14 +20,20 @@ const socketConfig = {
 };
 
 export const useSocket = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [socket, setSocket] = useState<ReturnType<typeof Manager.prototype.socket> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof Manager.prototype.socket> | null>(null);
 
   useEffect(() => {
-    if (!session?.user?.id) {
+    // Only attempt to connect if we have a session and it's not loading
+    if (status === 'loading') {
+      console.log('Session is loading, waiting...');
+      return;
+    }
+
+    if (status === 'unauthenticated' || !session?.user?.id) {
       console.log('No user session, skipping socket connection');
       return;
     }
@@ -71,7 +77,7 @@ export const useSocket = () => {
         newSocket.disconnect();
       }
     };
-  }, [session]);
+  }, [session, status]);
 
   return { socket, isConnected, error };
 };
