@@ -26,6 +26,17 @@ export const useSocket = () => {
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof Manager.prototype.socket> | null>(null);
 
+  // Add detailed logging for session state
+  useEffect(() => {
+    console.log('Session status:', status);
+    console.log('Session data:', session);
+    
+    if (session?.user) {
+      console.log('User ID:', session.user.id);
+      console.log('User name:', session.user.name);
+    }
+  }, [session, status]);
+
   useEffect(() => {
     // Only attempt to connect if we have a session and it's not loading
     if (status === 'loading') {
@@ -38,6 +49,8 @@ export const useSocket = () => {
       return;
     }
 
+    console.log('Attempting to connect to socket server with user ID:', session.user.id);
+    
     // Create socket instance
     const manager = new Manager(SOCKET_URL, socketConfig);
     const newSocket = manager.socket('/');
@@ -49,6 +62,7 @@ export const useSocket = () => {
       setError(null);
       
       // Authenticate the socket connection
+      console.log('Authenticating socket with user ID:', session.user.id);
       newSocket.emit('authenticate', { userId: session.user.id });
     });
 
