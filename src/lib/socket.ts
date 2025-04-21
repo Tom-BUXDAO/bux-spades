@@ -10,53 +10,82 @@ let regularSocket: typeof Socket | null = null;
 const testSockets: Map<string, typeof Socket> = new Map();
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
-export const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+// Socket configuration
+const socketConfig = {
   transports: ['websocket'],
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  timeout: 20000
-});
+  timeout: 20000,
+  withCredentials: true
+};
 
-export const testSocket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
-  transports: ['websocket'],
-  autoConnect: false,
-  reconnection: true,
-  reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  timeout: 20000
-});
+export const socket = io(SOCKET_URL, socketConfig);
+export const testSocket = io(SOCKET_URL, socketConfig);
 
 export const useSocket = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isConnected, setIsConnected] = useState(false);
   const [isTestConnected, setIsTestConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
+    // Only proceed if we have a session and it's not loading
+    if (status === 'loading') {
+      console.log('Session is loading, waiting...');
+      return;
+    }
+
     if (!session?.user?.id) {
       console.log('No user session, not connecting socket');
+      if (socket.connected) {
+        socket.disconnect();
+      }
       return;
     }
 
     const handleConnect = () => {
-      console.log('Socket connected');
+      console.log('Socket connected, authenticating...');
       setIsConnected(true);
       setError(null);
+      
+      // Authenticate immediately after connection
       socket.emit('authenticate', { userId: session.user.id });
     };
 
     const handleDisconnect = () => {
       console.log('Socket disconnected');
       setIsConnected(false);
+      
+      // Attempt to reconnect after a delay
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      
+      reconnectTimeoutRef.current = setTimeout(() => {
+        if (!socket.connected && session?.user?.id) {
+          console.log('Attempting to reconnect...');
+          socket.connect();
+        }
+      }, 5000);
     };
 
     const handleError = (error: { message: string }) => {
       console.error('Socket error:', error);
       setError(error.message);
+      
+      // If authentication failed, disconnect and try again
+      if (error.message.includes('Authentication failed')) {
+        socket.disconnect();
+        setTimeout(() => {
+          if (session?.user?.id) {
+            socket.connect();
+          }
+        }, 1000);
+      }
     };
 
     const handleTestConnect = () => {
@@ -70,24 +99,36 @@ export const useSocket = () => {
       setIsTestConnected(false);
     };
 
+    // Set up event listeners
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
     socket.on('error', handleError);
     testSocket.on('connect', handleTestConnect);
     testSocket.on('disconnect', handleTestDisconnect);
 
+    // Connect if not already connected
     if (!socket.connected) {
+      console.log('Connecting socket...');
       socket.connect();
     }
 
+    // Cleanup function
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
       socket.off('error', handleError);
       testSocket.off('connect', handleTestConnect);
       testSocket.off('disconnect', handleTestDisconnect);
+      
+      if (socket.connected) {
+        socket.disconnect();
+      }
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, status]);
 
   return { socket, testSocket, isConnected, isTestConnected, error };
 };
