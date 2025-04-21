@@ -76,8 +76,7 @@ function LoginForm() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false,
-        callbackUrl: '/game'
+        redirect: false
       });
 
       if (!result) {
@@ -106,8 +105,7 @@ function LoginForm() {
       
       // Sign in with Discord
       const result = await signIn("discord", {
-        redirect: false,
-        callbackUrl: '/game'
+        redirect: false
       });
       
       if (!result) {
