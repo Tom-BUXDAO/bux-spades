@@ -73,21 +73,11 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Get the current URL and ensure it's valid
-      const currentUrl = window.location.href;
-      if (!currentUrl) {
-        throw new Error('Unable to determine current URL');
-      }
-      
-      // Construct the callback URL
-      const url = new URL(currentUrl);
-      const callbackUrl = `${url.origin}/game`;
-
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
-        callbackUrl
+        callbackUrl: '/game'
       });
 
       if (!result) {
@@ -100,8 +90,8 @@ function LoginForm() {
         return;
       }
 
-      // Use window.location for navigation
-      window.location.href = '/game';
+      // Use router for navigation
+      router.push('/game');
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
