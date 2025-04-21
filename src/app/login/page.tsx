@@ -73,12 +73,21 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      await signIn('credentials', {
+      const result = await signIn('credentials', {
         email,
         password,
-        redirect: true,
-        callbackUrl: '/game'
+        redirect: false,
       });
+
+      if (result?.error) {
+        setError(result.error);
+        setIsLoading(false);
+        return;
+      }
+
+      if (result?.url) {
+        router.push(result.url);
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
