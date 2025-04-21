@@ -144,18 +144,21 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // If the url is relative, prefix it with the baseUrl
+      // Always use the baseUrl from environment
+      const base = process.env.NEXTAUTH_URL || baseUrl;
+      
+      // If the url is relative, prefix it with the base
       if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
+        return `${base}${url}`;
       }
       
       // If the url is already absolute and on the same origin, allow it
-      if (url.startsWith(baseUrl)) {
+      if (url.startsWith(base)) {
         return url;
       }
       
-      // Default to the baseUrl
-      return baseUrl;
+      // Default to the base
+      return base;
     },
   },
   debug: true,
