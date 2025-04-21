@@ -144,18 +144,21 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
+      // Ensure baseUrl is always defined
+      const safeBaseUrl = baseUrl || env.NEXTAUTH_URL || "https://bux-spades-buxdaos-projects.vercel.app";
+      
       // If the URL is relative, prefix it with the base URL
       if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
+        return `${safeBaseUrl}${url}`;
       }
       
       // If the URL is absolute and on the same origin, allow it
-      if (url.startsWith(baseUrl)) {
+      if (url.startsWith(safeBaseUrl)) {
         return url;
       }
       
       // Default to the base URL
-      return baseUrl;
+      return safeBaseUrl;
     },
   },
   debug: true,
