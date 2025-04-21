@@ -144,12 +144,6 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // Ensure we have a valid baseUrl
-      if (!baseUrl) {
-        console.error('No baseUrl provided in redirect callback');
-        return '/login';
-      }
-      
       // If the url is relative, prefix it with the baseUrl
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
@@ -164,7 +158,7 @@ export const authOptions: NextAuthOptions = {
       return baseUrl;
     },
   },
-  debug: true, // Enable debug logs
+  debug: true,
   secret: env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
