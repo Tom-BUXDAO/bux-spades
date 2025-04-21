@@ -29,7 +29,10 @@ export async function middleware(request: NextRequest) {
   const isAuthPath = authPaths.some(path => pathname === path);
   
   // First try NextAuth token
-  const token = await getToken({ req: request });
+  const token = await getToken({ 
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET
+  });
   
   // Then try our custom auth token
   const authToken = request.cookies.get("auth-token")?.value;
