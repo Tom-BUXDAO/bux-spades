@@ -26,6 +26,7 @@ export const useSocket = () => {
   const { data: session } = useSession();
   const [socket, setSocket] = useState<SocketIOClient | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -40,7 +41,13 @@ export const useSocket = () => {
 
     socketInstance.on('connect', () => {
       console.log('Socket connected, authenticating...');
+      setIsConnected(true);
       socketInstance.emit('authenticate', { userId: session.user.id });
+    });
+
+    socketInstance.on('disconnect', () => {
+      console.log('Socket disconnected');
+      setIsConnected(false);
     });
 
     socketInstance.on('authenticated', () => {
@@ -60,7 +67,7 @@ export const useSocket = () => {
     };
   }, [session]);
 
-  return { socket, error };
+  return { socket, error, isConnected };
 };
 
 // Helper function to explicitly join a game room
