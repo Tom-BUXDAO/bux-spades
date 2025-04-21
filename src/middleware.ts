@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
   
   if (isProtectedPath && !isAuthenticated) {
     // Store the original URL to redirect back after login
-    const baseUrl = process.env.NEXTAUTH_URL || request.headers.get('host') || 'http://localhost:3000';
+    const baseUrl = process.env.NEXTAUTH_URL || "https://bux-spades-buxdaos-projects.vercel.app";
     const url = new URL('/login', baseUrl);
     url.searchParams.set('callbackUrl', request.url);
     return NextResponse.redirect(url);
@@ -64,7 +64,7 @@ export async function middleware(request: NextRequest) {
   
   if (isAuthPath && isAuthenticated) {
     // Redirect to game if trying to access auth paths with valid token
-    const baseUrl = process.env.NEXTAUTH_URL || request.headers.get('host') || 'http://localhost:3000';
+    const baseUrl = process.env.NEXTAUTH_URL || "https://bux-spades-buxdaos-projects.vercel.app";
     return NextResponse.redirect(new URL('/game', baseUrl));
   }
   
