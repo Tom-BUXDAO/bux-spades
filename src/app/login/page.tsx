@@ -73,20 +73,38 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
+      // Get the current URL and ensure it's valid
+      const currentUrl = window.location.href;
+      if (!currentUrl) {
+        throw new Error('Unable to determine current URL');
+      }
+      
+      // Construct the callback URL
+      const url = new URL(currentUrl);
+      const callbackUrl = `${url.origin}/game`;
+
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
+        callbackUrl
       });
 
-      if (result?.error) {
+      if (!result) {
+        throw new Error('No response from login attempt');
+      }
+
+      if (result.error) {
         setError(result.error);
         setIsLoading(false);
         return;
       }
 
-      // Redirect to game page on success
-      router.push('/game');
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        router.push('/game');
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -97,31 +115,40 @@ function LoginForm() {
   const handleDiscordSignIn = async () => {
     try {
       setIsLoading(true);
-      const baseUrl = window.location.origin;
-      if (!baseUrl) {
-        throw new Error('Unable to determine base URL');
+      setError(null);
+      
+      // Get the current URL and ensure it's valid
+      const currentUrl = window.location.href;
+      if (!currentUrl) {
+        throw new Error('Unable to determine current URL');
       }
       
+      // Construct the callback URL
+      const url = new URL(currentUrl);
+      const callbackUrl = `${url.origin}/game`;
+      
+      // Sign in with Discord
       const result = await signIn("discord", {
         redirect: false,
-        callbackUrl: `${baseUrl}/game`
+        callbackUrl
       });
       
-      if (result?.error) {
-        setError(result.error);
-        setIsLoading(false);
-        return;
+      if (!result) {
+        throw new Error('No response from Discord sign-in');
       }
       
-      if (result?.url) {
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      if (result.url) {
         window.location.href = result.url;
       } else {
-        setError('No redirect URL received from Discord');
-        setIsLoading(false);
+        throw new Error('No redirect URL received from Discord');
       }
     } catch (error) {
       console.error('Discord sign-in error:', error);
-      setError('Failed to sign in with Discord');
+      setError(error instanceof Error ? error.message : 'Failed to sign in with Discord');
       setIsLoading(false);
     }
   };
