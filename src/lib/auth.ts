@@ -56,7 +56,7 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
         });
 
-        if (!user) {
+        if (!user || !user.username) {
           throw new Error("No user found");
         }
 
