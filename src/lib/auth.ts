@@ -145,7 +145,7 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Always use the baseUrl from environment
-      const base = process.env.NEXTAUTH_URL || baseUrl;
+      const base = env.NEXTAUTH_URL || baseUrl;
       
       // If the url is relative, prefix it with the base
       if (url.startsWith('/')) {
