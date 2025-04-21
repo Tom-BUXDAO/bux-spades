@@ -76,7 +76,7 @@ function LoginForm() {
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: false
+        redirect: true
       });
 
       if (!result) {
@@ -88,9 +88,6 @@ function LoginForm() {
         setIsLoading(false);
         return;
       }
-
-      // Use router for navigation
-      router.push('/game');
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -104,23 +101,9 @@ function LoginForm() {
       setError(null);
       
       // Sign in with Discord
-      const result = await signIn("discord", {
-        redirect: false
+      await signIn("discord", {
+        redirect: true
       });
-      
-      if (!result) {
-        throw new Error('No response from Discord sign-in');
-      }
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      
-      if (result.url) {
-        router.push(result.url);
-      } else {
-        throw new Error('No redirect URL received from Discord');
-      }
     } catch (error) {
       console.error('Discord sign-in error:', error);
       setError(error instanceof Error ? error.message : 'Failed to sign in with Discord');
