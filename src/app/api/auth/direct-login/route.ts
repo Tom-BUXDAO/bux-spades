@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { SignJWT } from "jose";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -42,24 +43,12 @@ export async function POST(req: Request) {
         { status: 401 }
       );
     }
+
+    // Get the session
+    const session = await getServerSession(authOptions);
     
-    // Create a JWT token using jose
-    const secret = new TextEncoder().encode(
-      process.env.NEXTAUTH_SECRET || "fallback-secret"
-    );
-    
-    const token = await new SignJWT({ 
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      coins: user.coins
-    })
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("30d")
-      .sign(secret);
-    
-    // Set the token as a cookie
-    const response = NextResponse.json({
+    // Return user data
+    return NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -69,17 +58,6 @@ export async function POST(req: Request) {
         image: user.image
       }
     });
-    
-    // Set the token as an HTTP-only cookie
-    response.cookies.set("auth-token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60 // 30 days
-    });
-    
-    return response;
   } catch (error) {
     console.error("Direct login error:", error);
     return NextResponse.json(

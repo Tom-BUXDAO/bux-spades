@@ -73,28 +73,20 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      // Use our direct login API route
-      const response = await fetch('/api/auth/direct-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.message || 'Login failed');
+      if (result?.error) {
+        setError(result.error);
         setIsLoading(false);
         return;
       }
 
-      // Store user data in localStorage for socket authentication
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      // Force a hard redirect to the game page
-      window.location.href = '/game';
+      // Redirect to game page on success
+      router.push('/game');
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
