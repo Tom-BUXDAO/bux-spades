@@ -19,9 +19,6 @@ const socketConfig = {
   withCredentials: true,
   path: '/socket.io/',
   forceNew: true,
-  auth: {
-    token: typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-  }
 };
 
 export const useSocket = () => {
@@ -45,116 +42,85 @@ export const useSocket = () => {
     }
   }, [session, status]);
 
+  // Initialize socket connection
   useEffect(() => {
-    // Only attempt to connect if we have a session and it's not loading
     if (status === 'loading') {
       console.log('Session is loading, waiting...');
       return;
     }
 
-    if (status === 'unauthenticated' || !session?.user?.id) {
+    if (status === 'unauthenticated' || !session?.user) {
       console.log('No user session, skipping socket connection');
+      return;
+    }
+
+    // Clear any existing connection timeout
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+    }
+
+    // Initialize socket if not already connected
+    if (!socketRef.current) {
+      console.log('Initializing socket connection...');
+      const manager = new Manager(SOCKET_URL, socketConfig);
+      const newSocket = manager.socket('/');
+
+      // Set up connection event handlers
+      newSocket.on('connect', () => {
+        console.log('Socket connected');
+        setIsConnected(true);
+        setError(null);
+        reconnectAttemptsRef.current = 0;
+
+        // Authenticate the socket connection
+        newSocket.emit('authenticate', { userId: session.user.id });
+      });
+
+      newSocket.on('connect_error', (err: Error) => {
+        console.error('Socket connection error:', err);
+        setError(err.message);
+        setIsConnected(false);
+      });
+
+      newSocket.on('disconnect', (reason: string) => {
+        console.log('Socket disconnected:', reason);
+        setIsConnected(false);
+      });
+
+      newSocket.on('error', (err: Error) => {
+        console.error('Socket error:', err);
+        setError(err.message);
+      });
+
+      socketRef.current = newSocket;
+      setSocket(newSocket);
+    }
+
+    // Connect the socket
+    if (!socketRef.current.connected) {
+      console.log('Connecting socket...');
+      socketRef.current.connect();
+    }
+
+    // Set up connection timeout
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (!socketRef.current?.connected) {
+        console.error('Socket connection timeout');
+        setError('Connection timeout');
+      }
+    }, 10000);
+
+    // Cleanup function
+    return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
       if (socketRef.current) {
+        console.log('Cleaning up socket connection...');
         socketRef.current.disconnect();
         socketRef.current = null;
         setSocket(null);
         setIsConnected(false);
-      }
-      return;
-    }
-
-    // If we already have a socket and it's connected, don't create a new one
-    if (socketRef.current?.connected) {
-      console.log('Socket already connected, skipping connection');
-      return;
-    }
-
-    console.log('Attempting to connect to socket server with user ID:', session.user.id);
-    
-    // Create socket instance with updated auth token
-    const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    const manager = new Manager(SOCKET_URL, {
-      ...socketConfig,
-      auth: { token: authToken }
-    });
-    const newSocket = manager.socket('/');
-    socketRef.current = newSocket;
-
-    const handleConnect = () => {
-      console.log('Socket connected');
-      setIsConnected(true);
-      setError(null);
-      reconnectAttemptsRef.current = 0;
-      
-      // Clear any existing connection timeout
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-        connectionTimeoutRef.current = null;
-      }
-      
-      // Authenticate the socket connection
-      console.log('Authenticating socket with user ID:', session.user.id);
-      newSocket.emit('authenticate', { 
-        userId: session.user.id,
-        token: authToken
-      });
-    };
-
-    const handleDisconnect = (reason: string) => {
-      console.log('Socket disconnected:', reason);
-      setIsConnected(false);
-      
-      // Only attempt reconnect if not manually disconnected
-      if (reason !== 'io client disconnect' && reconnectAttemptsRef.current < maxReconnectAttempts) {
-        reconnectAttemptsRef.current++;
-        console.log(`Attempting reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
-        
-        // Exponential backoff for reconnection
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
-        setTimeout(() => {
-          if (!newSocket.connected) {
-            newSocket.connect();
-          }
-        }, delay);
-      } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-        setError('Maximum reconnection attempts reached. Please refresh the page.');
-      }
-    };
-
-    const handleError = (err: Error) => {
-      console.error('Socket error:', err);
-      setError(`Socket error: ${err.message}`);
-      setIsConnected(false);
-    };
-
-    // Set a connection timeout
-    connectionTimeoutRef.current = setTimeout(() => {
-      if (!newSocket.connected) {
-        console.log('Socket connection timeout');
-        handleError(new Error('Connection timeout'));
-      }
-    }, socketConfig.timeout);
-
-    newSocket.on('connect', handleConnect);
-    newSocket.on('disconnect', handleDisconnect);
-    newSocket.on('connect_error', handleError);
-    newSocket.on('error', handleError);
-
-    // Connect the socket
-    newSocket.connect();
-    setSocket(newSocket);
-
-    return () => {
-      console.log('Cleaning up socket connection');
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
-      if (newSocket) {
-        newSocket.off('connect', handleConnect);
-        newSocket.off('disconnect', handleDisconnect);
-        newSocket.off('connect_error', handleError);
-        newSocket.off('error', handleError);
-        newSocket.disconnect();
       }
     };
   }, [session, status]);
