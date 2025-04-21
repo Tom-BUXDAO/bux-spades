@@ -6,12 +6,12 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     DIRECT_URL: z.string().url(),
     NEXTAUTH_SECRET: z.string().min(1),
-    NEXTAUTH_URL: z.string().min(1),
     DISCORD_CLIENT_ID: z.string().min(1),
     DISCORD_CLIENT_SECRET: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().url().optional().default("https://bux-spades-buxdaos-projects.vercel.app"),
+    NEXTAUTH_URL: z.string().min(1).default("https://bux-spades-buxdaos-projects.vercel.app"),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
