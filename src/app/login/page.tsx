@@ -104,20 +104,10 @@ function LoginForm() {
       setIsLoading(true);
       setError(null);
       
-      // Get the current URL and ensure it's valid
-      const currentUrl = window.location.href;
-      if (!currentUrl) {
-        throw new Error('Unable to determine current URL');
-      }
-      
-      // Construct the callback URL
-      const url = new URL(currentUrl);
-      const callbackUrl = `${url.origin}/game`;
-      
       // Sign in with Discord
       const result = await signIn("discord", {
         redirect: false,
-        callbackUrl
+        callbackUrl: '/game'
       });
       
       if (!result) {
@@ -129,7 +119,7 @@ function LoginForm() {
       }
       
       if (result.url) {
-        window.location.href = result.url;
+        router.push(result.url);
       } else {
         throw new Error('No redirect URL received from Discord');
       }
