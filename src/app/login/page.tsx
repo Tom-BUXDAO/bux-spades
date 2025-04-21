@@ -6,7 +6,7 @@ import Image from "next/image";
 import WelcomeModal from "@/components/WelcomeModal";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +19,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     // Check for error in URL parameters
@@ -44,28 +45,10 @@ function LoginForm() {
 
   // Check if user is already logged in
   useEffect(() => {
-    let mounted = true;
-    
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/session');
-        const data = await response.json();
-        
-        if (mounted && data.user) {
-          // User is authenticated, redirect to game page
-          router.push('/game');
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-      }
-    };
-    
-    checkAuth();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    if (status === "authenticated" && session?.user) {
+      router.push('/game');
+    }
+  }, [status, session, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
