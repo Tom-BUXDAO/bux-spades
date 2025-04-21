@@ -81,6 +81,7 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           scope: "identify email",
+          prompt: "consent",
         },
       },
       profile(profile) {
@@ -130,7 +131,7 @@ export const authOptions: NextAuthOptions = {
                 username: user.username,
                 coins: 1000,
                 image: user.image,
-                hashedPassword: Math.random().toString(36).slice(-8), // Generate random password
+                hashedPassword: Math.random().toString(36).slice(-8),
               },
             });
           }
@@ -142,8 +143,28 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
+    async redirect({ url, baseUrl }) {
+      // Ensure we have a valid baseUrl
+      if (!baseUrl) {
+        console.error('No baseUrl provided in redirect callback');
+        return '/login';
+      }
+      
+      // If the url is relative, prefix it with the baseUrl
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      
+      // If the url is already absolute and on the same origin, allow it
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      
+      // Default to the baseUrl
+      return baseUrl;
+    },
   },
-  debug: process.env.NODE_ENV === "development",
+  debug: true, // Enable debug logs
   secret: env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
