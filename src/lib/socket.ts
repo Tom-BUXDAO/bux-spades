@@ -12,11 +12,16 @@ const socketConfig = {
   transports: ['websocket'],
   autoConnect: false,
   reconnection: true,
-  reconnectionAttempts: 5,
+  reconnectionAttempts: 10,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  timeout: 20000,
-  withCredentials: true
+  timeout: 30000,
+  withCredentials: true,
+  path: '/socket.io/',
+  forceNew: true,
+  auth: {
+    token: typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+  }
 };
 
 export const useSocket = () => {
@@ -25,6 +30,9 @@ export const useSocket = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<ReturnType<typeof Manager.prototype.socket> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 10;
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Add detailed logging for session state
   useEffect(() => {
@@ -46,48 +54,106 @@ export const useSocket = () => {
 
     if (status === 'unauthenticated' || !session?.user?.id) {
       console.log('No user session, skipping socket connection');
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setSocket(null);
+        setIsConnected(false);
+      }
+      return;
+    }
+
+    // If we already have a socket and it's connected, don't create a new one
+    if (socketRef.current?.connected) {
+      console.log('Socket already connected, skipping connection');
       return;
     }
 
     console.log('Attempting to connect to socket server with user ID:', session.user.id);
     
-    // Create socket instance
-    const manager = new Manager(SOCKET_URL, socketConfig);
+    // Create socket instance with updated auth token
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const manager = new Manager(SOCKET_URL, {
+      ...socketConfig,
+      auth: { token: authToken }
+    });
     const newSocket = manager.socket('/');
     socketRef.current = newSocket;
 
-    newSocket.on('connect', () => {
+    const handleConnect = () => {
       console.log('Socket connected');
       setIsConnected(true);
       setError(null);
+      reconnectAttemptsRef.current = 0;
+      
+      // Clear any existing connection timeout
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+        connectionTimeoutRef.current = null;
+      }
       
       // Authenticate the socket connection
       console.log('Authenticating socket with user ID:', session.user.id);
-      newSocket.emit('authenticate', { userId: session.user.id });
-    });
+      newSocket.emit('authenticate', { 
+        userId: session.user.id,
+        token: authToken
+      });
+    };
 
-    newSocket.on('connect_error', (err: Error) => {
-      console.error('Socket connection error:', err);
-      setError(`Connection error: ${err.message}`);
-      setIsConnected(false);
-    });
-
-    newSocket.on('disconnect', (reason: string) => {
+    const handleDisconnect = (reason: string) => {
       console.log('Socket disconnected:', reason);
       setIsConnected(false);
-    });
+      
+      // Only attempt reconnect if not manually disconnected
+      if (reason !== 'io client disconnect' && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        reconnectAttemptsRef.current++;
+        console.log(`Attempting reconnect (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
+        
+        // Exponential backoff for reconnection
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+        setTimeout(() => {
+          if (!newSocket.connected) {
+            newSocket.connect();
+          }
+        }, delay);
+      } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        setError('Maximum reconnection attempts reached. Please refresh the page.');
+      }
+    };
 
-    newSocket.on('error', (err: Error) => {
+    const handleError = (err: Error) => {
       console.error('Socket error:', err);
       setError(`Socket error: ${err.message}`);
-    });
+      setIsConnected(false);
+    };
+
+    // Set a connection timeout
+    connectionTimeoutRef.current = setTimeout(() => {
+      if (!newSocket.connected) {
+        console.log('Socket connection timeout');
+        handleError(new Error('Connection timeout'));
+      }
+    }, socketConfig.timeout);
+
+    newSocket.on('connect', handleConnect);
+    newSocket.on('disconnect', handleDisconnect);
+    newSocket.on('connect_error', handleError);
+    newSocket.on('error', handleError);
 
     // Connect the socket
     newSocket.connect();
     setSocket(newSocket);
 
     return () => {
+      console.log('Cleaning up socket connection');
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
       if (newSocket) {
+        newSocket.off('connect', handleConnect);
+        newSocket.off('disconnect', handleDisconnect);
+        newSocket.off('connect_error', handleError);
+        newSocket.off('error', handleError);
         newSocket.disconnect();
       }
     };
@@ -231,12 +297,39 @@ export function sendChatMessage(socket: ReturnType<typeof Manager.prototype.sock
     return;
   }
   
-  try {
-    console.log(`Sending chat message to game ${gameId}:`, message);
-    socket.emit('chat_message', { gameId, ...message });
-  } catch (error) {
-    console.error('Error sending chat message:', error);
-  }
+  const sendWithRetry = (retryCount = 0) => {
+    if (!socket.connected) {
+      if (retryCount < 3) {
+        console.log(`Socket not connected, retrying in ${Math.pow(2, retryCount)}s...`);
+        setTimeout(() => sendWithRetry(retryCount + 1), Math.pow(2, retryCount) * 1000);
+      } else {
+        console.error('Failed to send message after 3 retries');
+      }
+      return;
+    }
+
+    try {
+      console.log(`Sending chat message to game ${gameId}:`, message);
+      socket.emit('chat_message', { 
+        gameId, 
+        message 
+      }, (ack: any) => {
+        if (ack?.error) {
+          console.error('Error acknowledgment from server:', ack.error);
+          if (retryCount < 3) {
+            setTimeout(() => sendWithRetry(retryCount + 1), Math.pow(2, retryCount) * 1000);
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error sending chat message:', error);
+      if (retryCount < 3) {
+        setTimeout(() => sendWithRetry(retryCount + 1), Math.pow(2, retryCount) * 1000);
+      }
+    }
+  };
+
+  sendWithRetry();
 }
 
 interface TrickWinnerData {

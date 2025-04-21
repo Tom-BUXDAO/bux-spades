@@ -83,6 +83,16 @@ export const authOptions: NextAuthOptions = {
           scope: "identify email",
         },
       },
+      profile(profile) {
+        return {
+          id: profile.id,
+          name: profile.username,
+          email: profile.email,
+          username: profile.username.toLowerCase().replace(/\s+/g, '_'),
+          coins: 1000,
+          image: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : null,
+        };
+      },
     }),
   ],
   callbacks: {
@@ -117,7 +127,7 @@ export const authOptions: NextAuthOptions = {
               data: {
                 email: user.email!,
                 name: user.name!,
-                username: user.name!.toLowerCase().replace(/\s+/g, '_'),
+                username: user.username,
                 coins: 1000,
                 image: user.image,
                 hashedPassword: Math.random().toString(36).slice(-8), // Generate random password

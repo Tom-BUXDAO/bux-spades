@@ -202,7 +202,12 @@ export default function Chat({ socket, gameId, userId, userName, players }: Chat
         if (chatMessage.id && prev.some(m => m.id === chatMessage.id)) {
           return prev;
         }
-        return [...prev, chatMessage];
+        // Keep only the last 100 messages
+        const newMessages = [...prev, chatMessage];
+        if (newMessages.length > 100) {
+          return newMessages.slice(-100);
+        }
+        return newMessages;
       });
     };
 
@@ -212,15 +217,31 @@ export default function Chat({ socket, gameId, userId, userName, players }: Chat
     // Some servers might use this event name instead
     activeSocket.on('chat', handleMessage);
 
+    // Handle socket reconnection
+    activeSocket.on('connect', () => {
+      console.log('Chat socket reconnected, joining game room:', gameId);
+      activeSocket.emit('join_game', {
+        gameId,
+        userId,
+        watchOnly: true
+      });
+    });
+
     return () => {
       activeSocket.off('chat_message', handleMessage);
       activeSocket.off('chat', handleMessage);
+      activeSocket.off('connect');
     };
-  }, [activeSocket]);
+  }, [activeSocket, gameId, userId]);
 
   useEffect(() => {
     // Scroll to bottom whenever messages change
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      const shouldAutoScroll = messagesEndRef.current.scrollHeight - messagesEndRef.current.scrollTop <= messagesEndRef.current.clientHeight + 100;
+      if (shouldAutoScroll) {
+        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -241,14 +262,11 @@ export default function Chat({ socket, gameId, userId, userName, players }: Chat
 
       console.log('Sending chat message:', chatMessage, 'to game:', gameId);
       
-      // Try both methods of sending the message
-      activeSocket.emit('chat_message', {
-        gameId,
-        message: chatMessage
-      });
-      
       // Add the message to our local state immediately (optimistic UI)
       setMessages(prev => [...prev, chatMessage as ChatMessage]);
+
+      // Send the message using the helper function
+      sendChatMessage(activeSocket, gameId, chatMessage);
 
       // Clear the input field
       setInputValue('');
