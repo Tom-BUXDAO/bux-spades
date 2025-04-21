@@ -326,15 +326,26 @@ export default function GameLobby({
 
   const handleLogout = async () => {
     try {
-      // Call our logout API endpoint
+      // First sign out from NextAuth
+      await signOut({ 
+        redirect: false, // Don't redirect yet, we'll handle it manually
+        callbackUrl: "/login" 
+      });
+      
+      // Then call our logout API endpoint
       await fetch('/api/auth/logout', {
         method: 'POST',
       });
       
-      // Sign out from NextAuth
-      await signOut({ redirect: true, callbackUrl: "/login" });
+      // Clear any local storage data
+      localStorage.removeItem('user');
+      
+      // Finally redirect to login page
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if there's an error, try to redirect to login
+      window.location.href = '/login';
     }
   };
 

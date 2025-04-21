@@ -34,19 +34,29 @@ export const useSocket = () => {
   const { data: session } = useSession();
   const [isConnected, setIsConnected] = useState(false);
   const [isTestConnected, setIsTestConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) {
+      console.log('No user session, not connecting socket');
+      return;
+    }
 
     const handleConnect = () => {
       console.log('Socket connected');
       setIsConnected(true);
+      setError(null);
       socket.emit('authenticate', { userId: session.user.id });
     };
 
     const handleDisconnect = () => {
       console.log('Socket disconnected');
       setIsConnected(false);
+    };
+
+    const handleError = (error: { message: string }) => {
+      console.error('Socket error:', error);
+      setError(error.message);
     };
 
     const handleTestConnect = () => {
@@ -62,6 +72,7 @@ export const useSocket = () => {
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
+    socket.on('error', handleError);
     testSocket.on('connect', handleTestConnect);
     testSocket.on('disconnect', handleTestDisconnect);
 
@@ -72,12 +83,13 @@ export const useSocket = () => {
     return () => {
       socket.off('connect', handleConnect);
       socket.off('disconnect', handleDisconnect);
+      socket.off('error', handleError);
       testSocket.off('connect', handleTestConnect);
       testSocket.off('disconnect', handleTestDisconnect);
     };
   }, [session?.user?.id]);
 
-  return { socket, testSocket, isConnected, isTestConnected };
+  return { socket, testSocket, isConnected, isTestConnected, error };
 };
 
 // Helper function to explicitly join a game room
