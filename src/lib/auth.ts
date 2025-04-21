@@ -144,33 +144,18 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     async redirect({ url, baseUrl }) {
-      // Ensure we have a valid base URL
-      const base = env.NEXTAUTH_URL;
-      if (!base) {
-        console.error('NEXTAUTH_URL is not set');
-        return baseUrl;
+      // If the URL is relative, prefix it with the base URL
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
       }
-
-      try {
-        // If the url is relative, prefix it with the base
-        if (url.startsWith('/')) {
-          return `${base}${url}`;
-        }
-        
-        // If the url is already absolute and on the same origin, allow it
-        const urlObj = new URL(url);
-        const baseObj = new URL(base);
-        
-        if (urlObj.origin === baseObj.origin) {
-          return url;
-        }
-        
-        // Default to the base
-        return base;
-      } catch (error) {
-        console.error('Error in redirect callback:', error);
-        return base;
+      
+      // If the URL is absolute and on the same origin, allow it
+      if (url.startsWith(baseUrl)) {
+        return url;
       }
+      
+      // Default to the base URL
+      return baseUrl;
     },
   },
   debug: true,
