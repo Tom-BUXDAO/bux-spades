@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Manager } from 'socket.io-client';
+import type { Socket as SocketIOClient } from 'socket.io-client/build/esm/socket';
 import type { GameState, Card, GameRules } from '@/types/game';
 import { useSession } from 'next-auth/react';
 
@@ -22,110 +23,44 @@ const socketConfig = {
 };
 
 export const useSocket = () => {
-  const { data: session, status } = useSession();
-  const [socket, setSocket] = useState<ReturnType<typeof Manager.prototype.socket> | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const { data: session } = useSession();
+  const [socket, setSocket] = useState<SocketIOClient | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const socketRef = useRef<ReturnType<typeof Manager.prototype.socket> | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 10;
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Add detailed logging for session state
   useEffect(() => {
-    console.log('Session status:', status);
-    console.log('Session data:', session);
-    
-    if (session?.user) {
-      console.log('User ID:', session.user.id);
-      console.log('User name:', session.user.name);
-    }
-  }, [session, status]);
-
-  // Initialize socket connection
-  useEffect(() => {
-    if (status === 'loading') {
-      console.log('Session is loading, waiting...');
+    if (!session?.user?.id) {
+      console.log('No session, skipping socket connection');
       return;
     }
 
-    if (status === 'unauthenticated' || !session?.user) {
-      console.log('No user session, skipping socket connection');
-      return;
-    }
+    console.log('Connecting to socket with session:', session);
 
-    // Clear any existing connection timeout
-    if (connectionTimeoutRef.current) {
-      clearTimeout(connectionTimeoutRef.current);
-    }
+    const newSocket = new Manager(SOCKET_URL, socketConfig);
+    const socketInstance = newSocket.socket('/');
 
-    // Initialize socket if not already connected
-    if (!socketRef.current) {
-      console.log('Initializing socket connection...');
-      const manager = new Manager(SOCKET_URL, socketConfig);
-      const newSocket = manager.socket('/');
+    socketInstance.on('connect', () => {
+      console.log('Socket connected, authenticating...');
+      socketInstance.emit('authenticate', { userId: session.user.id });
+    });
 
-      // Set up connection event handlers
-      newSocket.on('connect', () => {
-        console.log('Socket connected');
-        setIsConnected(true);
-        setError(null);
-        reconnectAttemptsRef.current = 0;
+    socketInstance.on('authenticated', () => {
+      console.log('Socket authenticated successfully');
+      setError(null);
+    });
 
-        // Authenticate the socket connection
-        newSocket.emit('authenticate', { userId: session.user.id });
-      });
+    socketInstance.on('error', (err: string) => {
+      console.error('Socket error:', err);
+      setError(err);
+    });
 
-      newSocket.on('connect_error', (err: Error) => {
-        console.error('Socket connection error:', err);
-        setError(err.message);
-        setIsConnected(false);
-      });
+    setSocket(socketInstance);
 
-      newSocket.on('disconnect', (reason: string) => {
-        console.log('Socket disconnected:', reason);
-        setIsConnected(false);
-      });
-
-      newSocket.on('error', (err: Error) => {
-        console.error('Socket error:', err);
-        setError(err.message);
-      });
-
-      socketRef.current = newSocket;
-      setSocket(newSocket);
-    }
-
-    // Connect the socket
-    if (!socketRef.current.connected) {
-      console.log('Connecting socket...');
-      socketRef.current.connect();
-    }
-
-    // Set up connection timeout
-    connectionTimeoutRef.current = setTimeout(() => {
-      if (!socketRef.current?.connected) {
-        console.error('Socket connection timeout');
-        setError('Connection timeout');
-      }
-    }, 10000);
-
-    // Cleanup function
     return () => {
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
-      if (socketRef.current) {
-        console.log('Cleaning up socket connection...');
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setSocket(null);
-        setIsConnected(false);
-      }
+      socketInstance.disconnect();
     };
-  }, [session, status]);
+  }, [session]);
 
-  return { socket, isConnected, error };
+  return { socket, error };
 };
 
 // Helper function to explicitly join a game room
