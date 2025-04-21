@@ -73,21 +73,12 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
+      await signIn('credentials', {
         email,
         password,
-        redirect: true
+        redirect: true,
+        callbackUrl: '/game'
       });
-
-      if (!result) {
-        throw new Error('No response from login attempt');
-      }
-
-      if (result.error) {
-        setError(result.error);
-        setIsLoading(false);
-        return;
-      }
     } catch (error) {
       console.error('Login error:', error);
       setError(error instanceof Error ? error.message : 'Login failed');
@@ -100,9 +91,9 @@ function LoginForm() {
       setIsLoading(true);
       setError(null);
       
-      // Sign in with Discord
       await signIn("discord", {
-        redirect: true
+        redirect: true,
+        callbackUrl: '/game'
       });
     } catch (error) {
       console.error('Discord sign-in error:', error);
